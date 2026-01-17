@@ -427,6 +427,10 @@
         "title": "App Data Directory",
         "description": "Location where Handy stores its data"
       },
+      "logDirectory": {
+        "title": "Log Directory",
+        "description": "Location where log files are stored"
+      },
       "sourceCode": {
         "title": "Source Code",
         "description": "View source code and contribute",

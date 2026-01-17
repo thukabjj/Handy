@@ -6,13 +6,12 @@ import { SettingsGroup } from "../../ui/SettingsGroup";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { Button } from "../../ui/Button";
 import { AppDataDirectory } from "../AppDataDirectory";
+import { LogDirectory } from "../LogDirectory";
 import { AppLanguageSelector } from "../AppLanguageSelector";
-import { LogDirectory } from "../debug";
 
 export const AboutSettings: React.FC = () => {
   const { t } = useTranslation();
   const [version, setVersion] = useState("");
-
   useEffect(() => {
     const fetchVersion = async () => {
       try {
