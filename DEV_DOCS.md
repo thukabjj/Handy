@@ -23,6 +23,74 @@ Handy uses the [Tauri](https://tauri.app/) framework, which allows for building 
 
 Communication between the frontend and backend is handled through Tauri's command and event system, with type safety provided by [Specta](https://specta.dev/) and [tauri-specta](https://github.com/oscartbeaumont/tauri-specta).
 
+## Visual Architecture
+
+Here are a couple of diagrams to illustrate the architecture and workflows.
+
+### High-Level Architecture
+
+```mermaid
+graph TD
+    subgraph User Interaction
+        A[User Presses Shortcut]
+    end
+
+    subgraph "Rust Backend (Tauri)"
+        B[Global Shortcut Listener <br> (rdev)]
+        C[Audio Capture <br> (cpal)]
+        D[VAD <br> (vad-rs)]
+        E[Transcription <br> (transcribe-rs / whisper.cpp)]
+        F[Text Output <br> (enigo)]
+    end
+
+    subgraph "Frontend (React/TypeScript)"
+        G[Settings UI]
+        H[Recording Overlay]
+    end
+
+    I[Tauri Core]
+
+    A --> B
+    B -- "Toggle Recording" --> C
+    C -- "Audio Stream" --> D
+    D -- "Voice Chunks" --> E
+    E -- "Transcribed Text" --> F
+    F -- "Paste Text" --> A
+
+    I -- "Commands & Events" -- G
+    I -- "Commands & Events" -- H
+    B -- "Events (e.g., RecordingStateChanged)" --> I
+```
+
+### Transcription Workflow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant System
+    participant RustBackend as Rust Backend
+    participant WhisperCPP as Whisper.cpp
+
+    User->>System: Presses Shortcut
+    System->>RustBackend: Shortcut detected (rdev)
+    RustBackend->>RustBackend: Start audio capture (cpal)
+    RustBackend->>RustBackend: Apply Voice Activity Detection (VAD)
+    Note right of RustBackend: Only audio chunks with speech are kept
+
+    User->>System: Speaks
+    System-->>RustBackend: Audio Stream
+
+    User->>System: Releases Shortcut
+    System->>RustBackend: Shortcut detected (rdev)
+    RustBackend->>RustBackend: Stop audio capture
+
+    RustBackend->>WhisperCPP: Send audio data for transcription
+    WhisperCPP-->>RustBackend: Return transcribed text
+
+    RustBackend->>System: Paste text into active application (enigo)
+    System-->>User: Sees transcribed text
+```
+
 ## Technology Stack
 
 This project uses a combination of technologies to deliver a cross-platform experience with high performance and a modern user interface.
