@@ -5,7 +5,9 @@ export { DebugSettings } from "./debug/DebugSettings";
 export { HistorySettings } from "./history/HistorySettings";
 export { AboutSettings } from "./about/AboutSettings";
 export { PostProcessingSettings } from "./post-processing/PostProcessingSettings";
-export { ModelsSettings } from "./models/ModelsSettings";
+export { ActiveListeningSettings } from "./active-listening";
+export { AskAiSettings } from "./ask-ai";
+export { KnowledgeBaseSettings } from "./knowledge-base";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";
@@ -15,9 +17,7 @@ export { AlwaysOnMicrophone } from "./AlwaysOnMicrophone";
 export { PushToTalk } from "./PushToTalk";
 export { AudioFeedback } from "./AudioFeedback";
 export { ShowOverlay } from "./ShowOverlay";
-export { GlobalShortcutInput } from "./GlobalShortcutInput";
-export { HandyKeysShortcutInput } from "./HandyKeysShortcutInput";
-export { ShortcutInput } from "./ShortcutInput";
+export { HandyShortcut } from "./HandyShortcut";
 export { TranslateToEnglish } from "./TranslateToEnglish";
 export { CustomWords } from "./CustomWords";
 export { PostProcessingToggle } from "./PostProcessingToggle";
@@ -31,3 +31,6 @@ export { RecordingRetentionPeriodSelector } from "./RecordingRetentionPeriod";
 export { AutostartToggle } from "./AutostartToggle";
 export { UpdateChecksToggle } from "./UpdateChecksToggle";
 export { LogDirectory } from "./LogDirectory";
+export { PrivateOverlayToggle } from "./PrivateOverlayToggle";
+export { AskAiToggle } from "./AskAiToggle";
+export { KnowledgeBaseToggle } from "./KnowledgeBaseToggle";

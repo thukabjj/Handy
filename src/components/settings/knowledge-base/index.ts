@@ -1,0 +1,1 @@
+export { KnowledgeBaseSettings } from "./KnowledgeBaseSettings";

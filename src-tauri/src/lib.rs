@@ -5,10 +5,12 @@ mod audio_feedback;
 pub mod audio_toolkit;
 mod clipboard;
 mod commands;
+pub mod error;
 mod helpers;
 mod input;
 mod llm_client;
 mod managers;
+mod ollama_client;
 mod overlay;
 mod settings;
 mod shortcut;
@@ -20,9 +22,14 @@ use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, Builder};
 
 use env_filter::Builder as EnvFilterBuilder;
+use managers::active_listening::ActiveListeningManager;
+use managers::ask_ai::AskAiManager;
+use managers::ask_ai_history::AskAiHistoryManager;
 use managers::audio::AudioRecordingManager;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
+use managers::rag::RagManager;
+use managers::suggestion_engine::SuggestionEngine;
 use managers::transcription::TranscriptionManager;
 #[cfg(unix)]
 use signal_hook::consts::SIGUSR2;
@@ -127,17 +134,55 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
+    let active_listening_manager = Arc::new(
+        ActiveListeningManager::new(app_handle, transcription_manager.clone())
+            .expect("Failed to initialize active listening manager"),
+    );
+    let ask_ai_manager = Arc::new(
+        AskAiManager::new(app_handle, transcription_manager.clone())
+            .expect("Failed to initialize ask ai manager"),
+    );
+    let ask_ai_history_manager = Arc::new(
+        AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
+    );
+
+    // Initialize RAG manager with Ollama client
+    let settings = settings::get_settings(app_handle);
+    let ollama_base_url = settings.active_listening.ollama_base_url.clone();
+    let rag_db_path = app_handle
+        .path()
+        .app_data_dir()
+        .expect("Failed to get app data dir")
+        .join("rag.db");
+    let ollama_client = Arc::new(
+        ollama_client::OllamaClient::new(&ollama_base_url)
+            .expect("Failed to initialize Ollama client for RAG"),
+    );
+    let rag_manager = Arc::new(
+        RagManager::new(rag_db_path, ollama_client.clone()).expect("Failed to initialize RAG manager"),
+    );
+
+    // Initialize the Suggestion Engine
+    let suggestion_engine = SuggestionEngine::new(
+        app_handle,
+        Some(rag_manager.clone()),
+        ollama_client.clone(),
+        settings.suggestions.clone(),
+    );
 
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(active_listening_manager.clone());
+    app_handle.manage(ask_ai_manager.clone());
+    app_handle.manage(ask_ai_history_manager.clone());
+    app_handle.manage(rag_manager.clone());
+    app_handle.manage(suggestion_engine);
 
-    // Note: Shortcuts are NOT initialized here.
-    // The frontend is responsible for calling the `initialize_shortcuts` command
-    // after permissions are confirmed (on macOS) or after onboarding completes.
-    // This matches the pattern used for Enigo initialization.
+    // Initialize the shortcuts
+    shortcut::init_shortcuts(app_handle);
 
     #[cfg(unix)]
     let signals = Signals::new(&[SIGUSR2]).unwrap();
@@ -149,7 +194,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     #[cfg(target_os = "macos")]
     {
         let settings = settings::get_settings(app_handle);
-        if settings.start_hidden {
+        if settings.general.start_hidden {
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
     }
@@ -177,19 +222,91 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             }
             "check_updates" => {
                 let settings = settings::get_settings(app);
-                if settings.update_checks_enabled {
+                if settings.general.update_checks_enabled {
                     show_main_window(app);
                     let _ = app.emit("check-for-updates", ());
                 }
-            }
-            "copy_last_transcript" => {
-                tray::copy_last_transcript(app);
             }
             "cancel" => {
                 use crate::utils::cancel_current_operation;
 
                 // Use centralized cancellation that handles all operations
                 cancel_current_operation(app);
+            }
+            "start_active_listening" => {
+                let al_manager = app.state::<Arc<ActiveListeningManager>>();
+                let audio_manager = app.state::<Arc<AudioRecordingManager>>();
+
+                // Check if session is already active
+                if al_manager.is_session_active() {
+                    log::warn!("Active listening session already in progress, ignoring start request");
+                    return;
+                }
+
+                // Start session
+                match al_manager.start_session(None) {
+                    Ok(session_id) => {
+                        log::info!("Started active listening session from tray: {}", session_id);
+
+                        // Create callback to forward audio samples
+                        let al_manager_clone = al_manager.inner().clone();
+                        let callback = std::sync::Arc::new(move |samples: &[f32]| {
+                            al_manager_clone.push_audio_samples(samples);
+                        });
+
+                        // Start audio
+                        if let Err(e) = audio_manager.start_active_listening(callback) {
+                            log::error!("Failed to start active listening audio: {}", e);
+                            let _ = al_manager.stop_session();
+                        } else {
+                            // Update tray icon and show overlay
+                            utils::change_tray_icon(app, utils::TrayIconState::ActiveListening);
+                            utils::show_active_listening_overlay(app);
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Failed to start active listening session: {}", e);
+                    }
+                }
+            }
+            "stop_active_listening" => {
+                let al_manager = app.state::<Arc<ActiveListeningManager>>();
+                let audio_manager = app.state::<Arc<AudioRecordingManager>>();
+
+                // Check if session is active before stopping
+                if !al_manager.is_session_active() {
+                    log::debug!("No active listening session to stop");
+                    return;
+                }
+
+                // Flush remaining audio
+                al_manager.flush_segment();
+
+                // Stop audio
+                if let Err(e) = audio_manager.stop_active_listening() {
+                    log::error!("Failed to stop active listening audio: {}", e);
+                }
+
+                // Stop session
+                match al_manager.stop_session() {
+                    Ok(Some(session)) => {
+                        log::info!(
+                            "Stopped active listening session from tray: {} with {} insights",
+                            session.id,
+                            session.insights.len()
+                        );
+                    }
+                    Ok(None) => {
+                        log::debug!("No active session was running");
+                    }
+                    Err(e) => {
+                        log::error!("Error stopping active listening session: {}", e);
+                    }
+                }
+
+                // Update tray icon and hide overlay
+                utils::change_tray_icon(app, utils::TrayIconState::Idle);
+                utils::hide_recording_overlay(app);
             }
             "quit" => {
                 app.exit(0);
@@ -207,7 +324,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let autostart_manager = app_handle.autolaunch();
     let settings = settings::get_settings(&app_handle);
 
-    if settings.autostart_enabled {
+    if settings.general.autostart_enabled {
         // Enable autostart if user has opted in
         let _ = autostart_manager.enable();
     } else {
@@ -223,7 +340,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 #[specta::specta]
 fn trigger_update_check(app: AppHandle) -> Result<(), String> {
     let settings = settings::get_settings(&app);
-    if !settings.update_checks_enabled {
+    if !settings.general.update_checks_enabled {
         return Ok(());
     }
     app.emit("check-for-updates", ())
@@ -254,7 +371,6 @@ pub fn run() {
         shortcut::change_paste_method_setting,
         shortcut::change_clipboard_handling_setting,
         shortcut::change_post_process_enabled_setting,
-        shortcut::change_experimental_enabled_setting,
         shortcut::change_post_process_base_url_setting,
         shortcut::change_post_process_api_key_setting,
         shortcut::change_post_process_model_setting,
@@ -271,10 +387,7 @@ pub fn run() {
         shortcut::change_append_trailing_space_setting,
         shortcut::change_app_language_setting,
         shortcut::change_update_checks_setting,
-        shortcut::change_keyboard_implementation_setting,
-        shortcut::get_keyboard_implementation,
-        shortcut::handy_keys::start_handy_keys_recording,
-        shortcut::handy_keys::stop_handy_keys_recording,
+        shortcut::change_private_overlay_setting,
         trigger_update_check,
         commands::cancel_operation,
         commands::get_app_dir_path,
@@ -287,7 +400,6 @@ pub fn run() {
         commands::open_app_data_dir,
         commands::check_apple_intelligence_available,
         commands::initialize_enigo,
-        commands::initialize_shortcuts,
         commands::models::get_available_models,
         commands::models::get_model_info,
         commands::models::download_model,
@@ -299,6 +411,7 @@ pub fn run() {
         commands::models::is_model_loading,
         commands::models::has_any_models_available,
         commands::models::has_any_models_or_downloads,
+        commands::models::get_recommended_first_model,
         commands::audio::update_microphone_mode,
         commands::audio::get_microphone_mode,
         commands::audio::get_available_microphones,
@@ -321,6 +434,81 @@ pub fn run() {
         commands::history::delete_history_entry,
         commands::history::update_history_limit,
         commands::history::update_recording_retention_period,
+        commands::active_listening::start_active_listening_session,
+        commands::active_listening::stop_active_listening_session,
+        commands::active_listening::get_active_listening_state,
+        commands::active_listening::get_active_listening_session,
+        commands::active_listening::check_ollama_connection,
+        commands::active_listening::fetch_ollama_models,
+        commands::active_listening::change_active_listening_enabled_setting,
+        commands::active_listening::change_active_listening_segment_duration_setting,
+        commands::active_listening::change_ollama_base_url_setting,
+        commands::active_listening::change_ollama_model_setting,
+        commands::active_listening::change_active_listening_context_window_setting,
+        commands::active_listening::change_audio_source_type_setting,
+        commands::active_listening::change_audio_mix_ratio_setting,
+        commands::active_listening::get_audio_source_type,
+        commands::active_listening::get_audio_mix_ratio,
+        commands::active_listening::get_loopback_support_level,
+        commands::active_listening::is_loopback_supported,
+        commands::active_listening::list_loopback_devices,
+        commands::active_listening::add_active_listening_prompt,
+        commands::active_listening::update_active_listening_prompt,
+        commands::active_listening::delete_active_listening_prompt,
+        commands::active_listening::set_active_listening_selected_prompt,
+        commands::active_listening::generate_meeting_summary,
+        commands::active_listening::export_meeting_summary,
+        commands::ask_ai::get_ask_ai_state,
+        commands::ask_ai::is_ask_ai_active,
+        commands::ask_ai::get_ask_ai_question,
+        commands::ask_ai::get_ask_ai_response,
+        commands::ask_ai::get_ask_ai_conversation,
+        commands::ask_ai::can_start_ask_ai_recording,
+        commands::ask_ai::cancel_ask_ai_session,
+        commands::ask_ai::reset_ask_ai_session,
+        commands::ask_ai::dismiss_ask_ai_session,
+        commands::ask_ai::start_new_ask_ai_conversation,
+        commands::ask_ai::change_ask_ai_enabled_setting,
+        commands::ask_ai::change_ask_ai_ollama_base_url_setting,
+        commands::ask_ai::change_ask_ai_ollama_model_setting,
+        commands::ask_ai::change_ask_ai_system_prompt_setting,
+        commands::ask_ai::get_ask_ai_settings,
+        commands::ask_ai::save_ask_ai_window_bounds,
+        commands::ask_ai::get_ask_ai_window_bounds,
+        commands::ask_ai::save_ask_ai_conversation_to_history,
+        commands::ask_ai::list_ask_ai_conversations,
+        commands::ask_ai::get_ask_ai_conversation_from_history,
+        commands::ask_ai::delete_ask_ai_conversation_from_history,
+        commands::rag::rag_add_document,
+        commands::rag::rag_search,
+        commands::rag::rag_delete_document,
+        commands::rag::rag_list_documents,
+        commands::rag::rag_get_stats,
+        commands::rag::rag_get_embedding_model,
+        commands::rag::rag_set_embedding_model,
+        commands::rag::rag_clear_all,
+        commands::rag::get_knowledge_base_settings,
+        commands::rag::change_knowledge_base_enabled_setting,
+        commands::rag::change_auto_index_transcriptions_setting,
+        commands::rag::change_kb_embedding_model_setting,
+        commands::rag::change_kb_top_k_setting,
+        commands::rag::change_kb_similarity_threshold_setting,
+        commands::rag::change_kb_use_in_active_listening_setting,
+        commands::suggestions::get_suggestions_settings,
+        commands::suggestions::update_suggestions_settings,
+        commands::suggestions::change_suggestions_enabled_setting,
+        commands::suggestions::get_quick_responses,
+        commands::suggestions::get_quick_responses_by_category,
+        commands::suggestions::add_quick_response,
+        commands::suggestions::update_quick_response,
+        commands::suggestions::delete_quick_response,
+        commands::suggestions::toggle_quick_response,
+        commands::suggestions::change_rag_suggestions_enabled,
+        commands::suggestions::change_llm_suggestions_enabled,
+        commands::suggestions::change_max_suggestions,
+        commands::suggestions::change_min_confidence,
+        commands::suggestions::change_auto_dismiss_on_copy,
+        commands::suggestions::change_display_duration,
         helpers::clamshell::is_laptop,
     ]);
 
@@ -332,31 +520,29 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    let mut builder = tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(
-            LogBuilder::new()
-                .level(log::LevelFilter::Trace) // Set to most verbose level globally
-                .max_file_size(500_000)
-                .rotation_strategy(RotationStrategy::KeepOne)
-                .clear_targets()
-                .targets([
-                    // Console output respects RUST_LOG environment variable
-                    Target::new(TargetKind::Stdout).filter({
-                        let console_filter = console_filter.clone();
-                        move |metadata| console_filter.enabled(metadata)
-                    }),
-                    // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
-                    Target::new(TargetKind::LogDir {
-                        file_name: Some("handy".into()),
-                    })
-                    .filter(|metadata| {
-                        let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
-                        metadata.level() <= level_filter_from_u8(file_level)
-                    }),
-                ])
-                .build(),
-        );
+    let mut builder = tauri::Builder::default().plugin(
+        LogBuilder::new()
+            .level(log::LevelFilter::Trace) // Set to most verbose level globally
+            .max_file_size(500_000)
+            .rotation_strategy(RotationStrategy::KeepOne)
+            .clear_targets()
+            .targets([
+                // Console output respects RUST_LOG environment variable
+                Target::new(TargetKind::Stdout).filter({
+                    let console_filter = console_filter.clone();
+                    move |metadata| console_filter.enabled(metadata)
+                }),
+                // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
+                Target::new(TargetKind::LogDir {
+                    file_name: Some("handy".into()),
+                })
+                .filter(|metadata| {
+                    let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
+                    metadata.level() <= level_filter_from_u8(file_level)
+                }),
+            ])
+            .build(),
+    );
 
     #[cfg(target_os = "macos")]
     {
@@ -392,7 +578,7 @@ pub fn run() {
             initialize_core_logic(&app_handle);
 
             // Show main window only if not starting hidden
-            if !settings.start_hidden {
+            if !settings.general.start_hidden {
                 if let Some(main_window) = app_handle.get_webview_window("main") {
                     main_window.show().unwrap();
                     main_window.set_focus().unwrap();

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import type { AppSettings as Settings, AudioDevice } from "@/bindings";
+import type { AppSettings as Settings, AudioDevice, LogLevel } from "@/bindings";
 import { commands } from "@/bindings";
 
 interface SettingsStore {
@@ -82,6 +82,8 @@ const settingUpdaters: {
     commands.changeAutostartSetting(value as boolean),
   update_checks_enabled: (value) =>
     commands.changeUpdateChecksSetting(value as boolean),
+  private_overlay: (value) =>
+    commands.changePrivateOverlaySetting(value as boolean),
   push_to_talk: (value) => commands.changePttSetting(value as boolean),
   selected_microphone: (value) =>
     commands.setSelectedMicrophone(
@@ -123,10 +125,10 @@ const settingUpdaters: {
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
     commands.changeAppendTrailingSpaceSetting(value as boolean),
-  log_level: (value) => commands.setLogLevel(value as any),
+  log_level: (value) => commands.setLogLevel(value as LogLevel),
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
-  experimental_enabled: (value) =>
-    commands.changeExperimentalEnabledSetting(value as boolean),
+  // Note: active_listening settings are handled via specific commands in the component
+  // rather than through the generic settingUpdaters pattern since they are nested settings
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -279,7 +281,9 @@ export const useSettingsStore = create<SettingsStore>()(
       if (defaultSettings) {
         const defaultValue = defaultSettings[key];
         if (defaultValue !== undefined) {
-          await get().updateSetting(key, defaultValue as any);
+          // Type assertion is safe here because defaultValue comes from defaultSettings[key]
+          // which has the same type as settings[key]
+          await get().updateSetting(key, defaultValue as Settings[typeof key]);
         }
       }
     },

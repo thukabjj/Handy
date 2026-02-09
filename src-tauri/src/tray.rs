@@ -1,19 +1,16 @@
-use crate::managers::history::{HistoryEntry, HistoryManager};
 use crate::settings;
 use crate::tray_i18n::get_tray_translations;
-use log::{error, info, warn};
-use std::sync::Arc;
 use tauri::image::Image;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIcon;
 use tauri::{AppHandle, Manager, Theme};
-use tauri_plugin_clipboard_manager::ClipboardExt;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TrayIconState {
     Idle,
     Recording,
     Transcribing,
+    ActiveListening,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -49,14 +46,17 @@ pub fn get_icon_path(theme: AppTheme, state: TrayIconState) -> &'static str {
         (AppTheme::Dark, TrayIconState::Idle) => "resources/tray_idle.png",
         (AppTheme::Dark, TrayIconState::Recording) => "resources/tray_recording.png",
         (AppTheme::Dark, TrayIconState::Transcribing) => "resources/tray_transcribing.png",
+        (AppTheme::Dark, TrayIconState::ActiveListening) => "resources/tray_recording.png",
         // Light theme uses dark icons
         (AppTheme::Light, TrayIconState::Idle) => "resources/tray_idle_dark.png",
         (AppTheme::Light, TrayIconState::Recording) => "resources/tray_recording_dark.png",
         (AppTheme::Light, TrayIconState::Transcribing) => "resources/tray_transcribing_dark.png",
+        (AppTheme::Light, TrayIconState::ActiveListening) => "resources/tray_recording_dark.png",
         // Colored theme uses pink icons (for Linux)
         (AppTheme::Colored, TrayIconState::Idle) => "resources/handy.png",
         (AppTheme::Colored, TrayIconState::Recording) => "resources/recording.png",
         (AppTheme::Colored, TrayIconState::Transcribing) => "resources/transcribing.png",
+        (AppTheme::Colored, TrayIconState::ActiveListening) => "resources/recording.png",
     }
 }
 
@@ -82,7 +82,7 @@ pub fn change_tray_icon(app: &AppHandle, icon: TrayIconState) {
 pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&str>) {
     let settings = settings::get_settings(app);
 
-    let locale = locale.unwrap_or(&settings.app_language);
+    let locale = locale.unwrap_or(&settings.general.app_language);
     let strings = get_tray_translations(Some(locale.to_string()));
 
     // Platform-specific accelerators
@@ -111,21 +111,16 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
         app,
         "check_updates",
         &strings.check_updates,
-        settings.update_checks_enabled,
+        settings.general.update_checks_enabled,
         None::<&str>,
     )
     .expect("failed to create check updates item");
-    let copy_last_transcript_i = MenuItem::with_id(
-        app,
-        "copy_last_transcript",
-        &strings.copy_last_transcript,
-        true,
-        None::<&str>,
-    )
-    .expect("failed to create copy last transcript item");
     let quit_i = MenuItem::with_id(app, "quit", &strings.quit, true, quit_accelerator)
         .expect("failed to create quit item");
     let separator = || PredefinedMenuItem::separator(app).expect("failed to create separator");
+
+    // Active listening menu items (only show if enabled in settings)
+    let active_listening_enabled = settings.active_listening.enabled;
 
     let menu = match state {
         TrayIconState::Recording | TrayIconState::Transcribing => {
@@ -138,7 +133,29 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
                     &separator(),
                     &cancel_i,
                     &separator(),
-                    &copy_last_transcript_i,
+                    &settings_i,
+                    &check_updates_i,
+                    &separator(),
+                    &quit_i,
+                ],
+            )
+            .expect("failed to create menu")
+        }
+        TrayIconState::ActiveListening => {
+            let stop_al_i = MenuItem::with_id(
+                app,
+                "stop_active_listening",
+                &strings.stop_active_listening,
+                true,
+                None::<&str>,
+            )
+            .expect("failed to create stop active listening item");
+            Menu::with_items(
+                app,
+                &[
+                    &version_i,
+                    &separator(),
+                    &stop_al_i,
                     &separator(),
                     &settings_i,
                     &check_updates_i,
@@ -148,83 +165,48 @@ pub fn update_tray_menu(app: &AppHandle, state: &TrayIconState, locale: Option<&
             )
             .expect("failed to create menu")
         }
-        TrayIconState::Idle => Menu::with_items(
-            app,
-            &[
-                &version_i,
-                &separator(),
-                &copy_last_transcript_i,
-                &separator(),
-                &settings_i,
-                &check_updates_i,
-                &separator(),
-                &quit_i,
-            ],
-        )
-        .expect("failed to create menu"),
+        TrayIconState::Idle => {
+            if active_listening_enabled {
+                let start_al_i = MenuItem::with_id(
+                    app,
+                    "start_active_listening",
+                    &strings.start_active_listening,
+                    true,
+                    None::<&str>,
+                )
+                .expect("failed to create start active listening item");
+                Menu::with_items(
+                    app,
+                    &[
+                        &version_i,
+                        &separator(),
+                        &start_al_i,
+                        &separator(),
+                        &settings_i,
+                        &check_updates_i,
+                        &separator(),
+                        &quit_i,
+                    ],
+                )
+                .expect("failed to create menu")
+            } else {
+                Menu::with_items(
+                    app,
+                    &[
+                        &version_i,
+                        &separator(),
+                        &settings_i,
+                        &check_updates_i,
+                        &separator(),
+                        &quit_i,
+                    ],
+                )
+                .expect("failed to create menu")
+            }
+        }
     };
 
     let tray = app.state::<TrayIcon>();
     let _ = tray.set_menu(Some(menu));
     let _ = tray.set_icon_as_template(true);
-}
-
-fn last_transcript_text(entry: &HistoryEntry) -> &str {
-    entry
-        .post_processed_text
-        .as_deref()
-        .unwrap_or(&entry.transcription_text)
-}
-
-pub fn copy_last_transcript(app: &AppHandle) {
-    let history_manager = app.state::<Arc<HistoryManager>>();
-    let entry = match history_manager.get_latest_entry() {
-        Ok(Some(entry)) => entry,
-        Ok(None) => {
-            warn!("No transcription history entries available for tray copy.");
-            return;
-        }
-        Err(err) => {
-            error!("Failed to fetch last transcription entry: {}", err);
-            return;
-        }
-    };
-
-    if let Err(err) = app.clipboard().write_text(last_transcript_text(&entry)) {
-        error!("Failed to copy last transcript to clipboard: {}", err);
-        return;
-    }
-
-    info!("Copied last transcript to clipboard via tray.");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::last_transcript_text;
-    use crate::managers::history::HistoryEntry;
-
-    fn build_entry(transcription: &str, post_processed: Option<&str>) -> HistoryEntry {
-        HistoryEntry {
-            id: 1,
-            file_name: "handy-1.wav".to_string(),
-            timestamp: 0,
-            saved: false,
-            title: "Recording".to_string(),
-            transcription_text: transcription.to_string(),
-            post_processed_text: post_processed.map(|text| text.to_string()),
-            post_process_prompt: None,
-        }
-    }
-
-    #[test]
-    fn uses_post_processed_text_when_available() {
-        let entry = build_entry("raw", Some("processed"));
-        assert_eq!(last_transcript_text(&entry), "processed");
-    }
-
-    #[test]
-    fn falls_back_to_raw_transcription() {
-        let entry = build_entry("raw", None);
-        assert_eq!(last_transcript_text(&entry), "raw");
-    }
 }

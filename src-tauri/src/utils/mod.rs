@@ -1,3 +1,5 @@
+pub mod lock;
+
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::transcription::TranscriptionManager;
 use crate::shortcut;
@@ -7,10 +9,12 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 // Re-export all utility modules for easy access
-// pub use crate::audio_feedback::*;
 pub use crate::clipboard::*;
 pub use crate::overlay::*;
 pub use crate::tray::*;
+
+// Re-export lock utilities for convenient access
+pub use lock::{SafeLock, SafeRwLock};
 
 /// Centralized cancellation function that can be called from anywhere in the app.
 /// Handles cancelling both recording and transcription operations and updates UI state.
@@ -51,19 +55,4 @@ pub fn is_wayland() -> bool {
         || std::env::var("XDG_SESSION_TYPE")
             .map(|v| v.to_lowercase() == "wayland")
             .unwrap_or(false)
-}
-
-/// Check if running on KDE Plasma desktop environment
-#[cfg(target_os = "linux")]
-pub fn is_kde_plasma() -> bool {
-    std::env::var("XDG_CURRENT_DESKTOP")
-        .map(|v| v.to_uppercase().contains("KDE"))
-        .unwrap_or(false)
-        || std::env::var("KDE_SESSION_VERSION").is_ok()
-}
-
-/// Check if running on KDE Plasma with Wayland
-#[cfg(target_os = "linux")]
-pub fn is_kde_wayland() -> bool {
-    is_wayland() && is_kde_plasma()
 }

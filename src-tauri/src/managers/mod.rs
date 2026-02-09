@@ -1,4 +1,9 @@
+pub mod active_listening;
+pub mod ask_ai;
+pub mod ask_ai_history;
 pub mod audio;
 pub mod history;
 pub mod model;
+pub mod rag;
+pub mod suggestion_engine;
 pub mod transcription;

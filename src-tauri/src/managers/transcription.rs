@@ -1,6 +1,7 @@
 use crate::audio_toolkit::{apply_custom_words, filter_transcription_output};
 use crate::managers::model::{EngineType, ModelManager};
 use crate::settings::{get_settings, ModelUnloadTimeout};
+use crate::utils::lock::SafeLock;
 use anyhow::Result;
 use log::{debug, error, info, warn};
 use serde::Serialize;
@@ -128,15 +129,21 @@ impl TranscriptionManager {
                 }
                 debug!("Idle watcher thread shutting down gracefully");
             });
-            *manager.watcher_handle.lock().unwrap() = Some(handle);
+            if let Ok(mut watcher_guard) = manager.watcher_handle.lock() {
+                *watcher_guard = Some(handle);
+            } else {
+                warn!("Failed to store watcher handle due to poisoned lock");
+            }
         }
 
         Ok(manager)
     }
 
     pub fn is_model_loaded(&self) -> bool {
-        let engine = self.engine.lock().unwrap();
-        engine.is_some()
+        match self.engine.lock() {
+            Ok(engine) => engine.is_some(),
+            Err(_) => false, // Treat poisoned lock as not loaded
+        }
     }
 
     pub fn unload_model(&self) -> Result<()> {
@@ -144,7 +151,7 @@ impl TranscriptionManager {
         debug!("Starting to unload model");
 
         {
-            let mut engine = self.engine.lock().unwrap();
+            let mut engine = self.engine.safe_lock()?;
             if let Some(ref mut loaded_engine) = *engine {
                 match loaded_engine {
                     LoadedEngine::Whisper(ref mut e) => e.unload_model(),
@@ -156,7 +163,7 @@ impl TranscriptionManager {
             *engine = None; // Drop the engine to free memory
         }
         {
-            let mut current_model = self.current_model_id.lock().unwrap();
+            let mut current_model = self.current_model_id.safe_lock()?;
             *current_model = None;
         }
 
@@ -314,11 +321,22 @@ impl TranscriptionManager {
 
         // Update the current engine and model ID
         {
-            let mut engine = self.engine.lock().unwrap();
+            let mut engine = self.engine.safe_lock().map_err(|e| {
+                let _ = self.app_handle.emit(
+                    "model-state-changed",
+                    ModelStateEvent {
+                        event_type: "loading_failed".to_string(),
+                        model_id: Some(model_id.to_string()),
+                        model_name: Some(model_info.name.clone()),
+                        error: Some(e.to_string()),
+                    },
+                );
+                anyhow::anyhow!(e)
+            })?;
             *engine = Some(loaded_engine);
         }
         {
-            let mut current_model = self.current_model_id.lock().unwrap();
+            let mut current_model = self.current_model_id.safe_lock().map_err(|e| anyhow::anyhow!(e))?;
             *current_model = Some(model_id.to_string());
         }
 
@@ -344,7 +362,13 @@ impl TranscriptionManager {
 
     /// Kicks off the model loading in a background thread if it's not already loaded
     pub fn initiate_model_load(&self) {
-        let mut is_loading = self.is_loading.lock().unwrap();
+        let mut is_loading = match self.is_loading.lock() {
+            Ok(guard) => guard,
+            Err(e) => {
+                warn!("Failed to acquire is_loading lock: {}", e);
+                return;
+            }
+        };
         if *is_loading || self.is_model_loaded() {
             return;
         }
@@ -356,15 +380,18 @@ impl TranscriptionManager {
             if let Err(e) = self_clone.load_model(&settings.selected_model) {
                 error!("Failed to load model: {}", e);
             }
-            let mut is_loading = self_clone.is_loading.lock().unwrap();
-            *is_loading = false;
+            if let Ok(mut is_loading) = self_clone.is_loading.lock() {
+                *is_loading = false;
+            }
             self_clone.loading_condvar.notify_all();
         });
     }
 
     pub fn get_current_model(&self) -> Option<String> {
-        let current_model = self.current_model_id.lock().unwrap();
-        current_model.clone()
+        match self.current_model_id.lock() {
+            Ok(current_model) => current_model.clone(),
+            Err(_) => None, // Treat poisoned lock as no model
+        }
     }
 
     pub fn transcribe(&self, audio: Vec<f32>) -> Result<String> {
@@ -390,12 +417,14 @@ impl TranscriptionManager {
         // Check if model is loaded, if not try to load it
         {
             // If the model is loading, wait for it to complete.
-            let mut is_loading = self.is_loading.lock().unwrap();
+            let mut is_loading = self.is_loading.safe_lock()?;
             while *is_loading {
-                is_loading = self.loading_condvar.wait(is_loading).unwrap();
+                is_loading = self.loading_condvar.wait(is_loading).map_err(|e| {
+                    anyhow::anyhow!("Failed to wait for model loading: {}", e)
+                })?;
             }
 
-            let engine_guard = self.engine.lock().unwrap();
+            let engine_guard = self.engine.safe_lock()?;
             if engine_guard.is_none() {
                 return Err(anyhow::anyhow!("Model is not loaded for transcription."));
             }
@@ -406,7 +435,7 @@ impl TranscriptionManager {
 
         // Perform transcription with the appropriate engine
         let result = {
-            let mut engine_guard = self.engine.lock().unwrap();
+            let mut engine_guard = self.engine.safe_lock()?;
             let engine = engine_guard.as_mut().ok_or_else(|| {
                 anyhow::anyhow!(
                     "Model failed to load after auto-load attempt. Please check your model settings."
@@ -520,12 +549,16 @@ impl Drop for TranscriptionManager {
         self.shutdown_signal.store(true, Ordering::Relaxed);
 
         // Wait for the thread to finish gracefully
-        if let Some(handle) = self.watcher_handle.lock().unwrap().take() {
-            if let Err(e) = handle.join() {
-                warn!("Failed to join idle watcher thread: {:?}", e);
-            } else {
-                debug!("Idle watcher thread joined successfully");
+        if let Ok(mut watcher_guard) = self.watcher_handle.lock() {
+            if let Some(handle) = watcher_guard.take() {
+                if let Err(e) = handle.join() {
+                    warn!("Failed to join idle watcher thread: {:?}", e);
+                } else {
+                    debug!("Idle watcher thread joined successfully");
+                }
             }
+        } else {
+            warn!("Failed to acquire watcher handle lock during shutdown");
         }
     }
 }

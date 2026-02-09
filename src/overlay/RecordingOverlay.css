@@ -1,3 +1,15 @@
+/* CSS Custom Properties for theme-awareness */
+:root {
+  --overlay-bg: rgba(0, 0, 0, 0.85);
+  --overlay-text: #ffffff;
+  --overlay-bar: #ffe5ee;
+  --overlay-hover: rgba(250, 162, 202, 0.2);
+  --overlay-success: #4ade80;
+  --overlay-error: #ef4444;
+  --overlay-purple: #8b5cf6;
+  --overlay-muted: rgba(255, 255, 255, 0.5);
+}
+
 .recording-overlay {
   height: 36px;
   width: 172px;
@@ -5,7 +17,7 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   padding: 6px;
-  background: #000000cc;
+  background: var(--overlay-bg);
   border-radius: 18px;
   opacity: 0;
   transition: opacity 300ms ease-out;
@@ -41,7 +53,7 @@
 
 .bar {
   width: 6px;
-  background: #ffe5ee;
+  background: var(--overlay-bar);
   max-height: 20px;
   border-radius: 2px;
   transition: height 80ms linear;
@@ -53,7 +65,7 @@
 }
 
 .transcribing-text {
-  color: white;
+  color: var(--overlay-text);
   font-size: 12px;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -86,10 +98,725 @@
 }
 
 .cancel-button:hover {
-  background: #faa2ca33;
+  background: var(--overlay-hover);
   transform: scale(1.05);
 }
 
 .cancel-button:active {
   transform: scale(0.95);
+}
+
+/* Active Listening Indicator - small green pulsing dot */
+.active-listening-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--overlay-success);
+  border-radius: 50%;
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+    box-shadow: 0 0 4px var(--overlay-success);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px var(--overlay-success);
+  }
+}
+
+/* Processing indicator - animated spinner for Active Listening */
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.processing-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--overlay-bar);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ask AI Indicator - pulsing dot with blue/purple color */
+.ask-ai-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.ask-ai-dot {
+  background: var(--overlay-purple);
+  box-shadow: 0 0 4px var(--overlay-purple);
+  animation: ask-ai-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes ask-ai-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+    box-shadow: 0 0 4px var(--overlay-purple);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px var(--overlay-purple);
+  }
+}
+
+/* Focus states for accessibility */
+.cancel-button:focus-visible {
+  outline: 2px solid var(--overlay-bar);
+  outline-offset: 2px;
+}
+
+/* ===== Ask AI Expanded Overlay ===== */
+
+.recording-overlay.ask-ai-expanded {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 16px;
+  cursor: default;
+  animation: slide-up 300ms ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recording-overlay.ask-ai-expanded.fade-in {
+  opacity: 1;
+}
+
+.ask-ai-response-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  cursor: default;
+  position: relative;
+}
+
+/* Draggable header */
+.ask-ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.ask-ai-header:active {
+  cursor: grabbing;
+}
+
+.ask-ai-header-title {
+  color: var(--overlay-text);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 0.9;
+}
+
+.ask-ai-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ask-ai-new-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    transform 100ms ease-out;
+  color: var(--overlay-text);
+  border: none;
+  opacity: 0.7;
+}
+
+.ask-ai-new-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 1;
+}
+
+.ask-ai-header .ask-ai-close-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.ask-ai-header .ask-ai-close-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Scrollable conversation area */
+.ask-ai-conversation-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ask-ai-conversation-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ask-ai-conversation-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ask-ai-conversation-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.ask-ai-conversation-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Conversation turn */
+.ask-ai-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ask-ai-turn:not(:last-child) {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ask-ai-turn.current {
+  /* Highlight current turn slightly */
+}
+
+.ask-ai-q {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ask-ai-a {
+  color: var(--overlay-text);
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-left: 20px;
+}
+
+.ask-ai-label {
+  color: var(--overlay-purple);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  flex-shrink: 0;
+}
+
+.ask-ai-question-text {
+  color: var(--overlay-text);
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+
+.ask-ai-waiting {
+  color: var(--overlay-muted);
+  font-style: italic;
+}
+
+/* Typing cursor */
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 16px;
+  background: var(--overlay-purple);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Error state - centered */
+.ask-ai-error {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+/* Error state - inline within conversation */
+.ask-ai-error-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.ask-ai-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.ask-ai-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ask-ai-error-icon {
+  color: var(--overlay-error);
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.ask-ai-error-text {
+  color: var(--overlay-text);
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.ask-ai-error-hint {
+  color: var(--overlay-muted);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-left: 24px;
+  opacity: 0.7;
+}
+
+.ask-ai-retry-button {
+  align-self: flex-start;
+  margin-left: 24px;
+  padding: 6px 14px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 6px;
+  color: var(--overlay-text);
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.ask-ai-retry-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
+}
+
+.ask-ai-retry-button:active {
+  transform: scale(0.98);
+}
+
+.ask-ai-retry-button:focus-visible {
+  outline: 2px solid var(--overlay-purple);
+  outline-offset: 2px;
+}
+
+/* Follow-up hint */
+.ask-ai-hint {
+  padding: 8px 16px;
+  text-align: center;
+  color: var(--overlay-muted);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: rgba(139, 92, 246, 0.1);
+  flex-shrink: 0;
+}
+
+/* Actions bar */
+.ask-ai-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.ask-ai-copy-button,
+.ask-ai-close-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    transform 100ms ease-out;
+  color: var(--overlay-text);
+  border: none;
+}
+
+.ask-ai-copy-button:hover,
+.ask-ai-close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ask-ai-copy-button:active,
+.ask-ai-close-button:active {
+  transform: scale(0.95);
+}
+
+.ask-ai-copy-button:focus-visible,
+.ask-ai-close-button:focus-visible {
+  outline: 2px solid var(--overlay-purple);
+  outline-offset: 2px;
+}
+
+/* Status indicator - inline in actions */
+.ask-ai-status-inline {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
+
+.ask-ai-status-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ask-ai-status-dot.generating {
+  background: var(--overlay-purple);
+  animation: status-pulse 1.5s infinite ease-in-out;
+}
+
+.ask-ai-status-dot.complete {
+  background: var(--overlay-success);
+}
+
+.ask-ai-status-dot.error {
+  background: var(--overlay-error);
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* ===== Active Listening Expanded Overlay ===== */
+
+.recording-overlay.active-listening-expanded {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 16px;
+  cursor: default;
+  animation: slide-up 300ms ease-out;
+}
+
+.active-listening-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Active Listening Header */
+.active-listening-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(74, 222, 128, 0.1);
+  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+  flex-shrink: 0;
+}
+
+.active-listening-header-title {
+  color: var(--overlay-text);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-listening-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.active-listening-stat {
+  color: var(--overlay-muted);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-listening-stat .pulse-dot {
+  width: 6px;
+  height: 6px;
+}
+
+/* Current transcription being processed */
+.active-listening-current {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.active-listening-current-label {
+  display: block;
+  color: var(--overlay-success);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  animation: transcribing-pulse 1.5s infinite ease-in-out;
+}
+
+.active-listening-current-text {
+  color: var(--overlay-text);
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* Insights scroll area */
+.active-listening-insights-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.active-listening-insights-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.active-listening-insights-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.active-listening-insights-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.active-listening-insights-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Individual insight item */
+.active-listening-insight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid var(--overlay-success);
+}
+
+.active-listening-insight-item.streaming {
+  border-left-color: var(--overlay-purple);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.active-listening-insight-transcription {
+  color: var(--overlay-muted);
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+}
+
+.active-listening-insight-quote {
+  color: var(--overlay-muted);
+  opacity: 0.6;
+}
+
+/* Speaker labels for diarization */
+.active-listening-speaker-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Primary speaker (You) - Green theme */
+.active-listening-speaker-label.speaker-0 {
+  color: var(--overlay-success);
+  background: rgba(74, 222, 128, 0.15);
+}
+
+/* Secondary speaker - Blue theme */
+.active-listening-speaker-label.speaker-1 {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+}
+
+/* Additional speakers - varying colors */
+.active-listening-speaker-label.speaker-2 {
+  color: #f472b6;
+  background: rgba(244, 114, 182, 0.15);
+}
+
+.active-listening-speaker-label.speaker-3 {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+
+/* Speaker-specific insight item borders */
+.active-listening-insight-item.speaker-0 {
+  border-left-color: var(--overlay-success);
+}
+
+.active-listening-insight-item.speaker-1 {
+  border-left-color: #60a5fa;
+}
+
+.active-listening-insight-item.speaker-2 {
+  border-left-color: #f472b6;
+}
+
+.active-listening-insight-item.speaker-3 {
+  border-left-color: #fbbf24;
+}
+
+.active-listening-insight-content {
+  color: var(--overlay-text);
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.active-listening-insight-waiting {
+  color: var(--overlay-muted);
+  font-style: italic;
+  animation: transcribing-pulse 1.5s infinite ease-in-out;
+}
+
+/* Status bar at bottom */
+.active-listening-status {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.active-listening-status-text {
+  color: var(--overlay-muted);
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-listening-status-text.processing {
+  color: var(--overlay-purple);
+}
+
+.active-listening-status-text.listening {
+  color: var(--overlay-success);
+}
+
+.active-listening-status-text::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-glow 1.5s infinite ease-in-out;
 }

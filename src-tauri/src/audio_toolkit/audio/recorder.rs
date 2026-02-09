@@ -28,6 +28,8 @@ pub struct AudioRecorder {
     worker_handle: Option<std::thread::JoinHandle<()>>,
     vad: Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
+    /// Callback for forwarding resampled audio samples (used by Active Listening)
+    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
 }
 
 impl AudioRecorder {
@@ -38,6 +40,7 @@ impl AudioRecorder {
             worker_handle: None,
             vad: None,
             level_cb: None,
+            sample_cb: None,
         })
     }
 
@@ -51,6 +54,17 @@ impl AudioRecorder {
         F: Fn(Vec<f32>) + Send + Sync + 'static,
     {
         self.level_cb = Some(Arc::new(cb));
+        self
+    }
+
+    /// Set a callback for forwarding resampled audio samples.
+    /// This is called continuously with resampled frames when recording,
+    /// useful for Active Listening mode.
+    pub fn with_sample_callback<F>(mut self, cb: F) -> Self
+    where
+        F: Fn(&[f32]) + Send + Sync + 'static,
+    {
+        self.sample_cb = Some(Arc::new(cb));
         self
     }
 
@@ -74,6 +88,8 @@ impl AudioRecorder {
         let vad = self.vad.clone();
         // Move the optional level callback into the worker thread
         let level_cb = self.level_cb.clone();
+        // Move the optional sample callback into the worker thread
+        let sample_cb = self.sample_cb.clone();
 
         let worker = std::thread::spawn(move || {
             let config = AudioRecorder::get_preferred_config(&thread_device)
@@ -93,31 +109,37 @@ impl AudioRecorder {
             let stream = match config.sample_format() {
                 cpal::SampleFormat::U8 => {
                     AudioRecorder::build_stream::<u8>(&thread_device, &config, sample_tx, channels)
-                        .unwrap()
                 }
                 cpal::SampleFormat::I8 => {
                     AudioRecorder::build_stream::<i8>(&thread_device, &config, sample_tx, channels)
-                        .unwrap()
                 }
                 cpal::SampleFormat::I16 => {
                     AudioRecorder::build_stream::<i16>(&thread_device, &config, sample_tx, channels)
-                        .unwrap()
                 }
                 cpal::SampleFormat::I32 => {
                     AudioRecorder::build_stream::<i32>(&thread_device, &config, sample_tx, channels)
-                        .unwrap()
                 }
                 cpal::SampleFormat::F32 => {
                     AudioRecorder::build_stream::<f32>(&thread_device, &config, sample_tx, channels)
-                        .unwrap()
                 }
-                _ => panic!("unsupported sample format"),
+                other => {
+                    log::error!("Unsupported sample format: {:?}", other);
+                    return; // Exit worker thread gracefully instead of panicking
+                }
+            };
+
+            let stream = match stream {
+                Ok(s) => s,
+                Err(e) => {
+                    log::error!("Failed to build audio stream: {}", e);
+                    return; // Exit worker thread gracefully instead of panicking
+                }
             };
 
             stream.play().expect("failed to start stream");
 
             // keep the stream alive while we process samples
-            run_consumer(sample_rate, vad, sample_rx, cmd_rx, level_cb);
+            run_consumer(sample_rate, vad, sample_rx, cmd_rx, level_cb, sample_cb);
             // stream is dropped here, after run_consumer returns
         });
 
@@ -245,6 +267,7 @@ fn run_consumer(
     sample_rx: mpsc::Receiver<Vec<f32>>,
     cmd_rx: mpsc::Receiver<Cmd>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
+    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
 ) {
     let mut frame_resampler = FrameResampler::new(
         in_sample_rate as usize,
@@ -271,16 +294,30 @@ fn run_consumer(
         recording: bool,
         vad: &Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
         out_buf: &mut Vec<f32>,
+        sample_cb: &Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
     ) {
         if !recording {
             return;
         }
 
+        // Forward resampled samples via callback (for Active Listening)
+        if let Some(cb) = sample_cb {
+            cb(samples);
+        }
+
         if let Some(vad_arc) = vad {
-            let mut det = vad_arc.lock().unwrap();
-            match det.push_frame(samples).unwrap_or(VadFrame::Speech(samples)) {
-                VadFrame::Speech(buf) => out_buf.extend_from_slice(buf),
-                VadFrame::Noise => {}
+            match vad_arc.lock() {
+                Ok(mut det) => {
+                    match det.push_frame(samples).unwrap_or(VadFrame::Speech(samples)) {
+                        VadFrame::Speech(buf) => out_buf.extend_from_slice(buf),
+                        VadFrame::Noise => {}
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to lock VAD: {}", e);
+                    // Fall back to treating as speech when VAD lock fails
+                    out_buf.extend_from_slice(samples);
+                }
             }
         } else {
             out_buf.extend_from_slice(samples);
@@ -302,7 +339,7 @@ fn run_consumer(
 
         // ---------- existing pipeline ------------------------------------ //
         frame_resampler.push(&raw, &mut |frame: &[f32]| {
-            handle_frame(frame, recording, &vad, &mut processed_samples)
+            handle_frame(frame, recording, &vad, &mut processed_samples, &sample_cb)
         });
 
         // non-blocking check for a command
@@ -313,7 +350,10 @@ fn run_consumer(
                     recording = true;
                     visualizer.reset(); // Reset visualization buffer
                     if let Some(v) = &vad {
-                        v.lock().unwrap().reset();
+                        match v.lock() {
+                            Ok(mut vad_guard) => vad_guard.reset(),
+                            Err(e) => log::error!("Failed to lock VAD for reset: {}", e),
+                        }
                     }
                 }
                 Cmd::Stop(reply_tx) => {
@@ -321,7 +361,7 @@ fn run_consumer(
 
                     frame_resampler.finish(&mut |frame: &[f32]| {
                         // we still want to process the last few frames
-                        handle_frame(frame, true, &vad, &mut processed_samples)
+                        handle_frame(frame, true, &vad, &mut processed_samples, &sample_cb)
                     });
 
                     let _ = reply_tx.send(std::mem::take(&mut processed_samples));

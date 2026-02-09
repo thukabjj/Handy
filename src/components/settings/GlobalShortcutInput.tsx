@@ -308,6 +308,7 @@ export const GlobalShortcutInput: React.FC<GlobalShortcutInputProps> = ({
         <ResetButton
           onClick={() => resetBinding(shortcutId)}
           disabled={isUpdating(`binding_${shortcutId}`)}
+          ariaLabel={t("settings.general.shortcut.resetAriaLabel")}
         />
       </div>
     </SettingContainer>

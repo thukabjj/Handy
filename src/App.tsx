@@ -168,27 +168,34 @@ function App() {
               "bg-background border border-mid-gray/20 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm",
             title: "font-medium",
             description: "text-mid-gray",
+            success: "border-green-500/30 bg-green-500/5",
+            error: "border-red-500/30 bg-red-500/5",
+            info: "border-blue-500/30 bg-blue-500/5",
           },
         }}
       />
       {/* Main content area that takes remaining space */}
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          activeSection={currentSection}
-          onSectionChange={setCurrentSection}
-        />
+        <nav aria-label="Settings navigation">
+          <Sidebar
+            activeSection={currentSection}
+            onSectionChange={setCurrentSection}
+          />
+        </nav>
         {/* Scrollable content area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden" role="main">
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col items-center p-4 gap-4">
               <AccessibilityPermissions />
               {renderSettingsContent(currentSection)}
             </div>
           </div>
-        </div>
+        </main>
       </div>
       {/* Fixed footer at bottom */}
-      <Footer />
+      <footer role="contentinfo">
+        <Footer />
+      </footer>
     </div>
   );
 }

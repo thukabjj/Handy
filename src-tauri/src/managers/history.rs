@@ -31,6 +31,28 @@ static MIGRATIONS: &[M] = &[
     ),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_processed_text TEXT;"),
     M::up("ALTER TABLE transcription_history ADD COLUMN post_process_prompt TEXT;"),
+    // Migration 4: Ask AI conversation tables
+    M::up(
+        "CREATE TABLE IF NOT EXISTS ask_ai_conversations (
+            id TEXT PRIMARY KEY,
+            title TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS ask_ai_turns (
+            id TEXT PRIMARY KEY,
+            conversation_id TEXT NOT NULL,
+            question TEXT NOT NULL,
+            response TEXT NOT NULL,
+            audio_file_name TEXT,
+            timestamp INTEGER NOT NULL,
+            turn_order INTEGER NOT NULL,
+            FOREIGN KEY (conversation_id) REFERENCES ask_ai_conversations(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_ask_ai_turns_conversation ON ask_ai_turns(conversation_id);",
+    ),
 ];
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]

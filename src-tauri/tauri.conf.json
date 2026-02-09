@@ -25,11 +25,11 @@
       }
     ],
     "security": {
-      "csp": null,
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: https:; connect-src 'self' https:; font-src 'self' data:; media-src 'self' asset:;",
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["**"],
+          "allow": ["$RESOURCE/**", "$APPDATA/**"],
           "requireLiteralLeadingDot": false
         }
       }

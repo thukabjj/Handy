@@ -1,6 +1,10 @@
+pub mod active_listening;
+pub mod ask_ai;
 pub mod audio;
 pub mod history;
 pub mod models;
+pub mod rag;
+pub mod suggestions;
 pub mod transcription;
 
 use crate::settings::{get_settings, write_settings, AppSettings, LogLevel};

@@ -452,7 +452,7 @@ pub fn paste(text: String, app_handle: AppHandle) -> Result<(), String> {
     let paste_delay_ms = settings.paste_delay_ms;
 
     // Append trailing space if setting is enabled
-    let text = if settings.append_trailing_space {
+    let text = if settings.general.append_trailing_space {
         format!("{} ", text)
     } else {
         text

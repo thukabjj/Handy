@@ -1,15 +1,15 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
+use crate::managers::active_listening::ActiveListeningManager;
+use crate::managers::ask_ai::AskAiManager;
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
 use crate::managers::transcription::TranscriptionManager;
 use crate::settings::{get_settings, AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{change_tray_icon, TrayIconState};
-use crate::utils::{
-    self, show_processing_overlay, show_recording_overlay, show_transcribing_overlay,
-};
+use crate::utils::{self, hide_recording_overlay, show_active_listening_overlay, show_recording_overlay, show_transcribing_overlay};
 use crate::ManagedToggleState;
 use ferrous_opencc::{config::BuiltinConfig, OpenCC};
 use log::{debug, error};
@@ -27,11 +27,16 @@ pub trait ShortcutAction: Send + Sync {
 }
 
 // Transcribe Action
-struct TranscribeAction {
-    post_process: bool,
-}
+struct TranscribeAction;
 
-async fn post_process_transcription(settings: &AppSettings, transcription: &str) -> Option<String> {
+async fn maybe_post_process_transcription(
+    settings: &AppSettings,
+    transcription: &str,
+) -> Option<String> {
+    if !settings.post_process_enabled {
+        return None;
+    }
+
     let provider = match settings.active_post_process_provider().cloned() {
         Some(provider) => provider,
         None => {
@@ -138,12 +143,6 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         .await
     {
         Ok(Some(content)) => {
-            // Strip invisible Unicode characters that some LLMs (e.g., Qwen) may insert
-            let content = content
-                .replace('\u{200B}', "") // Zero-Width Space
-                .replace('\u{200C}', "") // Zero-Width Non-Joiner
-                .replace('\u{200D}', "") // Zero-Width Joiner
-                .replace('\u{FEFF}', ""); // Byte Order Mark / Zero-Width No-Break Space
             debug!(
                 "LLM post-processing succeeded for provider '{}'. Output length: {} chars",
                 provider.id,
@@ -302,7 +301,6 @@ impl ShortcutAction for TranscribeAction {
         play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
-        let post_process = self.post_process;
 
         tauri::async_runtime::spawn(async move {
             let binding_id = binding_id.clone(); // Clone for the inner async task
@@ -338,22 +336,15 @@ impl ShortcutAction for TranscribeAction {
                             if let Some(converted_text) =
                                 maybe_convert_chinese_variant(&settings, &transcription).await
                             {
-                                final_text = converted_text;
+                                final_text = converted_text.clone();
+                                post_processed_text = Some(converted_text);
                             }
-
-                            // Then apply LLM post-processing if this is the post-process hotkey
-                            // Uses final_text which may already have Chinese conversion applied
-                            if post_process {
-                                show_processing_overlay(&ah);
-                            }
-                            let processed = if post_process {
-                                post_process_transcription(&settings, &final_text).await
-                            } else {
-                                None
-                            };
-                            if let Some(processed_text) = processed {
-                                post_processed_text = Some(processed_text.clone());
-                                final_text = processed_text;
+                            // Then apply regular post-processing if enabled
+                            else if let Some(processed_text) =
+                                maybe_post_process_transcription(&settings, &transcription).await
+                            {
+                                final_text = processed_text.clone();
+                                post_processed_text = Some(processed_text);
 
                                 // Get the prompt that was used
                                 if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
@@ -365,9 +356,6 @@ impl ShortcutAction for TranscribeAction {
                                         post_process_prompt = Some(prompt.prompt.clone());
                                     }
                                 }
-                            } else if final_text != transcription {
-                                // Chinese conversion was applied but no LLM post-processing
-                                post_processed_text = Some(final_text.clone());
                             }
 
                             // Save to history with post-processed text and prompt
@@ -473,18 +461,205 @@ impl ShortcutAction for TestAction {
     }
 }
 
+// Active Listening Action - toggle active listening on/off
+struct ActiveListeningAction;
+
+impl ShortcutAction for ActiveListeningAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        debug!(
+            "ActiveListeningAction::start called for binding: {}",
+            binding_id
+        );
+
+        let settings = get_settings(app);
+        if !settings.active_listening.enabled {
+            debug!("Active listening is disabled in settings, ignoring shortcut");
+            return;
+        }
+
+        let alm = app.state::<Arc<ActiveListeningManager>>();
+        let audio_manager = app.state::<Arc<AudioRecordingManager>>();
+
+        // Toggle behavior: if active listening is running, stop it; otherwise start it
+        if alm.is_session_active() {
+            debug!("Active listening session is active, stopping it");
+
+            // Flush remaining audio before stopping
+            alm.flush_segment();
+
+            // Stop audio capture
+            if let Err(e) = audio_manager.stop_active_listening() {
+                error!("Failed to stop active listening audio: {}", e);
+            }
+
+            // Stop the session
+            match alm.stop_session() {
+                Ok(Some(session)) => {
+                    debug!(
+                        "Active listening session stopped: {} with {} insights",
+                        session.id,
+                        session.insights.len()
+                    );
+                }
+                Ok(None) => {
+                    debug!("Active listening session stopped (no session data)");
+                }
+                Err(e) => {
+                    error!("Failed to stop active listening session: {}", e);
+                }
+            }
+
+            // Update tray icon to idle and hide overlay
+            change_tray_icon(app, TrayIconState::Idle);
+            hide_recording_overlay(app);
+        } else {
+            debug!("Starting active listening session");
+
+            // Start the session first
+            match alm.start_session(None) {
+                Ok(session_id) => {
+                    debug!("Active listening session started: {}", session_id);
+
+                    // Create callback to forward audio samples to the active listening manager
+                    let alm_clone = alm.inner().clone();
+                    let callback = Arc::new(move |samples: &[f32]| {
+                        alm_clone.push_audio_samples(samples);
+                    });
+
+                    // Start audio capture with the callback
+                    if let Err(e) = audio_manager.start_active_listening(callback) {
+                        error!("Failed to start active listening audio: {}", e);
+                        // Clean up the session if audio failed to start
+                        let _ = alm.stop_session();
+                    } else {
+                        // Update tray icon to show active listening state
+                        change_tray_icon(app, TrayIconState::ActiveListening);
+                        // Show the overlay for visual feedback
+                        show_active_listening_overlay(app);
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to start active listening session: {}", e);
+                }
+            }
+        }
+    }
+
+    fn stop(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // For toggle-style shortcuts, nothing to do on stop
+        // The start handler toggles the state
+    }
+}
+
+// Toggle Overlay Action - temporarily hide/show the overlay
+struct ToggleOverlayAction;
+
+impl ShortcutAction for ToggleOverlayAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        debug!(
+            "ToggleOverlayAction::start called for binding: {}",
+            binding_id
+        );
+
+        // Toggle the overlay visibility
+        if let Some(overlay_window) = app.get_webview_window("recording_overlay") {
+            match overlay_window.is_visible() {
+                Ok(true) => {
+                    debug!("Hiding overlay window");
+                    let _ = overlay_window.hide();
+                }
+                Ok(false) => {
+                    debug!("Showing overlay window");
+                    let _ = overlay_window.show();
+                }
+                Err(e) => {
+                    error!("Failed to check overlay visibility: {}", e);
+                }
+            }
+        } else {
+            debug!("No overlay window found to toggle");
+        }
+    }
+
+    fn stop(&self, _app: &AppHandle, _binding_id: &str, _shortcut_str: &str) {
+        // Nothing to do on stop for toggle
+    }
+}
+
+// Ask AI Action - hold to record, release to process
+struct AskAiAction;
+
+impl ShortcutAction for AskAiAction {
+    fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        debug!("AskAiAction::start called for binding: {}", binding_id);
+
+        let settings = get_settings(app);
+        if !settings.ask_ai.enabled {
+            debug!("Ask AI is disabled in settings, ignoring shortcut");
+            return;
+        }
+
+        // Load model in the background (same as TranscribeAction)
+        let tm = app.state::<Arc<TranscriptionManager>>();
+        tm.initiate_model_load();
+
+        let ask_ai_manager = app.state::<Arc<AskAiManager>>();
+        let rm = app.state::<Arc<AudioRecordingManager>>();
+
+        // Start recording
+        if let Err(e) = ask_ai_manager.start_recording() {
+            error!("Failed to start Ask AI recording: {}", e);
+            return;
+        }
+
+        // Start audio recording with the ask_ai binding
+        if !rm.try_start_recording(binding_id) {
+            error!("Failed to start audio recording for Ask AI");
+            ask_ai_manager.cancel();
+            return;
+        }
+
+        // Show the recording overlay (same as Transcribe) with ask-ai state
+        change_tray_icon(app, TrayIconState::Recording);
+        utils::show_ask_ai_overlay(app);
+
+        debug!("Ask AI: Recording started");
+    }
+
+    fn stop(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
+        debug!("AskAiAction::stop called for binding: {}", binding_id);
+
+        let settings = get_settings(app);
+        if !settings.ask_ai.enabled {
+            return;
+        }
+
+        let ask_ai_manager = app.state::<Arc<AskAiManager>>();
+        let rm = app.state::<Arc<AudioRecordingManager>>();
+
+        // Show transcribing state on the overlay
+        change_tray_icon(app, TrayIconState::Transcribing);
+        utils::show_ask_ai_transcribing_overlay(app);
+
+        // Stop recording and get samples
+        if let Some(samples) = rm.stop_recording(binding_id) {
+            debug!("Ask AI: Got {} samples, processing", samples.len());
+            ask_ai_manager.process_question(samples);
+        } else {
+            debug!("Ask AI: No samples from recording");
+            ask_ai_manager.cancel();
+            hide_recording_overlay(app);
+            change_tray_icon(app, TrayIconState::Idle);
+        }
+    }
+}
+
 // Static Action Map
 pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::new(|| {
     let mut map = HashMap::new();
     map.insert(
         "transcribe".to_string(),
-        Arc::new(TranscribeAction {
-            post_process: false,
-        }) as Arc<dyn ShortcutAction>,
-    );
-    map.insert(
-        "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -493,6 +668,18 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
     map.insert(
         "test".to_string(),
         Arc::new(TestAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "active_listening".to_string(),
+        Arc::new(ActiveListeningAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "ask_ai".to_string(),
+        Arc::new(AskAiAction) as Arc<dyn ShortcutAction>,
+    );
+    map.insert(
+        "toggle_overlay".to_string(),
+        Arc::new(ToggleOverlayAction) as Arc<dyn ShortcutAction>,
     );
     map
 });
