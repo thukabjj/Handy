@@ -15,14 +15,24 @@ Translation files are located in:
 
 ```
 src/i18n/locales/
-├── en/
-│   └── translation.json    # English (source)
-├── vi/
-│   └── translation.json    # Vietnamese
-├── fr/
-│   └── translation.json    # French
+├── ar/translation.json    # Arabic (RTL)
+├── cs/translation.json    # Czech
+├── de/translation.json    # German
+├── en/translation.json    # English (source)
+├── es/translation.json    # Spanish
+├── fr/translation.json    # French
+├── it/translation.json    # Italian
+├── ja/translation.json    # Japanese
+├── ko/translation.json    # Korean
+├── pl/translation.json    # Polish
+├── pt/translation.json    # Portuguese
+├── ru/translation.json    # Russian
+├── tr/translation.json    # Turkish
+├── uk/translation.json    # Ukrainian
+├── vi/translation.json    # Vietnamese
+├── zh/translation.json    # Chinese
 └── [your-language]/
-    └── translation.json    # Your contribution!
+    └── translation.json   # Your contribution!
 ```
 
 ## Adding a New Language
@@ -34,15 +44,6 @@ Create a new folder using the [ISO 639-1 language code](https://en.wikipedia.org
 ```bash
 mkdir src/i18n/locales/[language-code]
 ```
-
-Examples:
-
-- `de` for German
-- `es` for Spanish
-- `ja` for Japanese
-- `zh` for Chinese
-- `ko` for Korean
-- `pt` for Portuguese
 
 ### Step 2: Copy the English File
 
@@ -57,8 +58,8 @@ Open the file and translate only the **values** (right side), not the keys (left
 ```json
 {
   "sidebar": {
-    "general": "General",      // ← Translate this value
-    "advanced": "Advanced",    // ← Translate this value
+    "general": "General",      // <- Translate this value
+    "advanced": "Advanced",    // <- Translate this value
     ...
   }
 }
@@ -77,20 +78,22 @@ Edit `src/i18n/languages.ts` and add your language metadata:
 ```typescript
 export const LANGUAGE_METADATA: Record<
   string,
-  { name: string; nativeName: string }
+  { name: string; nativeName: string; direction?: "rtl" }
 > = {
   en: { name: "English", nativeName: "English" },
-  es: { name: "Spanish", nativeName: "Español" },
-  fr: { name: "French", nativeName: "Français" },
-  vi: { name: "Vietnamese", nativeName: "Tiếng Việt" },
-  de: { name: "German", nativeName: "Deutsch" }, // ← Add your language
+  ar: { name: "Arabic", nativeName: "العربية", direction: "rtl" },
+  cs: { name: "Czech", nativeName: "Cestina" },
+  de: { name: "German", nativeName: "Deutsch" },
+  // ... add your language here
 };
 ```
 
+**RTL languages:** If your language is written right-to-left, include `direction: "rtl"` in the metadata. Handy supports RTL layout for languages such as Arabic.
+
 ### Step 5: Test Your Translation
 
-1. Run the app: `bun run tauri dev`
-2. Go to Settings → General → App Language
+1. Run the app: `make dev`
+2. Go to Settings -> General -> App Language
 3. Select your language
 4. Verify all text displays correctly
 
@@ -134,10 +137,10 @@ Some strings contain variables like `{{error}}` or `{{model}}`. Keep these exact
 "downloadModel": "Failed to download model: {{error}}"
 
 // French (correct)
-"downloadModel": "Échec du téléchargement du modèle : {{error}}"
+"downloadModel": "Echec du telechargement du modele : {{error}}"
 
 // French (incorrect - don't translate the variable!)
-"downloadModel": "Échec du téléchargement du modèle : {{erreur}}"
+"downloadModel": "Echec du telechargement du modele : {{erreur}}"
 ```
 
 ### Handling Plurals
@@ -151,23 +154,28 @@ Some languages have complex plural rules. For now, use a general form that works
 
 ## Currently Supported Languages
 
-| Language   | Code | Status            |
-| ---------- | ---- | ----------------- |
-| English    | `en` | Complete (source) |
-| Chinese    | `zh` | Complete          |
-| French     | `fr` | Complete          |
-| German     | `de` | Complete          |
-| Japanese   | `ja` | Complete          |
-| Spanish    | `es` | Complete          |
-| Vietnamese | `vi` | Complete          |
+| Language   | Code | Direction | Status            |
+|------------|------|-----------|-------------------|
+| Arabic     | `ar` | RTL       | Complete          |
+| Chinese    | `zh` | LTR       | Complete          |
+| Czech      | `cs` | LTR       | Complete          |
+| English    | `en` | LTR       | Complete (source) |
+| French     | `fr` | LTR       | Complete          |
+| German     | `de` | LTR       | Complete          |
+| Italian    | `it` | LTR       | Complete          |
+| Japanese   | `ja` | LTR       | Complete          |
+| Korean     | `ko` | LTR       | Complete          |
+| Polish     | `pl` | LTR       | Complete          |
+| Portuguese | `pt` | LTR       | Complete          |
+| Russian    | `ru` | LTR       | Complete          |
+| Spanish    | `es` | LTR       | Complete          |
+| Turkish    | `tr` | LTR       | Complete          |
+| Ukrainian  | `uk` | LTR       | Complete          |
+| Vietnamese | `vi` | LTR       | Complete          |
 
 ## Requested Languages
 
-We'd love help with:
-
-- Korean (`ko`)
-- Portuguese (`pt`)
-- And more!
+We'd love help with additional languages! If your language is not listed above, feel free to contribute it.
 
 ---
 

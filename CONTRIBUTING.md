@@ -2,16 +2,16 @@
 
 Thank you for your interest in contributing to Handy! This guide will help you get started with contributing to this open source speech-to-text application.
 
-## 📖 Philosophy
+## Philosophy
 
-Handy aims to be the most forkable speech-to-text app. The goal is to create both a useful tool and a foundation for others to build upon—a well-patterned, simple codebase that serves the community. We prioritize:
+Handy aims to be the most forkable speech-to-text app. The goal is to create both a useful tool and a foundation for others to build upon -- a well-patterned, simple codebase that serves the community. We prioritize:
 
 - **Simplicity**: Clear, maintainable code over clever solutions
 - **Extensibility**: Make it easy for others to fork and customize
 - **Privacy**: Keep everything local and offline
 - **Accessibility**: Free tooling that belongs in everyone's hands
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -41,21 +41,12 @@ Before you begin, ensure you have the following installed:
 4. **Install dependencies**:
 
    ```bash
-   bun install
+   make install
    ```
 
-5. **Download required models**:
-
+5. **Run in development mode**:
    ```bash
-   mkdir -p src-tauri/resources/models
-   curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.computer/silero_vad_v4.onnx
-   ```
-
-6. **Run in development mode**:
-   ```bash
-   bun run tauri dev
-   # On macOS if you encounter cmake errors:
-   CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri dev
+   make dev
    ```
 
 For detailed platform-specific setup instructions, see [BUILD.md](BUILD.md).
@@ -67,22 +58,37 @@ Handy follows a clean architecture pattern:
 **Backend (Rust - `src-tauri/src/`):**
 
 - `lib.rs` - Main application entry point with Tauri setup
-- `managers/` - Core business logic (audio, model, transcription)
-- `audio_toolkit/` - Low-level audio processing (recording, VAD)
-- `commands/` - Tauri command handlers for frontend communication
-- `shortcut.rs` - Global keyboard shortcut handling
-- `settings.rs` - Application settings management
+- `error.rs` - Structured error handling (`HandyError`, `ErrorCategory`)
+- `ollama_client.rs` - Streaming LLM client for AI features
+- `managers/` - Core business logic:
+  - `audio.rs` - Audio recording and device management
+  - `model.rs` - Model downloading and management
+  - `transcription.rs` - Speech-to-text processing pipeline
+  - `history.rs` - Transcription history storage (SQLite)
+  - `active_listening.rs` - Continuous transcription with AI insights
+  - `ask_ai.rs` - Multi-turn voice conversations with local LLM
+  - `ask_ai_history.rs` - Conversation persistence (SQLite)
+  - `rag.rs` - Retrieval-Augmented Generation knowledge base
+  - `suggestion_engine.rs` - Context-aware quick responses
+- `audio_toolkit/` - Low-level audio processing (recording, VAD, diarization, loopback, mixing)
+- `commands/` - Tauri command handlers (audio, models, transcription, history, active_listening, ask_ai, rag, suggestions)
+- `shortcut/` - Global keyboard shortcut handling
+- `settings/` - Application settings (general, active_listening, ask_ai, knowledge_base, suggestions)
+- `utils/` - Shared utilities (SafeLock/SafeRwLock, clipboard, overlay, tray)
 
 **Frontend (React/TypeScript - `src/`):**
 
 - `App.tsx` - Main application component
-- `components/` - React UI components
+- `components/` - React UI components (settings, model-selector, onboarding, overlay)
 - `hooks/` - Reusable React hooks
-- `lib/types.ts` - Shared TypeScript types
+- `stores/` - Zustand state management (settings, models, errors)
+- `bindings.ts` - Auto-generated Tauri type bindings (via tauri-specta)
+- `lib/errors/` - Frontend error handling utilities
+- `i18n/` - Internationalization (16 languages)
 
-For more details, see the Architecture section in [README.md](README.md) or [AGENTS.md](AGENTS.md).
+For more details, see the Architecture section in [CLAUDE.md](CLAUDE.md).
 
-## 🐛 Reporting Bugs
+## Reporting Bugs
 
 ### Before Submitting a Bug Report
 
@@ -113,7 +119,7 @@ When creating a bug report, please include:
 
 Use the [Bug Report template](.github/ISSUE_TEMPLATE/bug_report.md) when creating an issue.
 
-## 💡 Suggesting Features
+## Suggesting Features
 
 We use GitHub Discussions for feature requests rather than issues. This keeps issues focused on bugs and actionable tasks while allowing more open-ended conversations about features.
 
@@ -135,7 +141,7 @@ We use GitHub Discussions for feature requests rather than issues. This keeps is
    - Any alternatives you've considered
    - How it fits with Handy's philosophy
 
-## 🔧 Making Code Contributions
+## Making Code Contributions
 
 ### Before You Start
 
@@ -173,9 +179,10 @@ Community feedback is essential to keeping Handy the best it can be for everyone
    - Keep commits focused and atomic
 
 3. **Test thoroughly**:
+   - Run `bun run test` for frontend tests
+   - Run `make test-rust` for Rust tests
    - Test on your target platform(s)
    - Verify existing functionality still works
-   - Test edge cases and error conditions
    - Use debug mode to verify audio/transcription behavior
 
 4. **Commit your changes**:
@@ -238,30 +245,53 @@ In your PR description, please include:
 
 - Follow standard Rust formatting (`cargo fmt`)
 - Run `cargo clippy` and address warnings
+- Use `HandyError` with `ErrorCategory` for error returns (not plain strings)
+- Use `SafeLock`/`SafeRwLock` for mutex access (never `.unwrap()` on locks)
 - Use descriptive variable and function names
 - Add doc comments for public APIs
-- Handle errors explicitly (avoid unwrap in production code)
 
 **TypeScript/React:**
 
 - Use TypeScript strictly, avoid `any` types
-- Follow React hooks best practices
-- Use functional components
-- Keep components small and focused
+- Functional components with hooks
+- Zod schemas for runtime type validation and inference
+- `useCallback` hooks for stable function references
+- Destructure props with defaults: `disabled = false`
+- Container component pattern for layout
+- Composition over inheritance
 - Use Tailwind CSS for styling
 
-**General:**
+**Imports:**
 
-- Write self-documenting code
-- Add comments for non-obvious logic
-- Keep functions small and single-purpose
-- Prioritize readability over cleverness
+- Group imports: external libs, internal modules, relative imports
+- Use type imports for TypeScript: `import type { Settings }`
+- Named imports preferred over default exports
+
+**i18n:**
+
+- All user-facing strings must use i18next translations
+- ESLint enforces this via `eslint-plugin-i18next`
+- Add new keys to `src/i18n/locales/en/translation.json`
+- Use in components: `const { t } = useTranslation(); t('key.path')`
 
 ### Testing Your Changes
 
+**Automated Tests:**
+
+```bash
+# Frontend tests (Vitest + React Testing Library)
+bun run test
+
+# Rust tests
+make test-rust
+
+# All tests
+make test
+```
+
 **Manual Testing:**
 
-- Run the app in development mode: `bun run tauri dev`
+- Run the app in development mode: `make dev`
 - Test your changes with debug mode enabled
 - Verify on multiple platforms if possible
 - Test with different audio devices
@@ -275,17 +305,17 @@ bun run tauri build
 
 Test the production build to ensure it works as expected.
 
-## 📝 Documentation Contributions
+## Documentation Contributions
 
 Documentation improvements are highly valued! You can contribute by:
 
-- Improving README.md, BUILD.md, or this CONTRIBUTING.md
+- Improving README.md, BUILD.md, DEV_DOCS.md, or this CONTRIBUTING.md
 - Adding code comments and doc comments
 - Creating tutorials or guides
 - Improving error messages
 - Updating the project website content
 
-## 🤝 Community Guidelines
+## Community Guidelines
 
 - **Be respectful and inclusive** - We welcome contributors of all skill levels
 - **Be patient** - This is maintained by a small team, responses may take time
@@ -293,7 +323,7 @@ Documentation improvements are highly valued! You can contribute by:
 - **Be collaborative** - Help others and share knowledge
 - **Search first** - Check existing issues/discussions before creating new ones
 
-## 🎯 Good First Issues
+## Good First Issues
 
 Look for issues labeled `good first issue` or `help wanted` if you're new to the project. These are typically:
 
@@ -301,13 +331,13 @@ Look for issues labeled `good first issue` or `help wanted` if you're new to the
 - Good for learning the codebase
 - Mentor support available
 
-## 📞 Getting Help
+## Getting Help
 
 - **Discord**: Join our [Discord community](https://discord.com/invite/WVBeWsNXK4)
 - **Discussions**: Ask questions in [GitHub Discussions](https://github.com/cjpais/Handy/discussions)
 - **Email**: Reach out at [contact@handy.computer](mailto:contact@handy.computer)
 
-## 📜 License
+## License
 
 By contributing to Handy, you agree that your contributions will be licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
