@@ -17,7 +17,7 @@ pub enum ErrorCategory {
     Unknown,
 }
 
-/// A structured error type for the Handy application
+/// A structured error type for the Dictum application
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct HandyError {
     pub category: ErrorCategory,

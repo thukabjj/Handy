@@ -1,21 +1,21 @@
-# Handy
+# Dictum
 
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/WVBeWsNXK4)
 
 **A free, open source, and extensible speech-to-text application that works completely offline.**
 
-Handy is a cross-platform desktop application built with Tauri (Rust + React/TypeScript) that provides simple, privacy-focused speech transcription. Press a shortcut, speak, and have your words appear in any text field -- all without sending your voice to the cloud.
+Dictum is a cross-platform desktop application built with Tauri (Rust + React/TypeScript) that provides simple, privacy-focused speech transcription. Press a shortcut, speak, and have your words appear in any text field -- all without sending your voice to the cloud.
 
-## Why Handy?
+## Why Dictum?
 
-Handy was created to fill the gap for a truly open source, extensible speech-to-text tool. As stated on [handy.computer](https://handy.computer):
+Dictum was created to fill the gap for a truly open source, extensible speech-to-text tool. As stated on [handy.computer](https://handy.computer):
 
 - **Free**: Accessibility tooling belongs in everyone's hands, not behind a paywall
-- **Open Source**: Together we can build further. Extend Handy for yourself and contribute to something bigger
+- **Open Source**: Together we can build further. Extend Dictum for yourself and contribute to something bigger
 - **Private**: Your voice stays on your computer. Get transcriptions without sending audio to the cloud
 - **Simple**: One tool, one job. Transcribe what you say and put it into a text box
 
-Handy isn't trying to be the best speech-to-text app -- it's trying to be the most forkable one.
+Dictum isn't trying to be the best speech-to-text app -- it's trying to be the most forkable one.
 
 ## Features
 
@@ -48,7 +48,7 @@ Handy isn't trying to be the best speech-to-text app -- it's trying to be the mo
 
 1. **Press** a configurable keyboard shortcut to start/stop recording (or use push-to-talk mode)
 2. **Speak** your words while the shortcut is active
-3. **Release** and Handy processes your speech using your selected transcription engine
+3. **Release** and Dictum processes your speech using your selected transcription engine
 4. **Get** your transcribed text pasted directly into whatever app you're using
 
 The process is entirely local:
@@ -81,7 +81,7 @@ graph LR
 | Parakeet V3 | Parakeet | 478 MB | Fast | High | Auto language detection, CPU-optimized |
 | Moonshine Base | Moonshine | 58 MB | Very fast | Good | English only, handles accents well |
 
-Handy also supports SenseVoice and custom Whisper GGML models placed in the models directory.
+Dictum also supports SenseVoice and custom Whisper GGML models placed in the models directory.
 
 ## Quick Start
 
@@ -90,7 +90,7 @@ Handy also supports SenseVoice and custom Whisper GGML models placed in the mode
 1. Download the latest release from the [releases page](https://github.com/cjpais/Handy/releases) or the [website](https://handy.computer)
    - **macOS**: Also available via [Homebrew cask](https://formulae.brew.sh/cask/handy): `brew install --cask handy`
 2. Install the application
-3. Launch Handy and grant necessary system permissions (microphone, accessibility)
+3. Launch Dictum and grant necessary system permissions (microphone, accessibility)
 4. Configure your preferred keyboard shortcuts in Settings
 5. Start transcribing!
 
@@ -100,7 +100,7 @@ For detailed build instructions including platform-specific requirements, see [B
 
 ## Architecture
 
-Handy is built as a Tauri application combining:
+Dictum is built as a Tauri application combining:
 
 - **Frontend**: React + TypeScript with Tailwind CSS for the settings UI
 - **Backend**: Rust for system integration, audio processing, and ML inference
@@ -116,7 +116,7 @@ Handy is built as a Tauri application combining:
 
 ### Debug Mode
 
-Handy includes an advanced debug mode for development and troubleshooting. Access it by pressing:
+Dictum includes an advanced debug mode for development and troubleshooting. Access it by pressing:
 
 - **macOS**: `Cmd+Shift+D`
 - **Windows/Linux**: `Ctrl+Shift+D`
@@ -154,12 +154,12 @@ For reliable text input on Linux, install the appropriate tool for your display 
 - **Wayland**: Install `wtype` (preferred) or `dotool` for text input to work correctly
 - **dotool setup**: Requires adding your user to the `input` group: `sudo usermod -aG input $USER` (then log out and back in)
 
-Without these tools, Handy falls back to enigo which may have limited compatibility, especially on Wayland.
+Without these tools, Dictum falls back to enigo which may have limited compatibility, especially on Wayland.
 
 **Other Notes:**
 
 - **Runtime library dependency (`libgtk-layer-shell.so.0`)**:
-  - Handy links `gtk-layer-shell` on Linux for proper overlay support. If startup fails with `error while loading shared libraries: libgtk-layer-shell.so.0`, install the runtime package for your distro:
+  - Dictum links `gtk-layer-shell` on Linux for proper overlay support. If startup fails with `error while loading shared libraries: libgtk-layer-shell.so.0`, install the runtime package for your distro:
 
     | Distro        | Package to install    | Example command                        |
     |---------------|-----------------------|----------------------------------------|
@@ -169,9 +169,9 @@ Without these tools, Handy falls back to enigo which may have limited compatibil
 
   - For building from source on Ubuntu/Debian, you may also need `libgtk-layer-shell-dev`.
 
-- The recording overlay is disabled by default on Linux (`Overlay Position: None`) because certain compositors treat it as the active window. When the overlay is visible it can steal focus, which prevents Handy from pasting back into the application that triggered transcription. If you enable the overlay anyway, be aware that clipboard-based pasting might fail or end up in the wrong window.
+- The recording overlay is disabled by default on Linux (`Overlay Position: None`) because certain compositors treat it as the active window. When the overlay is visible it can steal focus, which prevents Dictum from pasting back into the application that triggered transcription. If you enable the overlay anyway, be aware that clipboard-based pasting might fail or end up in the wrong window.
 - If you are having trouble with the app, running with the environment variable `WEBKIT_DISABLE_DMABUF_RENDERER=1` may help
-- You can manage global shortcuts outside of Handy and still control the app via signals. Sending `SIGUSR2` to the Handy process toggles recording on/off, which lets Wayland window managers or other hotkey daemons keep ownership of keybindings. Example (Sway):
+- You can manage global shortcuts outside of Dictum and still control the app via signals. Sending `SIGUSR2` to the Dictum process toggles recording on/off, which lets Wayland window managers or other hotkey daemons keep ownership of keybindings. Example (Sway):
 
   ```ini
   bindsym $mod+o exec pkill -USR2 -n handy
@@ -212,11 +212,11 @@ Without these tools, Handy falls back to enigo which may have limited compatibil
 
 ### Manual Model Installation (For Proxy Users or Network Restrictions)
 
-If you're behind a proxy, firewall, or in a restricted network environment where Handy cannot download models automatically, you can manually download and install them. The URLs are publicly accessible from any browser.
+If you're behind a proxy, firewall, or in a restricted network environment where Dictum cannot download models automatically, you can manually download and install them. The URLs are publicly accessible from any browser.
 
 #### Step 1: Find Your App Data Directory
 
-1. Open Handy settings
+1. Open Dictum settings
 2. Navigate to the **About** section
 3. Copy the "App Data Directory" path shown there, or use the shortcuts:
    - **macOS**: `Cmd+Shift+D` to open debug menu
@@ -296,11 +296,11 @@ Final structure should look like:
 
 - For Parakeet/Moonshine models, the extracted directory name **must** match exactly as shown above
 - Do not rename the `.bin` files for Whisper models -- use the exact filenames from the download URLs
-- After placing the files, restart Handy to detect the new models
+- After placing the files, restart Dictum to detect the new models
 
 #### Step 5: Verify Installation
 
-1. Restart Handy
+1. Restart Dictum
 2. Open Settings -> Models
 3. Your manually installed models should now appear as "Downloaded"
 4. Select the model you want to use and test transcription
@@ -311,13 +311,13 @@ Active Listening, Ask AI, and RAG features require a local Ollama instance. See 
 
 ### Custom Whisper Models
 
-Handy can auto-discover custom Whisper GGML models placed in the `models` directory. This is useful for users who want to use fine-tuned or community models not included in the default model list.
+Dictum can auto-discover custom Whisper GGML models placed in the `models` directory. This is useful for users who want to use fine-tuned or community models not included in the default model list.
 
 **How to use:**
 
 1. Obtain a Whisper model in GGML `.bin` format (e.g., from [Hugging Face](https://huggingface.co/models?search=whisper%20ggml))
 2. Place the `.bin` file in your `models` directory (see paths above)
-3. Restart Handy to discover the new model
+3. Restart Dictum to discover the new model
 4. The model will appear in the "Custom Models" section of the Models settings page
 
 **Important:**
@@ -339,7 +339,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
 ## Sponsors
 
 <div align="center">
-  We're grateful for the support of our sponsors who help make Handy possible:
+  We're grateful for the support of our sponsors who help make Dictum possible:
   <br><br>
   <a href="https://wordcab.com">
     <img src="sponsor-images/wordcab.png" alt="Wordcab" width="120" height="120">
@@ -370,8 +370,8 @@ MIT License -- see [LICENSE](LICENSE) file for details.
 - **[Ollama](https://ollama.com/)** for local LLM inference powering AI features
 - **[Tauri](https://tauri.app/)** team for the excellent Rust-based app framework
 - **[Parakeet](https://nvidia.github.io/NeMo/)** by NVIDIA for the CPU-optimized speech recognition model
-- **Community contributors** helping make Handy better
+- **Community contributors** helping make Dictum better
 
 ---
 
-_"Your search for the right speech-to-text tool can end here -- not because Handy is perfect, but because you can make it perfect for you."_
+_"Your search for the right speech-to-text tool can end here -- not because Dictum is perfect, but because you can make it perfect for you."_

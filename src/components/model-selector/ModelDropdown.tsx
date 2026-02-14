@@ -42,7 +42,7 @@ const ModelDropdown: React.FC<ModelDropdownProps> = ({
               role="button"
               className={`w-full px-3 py-2 text-start hover:bg-mid-gray/10 transition-colors cursor-pointer focus:outline-none ${
                 currentModelId === model.id
-                  ? "bg-logo-primary/10 text-logo-primary"
+                  ? "bg-primary-light/10 text-primary-light"
                   : ""
               }`}
             >
@@ -61,7 +61,7 @@ const ModelDropdown: React.FC<ModelDropdownProps> = ({
                   </div>
                 </div>
                 {currentModelId === model.id && (
-                  <div className="text-xs text-logo-primary">
+                  <div className="text-xs text-primary-light">
                     {t("modelSelector.active")}
                   </div>
                 )}

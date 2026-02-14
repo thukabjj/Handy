@@ -55,7 +55,7 @@ curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.compute
 
 ## Architecture Overview
 
-Handy is a cross-platform desktop speech-to-text application built with Tauri 2.x (Rust backend + React/TypeScript frontend). It supports offline transcription, voice-powered AI conversations, and real-time active listening with local LLM integration via Ollama.
+Dictum is a cross-platform desktop speech-to-text application built with Tauri 2.x (Rust backend + React/TypeScript frontend). It supports offline transcription, voice-powered AI conversations, and real-time active listening with local LLM integration via Ollama.
 
 ### Backend Structure (src-tauri/src/)
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshCcw, Wifi, WifiOff } from "lucide-react";
+import { RefreshCcw, Wifi, WifiOff, Presentation } from "lucide-react";
 import { commands } from "@/bindings";
+import { SpeakerAnalytics } from "./SpeakerAnalytics";
 
 import {
   Dropdown,
@@ -14,7 +15,7 @@ import { Button } from "../../ui/Button";
 import { ResetButton } from "../../ui/ResetButton";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
-import { HandyShortcut } from "../HandyShortcut";
+import { ShortcutInput as DictumShortcut } from "../ShortcutInput";
 import { SessionViewer } from "./SessionViewer";
 import { AudioSourceSettings } from "./AudioSourceSettings";
 
@@ -586,7 +587,7 @@ export const ActiveListeningSettings: React.FC = () => {
           grouped={true}
         />
         {enabled && (
-          <HandyShortcut shortcutId="active_listening" grouped={true} />
+          <DictumShortcut shortcutId="active_listening" grouped={true} />
         )}
       </SettingsGroup>
 
@@ -605,6 +606,27 @@ export const ActiveListeningSettings: React.FC = () => {
           <SettingsGroup title={t("settings.activeListening.prompts.title")}>
             <PromptsEditorComponent />
           </SettingsGroup>
+
+          <SettingsGroup
+            title={t("presentationMode.title")}
+          >
+            <SettingContainer
+              title={t("presentationMode.description")}
+              layout="horizontal"
+              grouped={true}
+            >
+              <Button
+                onClick={() => commands.openPresentationMode()}
+                variant="primary"
+                size="md"
+              >
+                <Presentation className="h-4 w-4 mr-2" />
+                {t("presentationMode.open")}
+              </Button>
+            </SettingContainer>
+          </SettingsGroup>
+
+          <SpeakerAnalytics />
 
           <SessionViewer />
         </>

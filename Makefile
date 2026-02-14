@@ -1,7 +1,7 @@
 # Handy Development Makefile
 # ===========================
 
-.PHONY: all dev build check lint format clean install test help
+.PHONY: all dev build build-dmg check lint format clean install test help
 
 # Default target
 all: check
@@ -25,6 +25,10 @@ dev:
 ## Build for production
 build:
 	bun run tauri build
+
+## Build .dmg for macOS testing (debug mode, faster compile)
+build-dmg:
+	CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri build --debug --bundles dmg
 
 # ===========================
 # Code Quality
@@ -173,6 +177,7 @@ help:
 	@echo "  make install    - Install all dependencies"
 	@echo "  make dev        - Run in development mode"
 	@echo "  make build      - Build for production"
+	@echo "  make build-dmg  - Build .dmg for macOS testing (debug)"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make check-fast - Quick syntax check (fastest)"

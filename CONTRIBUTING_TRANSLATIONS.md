@@ -1,6 +1,6 @@
-# Contributing Translations to Handy
+# Contributing Translations to Dictum
 
-Thank you for helping translate Handy! This guide explains how to add or improve translations.
+Thank you for helping translate Dictum! This guide explains how to add or improve translations.
 
 ## Quick Start
 
@@ -88,7 +88,7 @@ export const LANGUAGE_METADATA: Record<
 };
 ```
 
-**RTL languages:** If your language is written right-to-left, include `direction: "rtl"` in the metadata. Handy supports RTL layout for languages such as Arabic.
+**RTL languages:** If your language is written right-to-left, include `direction: "rtl"` in the metadata. Dictum supports RTL layout for languages such as Arabic.
 
 ### Step 5: Test Your Translation
 
@@ -123,7 +123,7 @@ Found a typo or better translation?
 
 ### Don't:
 
-- Translate brand names (Handy, Whisper.cpp, OpenAI)
+- Translate brand names (Dictum, Whisper.cpp, OpenAI)
 - Change or remove `{{variables}}`
 - Modify JSON keys
 - Add extra spaces or formatting
@@ -179,4 +179,4 @@ We'd love help with additional languages! If your language is not listed above, 
 
 ---
 
-Thank you for making Handy accessible to more people around the world!
+Thank you for making Dictum accessible to more people around the world!

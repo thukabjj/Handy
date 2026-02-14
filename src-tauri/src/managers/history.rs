@@ -53,6 +53,22 @@ static MIGRATIONS: &[M] = &[
 
         CREATE INDEX IF NOT EXISTS idx_ask_ai_turns_conversation ON ask_ai_turns(conversation_id);",
     ),
+    // Migration 5: Action items table
+    M::up(
+        "CREATE TABLE IF NOT EXISTS action_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entry_id INTEGER NOT NULL,
+            task TEXT NOT NULL,
+            assignee TEXT,
+            deadline TEXT,
+            priority TEXT NOT NULL DEFAULT 'medium',
+            completed BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (entry_id) REFERENCES transcription_history(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_action_items_entry ON action_items(entry_id);",
+    ),
 ];
 
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
@@ -516,6 +532,100 @@ impl HistoryManager {
             error!("Failed to emit history-updated event: {}", e);
         }
 
+        Ok(())
+    }
+
+    /// Get the transcription text for a history entry by ID
+    pub fn get_entry_text(&self, id: i64) -> Result<Option<String>> {
+        let conn = self.get_connection()?;
+        let text = conn
+            .query_row(
+                "SELECT COALESCE(post_processed_text, transcription_text) FROM transcription_history WHERE id = ?1",
+                params![id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+        Ok(text)
+    }
+
+    /// Insert action items extracted from a transcript
+    pub fn insert_action_items(
+        &self,
+        entry_id: i64,
+        items: &[crate::managers::task_extractor::ActionItem],
+    ) -> Result<Vec<crate::managers::task_extractor::ActionItem>> {
+        let conn = self.get_connection()?;
+        let mut stored = Vec::new();
+
+        for item in items {
+            conn.execute(
+                "INSERT INTO action_items (entry_id, task, assignee, deadline, priority, completed, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![entry_id, item.task, item.assignee, item.deadline, item.priority, item.completed, item.created_at],
+            )?;
+            let id = conn.last_insert_rowid();
+            let mut stored_item = item.clone();
+            stored_item.id = id;
+            stored_item.entry_id = entry_id;
+            stored.push(stored_item);
+        }
+
+        Ok(stored)
+    }
+
+    /// Get action items, optionally filtered by entry_id
+    pub fn get_action_items(
+        &self,
+        entry_id: Option<i64>,
+    ) -> Result<Vec<crate::managers::task_extractor::ActionItem>> {
+        let conn = self.get_connection()?;
+
+        let (sql, param_values): (&str, Vec<Box<dyn rusqlite::types::ToSql>>) = match entry_id {
+            Some(eid) => (
+                "SELECT id, entry_id, task, assignee, deadline, priority, completed, created_at FROM action_items WHERE entry_id = ?1 ORDER BY id ASC",
+                vec![Box::new(eid)],
+            ),
+            None => (
+                "SELECT id, entry_id, task, assignee, deadline, priority, completed, created_at FROM action_items ORDER BY id DESC",
+                vec![],
+            ),
+        };
+
+        let mut stmt = conn.prepare(sql)?;
+        let params_slice: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(params_slice.as_slice(), |row| {
+            Ok(crate::managers::task_extractor::ActionItem {
+                id: row.get(0)?,
+                entry_id: row.get(1)?,
+                task: row.get(2)?,
+                assignee: row.get(3)?,
+                deadline: row.get(4)?,
+                priority: row.get(5)?,
+                completed: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
+
+        let mut items = Vec::new();
+        for row in rows {
+            items.push(row?);
+        }
+        Ok(items)
+    }
+
+    /// Toggle an action item's completed status
+    pub fn toggle_action_item(&self, id: i64, completed: bool) -> Result<()> {
+        let conn = self.get_connection()?;
+        conn.execute(
+            "UPDATE action_items SET completed = ?1 WHERE id = ?2",
+            params![completed, id],
+        )?;
+        Ok(())
+    }
+
+    /// Delete an action item
+    pub fn delete_action_item(&self, id: i64) -> Result<()> {
+        let conn = self.get_connection()?;
+        conn.execute("DELETE FROM action_items WHERE id = ?1", params![id])?;
         Ok(())
     }
 

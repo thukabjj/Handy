@@ -12,7 +12,44 @@ This directory contains E2E test infrastructure for the Handy application.
 
 ## Testing Options
 
-### 1. Unit & Component Tests (Recommended - All Platforms)
+### 1. Browser E2E with Playwright MCP (All Platforms - Recommended for Frontend)
+
+A browser-compatible E2E build that replaces all `@tauri-apps/*` imports with mock modules via Vite aliases. The full React frontend renders in a standard browser, testable with Claude Code's Playwright MCP or any browser automation tool.
+
+```bash
+# Start the E2E dev server
+bun run dev:e2e
+
+# App available at http://localhost:1420
+```
+
+**How it works:**
+- `e2e/vite.config.e2e.ts` aliases 16 Tauri imports to browser-compatible mocks
+- `e2e/browser-mocks/` contains mock implementations for all Tauri APIs
+- `e2e/browser-mocks/mock-state.ts` provides centralized state with `window.__E2E_MOCK__` API
+- Zero production code changes — all mocking happens at build time
+
+**What it tests:**
+- Full React frontend rendering and routing
+- Sidebar navigation and section filtering
+- Settings toggles and state management
+- Onboarding flow (configurable via mock state)
+- Keyboard shortcuts (Cmd+Shift+D for debug mode)
+- Model selector UI
+- History viewer with mock entries
+- i18n translations
+
+**Mock state control (via browser console or Playwright evaluate):**
+```javascript
+window.__E2E_MOCK__.getState()                          // Get current state
+window.__E2E_MOCK__.reset()                              // Reset to defaults
+window.__E2E_MOCK__.updateSettings({ push_to_talk: true }) // Patch settings
+window.__E2E_MOCK__.update({ hasAnyModels: false })      // Patch any state
+```
+
+See `e2e/scenarios/` for step-by-step test guides.
+
+### 2. Unit & Component Tests (Recommended - All Platforms)
 
 The existing Vitest test suite mocks all Tauri APIs and provides comprehensive coverage:
 
@@ -83,6 +120,35 @@ bun run tauri dev
 ```
 e2e/
 ├── README.md                  # This file
+├── vite.config.e2e.ts         # Vite config with Tauri mock aliases
+├── browser-mocks/             # Browser-compatible Tauri API mocks
+│   ├── mock-state.ts          # Centralized state + window.__E2E_MOCK__
+│   ├── tauri-api-core.ts      # invoke() handler for all 90+ commands
+│   ├── tauri-api-event.ts     # listen(), emit(), once()
+│   ├── tauri-api-window.ts    # getCurrentWindow() stub
+│   ├── tauri-api-webview-window.ts
+│   ├── tauri-api-app.ts       # getVersion()
+│   ├── tauri-plugin-os.ts     # platform(), type(), locale()
+│   ├── tauri-plugin-opener.ts
+│   ├── tauri-plugin-clipboard.ts
+│   ├── tauri-plugin-store.ts
+│   ├── tauri-plugin-autostart.ts
+│   ├── tauri-plugin-dialog.ts
+│   ├── tauri-plugin-updater.ts
+│   ├── tauri-plugin-process.ts
+│   ├── tauri-plugin-fs.ts
+│   ├── tauri-plugin-global-shortcut.ts
+│   └── tauri-plugin-macos-perms.ts
+├── scenarios/                 # Step-by-step Playwright MCP test guides
+│   ├── README.md
+│   ├── 01-settings-navigation.md
+│   ├── 02-toggle-settings.md
+│   ├── 03-model-selection.md
+│   ├── 04-active-listening.md
+│   ├── 05-onboarding-flow.md
+│   ├── 06-debug-mode.md
+│   ├── 07-history-viewer.md
+│   └── 08-sound-detection.md
 ├── playwright.config.js       # Playwright config (reference only)
 ├── wdio.conf.js              # WebdriverIO config (Linux/Windows)
 ├── playwright/               # Playwright specs (reference only)
@@ -127,26 +193,15 @@ Full E2E testing available:
 
 | Type | Tests | Platform |
 |------|-------|----------|
-| Frontend Unit (Vitest) | 132 | All |
+| Frontend Unit (Vitest) | 151 | All |
 | Backend Unit (Rust) | 72 | All |
+| Browser E2E (Playwright MCP) | 8 scenarios | All |
 | E2E (WebdriverIO) | ~30 | Linux/Windows |
 
-**Total: 204+ automated tests**
+**Total: 223+ automated tests + 8 interactive scenarios**
 
-## Why Playwright Tests Won't Work
+## Why `bun run dev` Alone Won't Work for E2E
 
-When you run `bun run dev`, it only starts the Vite development server for the frontend. The frontend JavaScript immediately tries to call Tauri APIs like:
+When you run `bun run dev`, it starts the Vite dev server but the frontend immediately calls Tauri APIs (`@tauri-apps/api/event`, `@tauri-apps/plugin-store`, etc.) which require the native Tauri runtime. Without it, the app shows a blank page.
 
-- `@tauri-apps/api/event` - Event system
-- `@tauri-apps/plugin-store` - Settings persistence
-- `@tauri-apps/plugin-os` - Platform detection
-
-These APIs require the Tauri Rust backend running. Without it, the app shows a blank page with console errors like:
-```
-TypeError: Cannot read properties of undefined (reading 'invoke')
-```
-
-This is why we:
-1. Use **mocked Tauri APIs** in unit tests (see `src/test/setup.ts`)
-2. Use **tauri-driver** for E2E tests on supported platforms
-3. Rely on **manual testing** via `bun run tauri dev` on macOS
+**Solution:** Use `bun run dev:e2e` which aliases all Tauri imports to browser-compatible mocks at build time, allowing the full frontend to render in any browser.

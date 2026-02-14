@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { AudioPlayer } from "../../ui/AudioPlayer";
+import { WaveformPlayer } from "../../ui/WaveformPlayer";
 import { Button } from "../../ui/Button";
 import { Copy, Star, Check, Trash2, FolderOpen } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -232,11 +233,13 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
 
-  const handleLoadAudio = useCallback(
-    () => getAudioUrl(entry.file_name),
-    [getAudioUrl, entry.file_name],
-  );
+  const handleLoadAudio = useCallback(async () => {
+    const url = await getAudioUrl(entry.file_name);
+    if (url) setAudioSrc(url);
+    return url;
+  }, [getAudioUrl, entry.file_name]);
 
   const handleCopyText = () => {
     onCopyText();
@@ -262,7 +265,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={handleCopyText}
-            className="text-text/50 hover:text-logo-primary  hover:border-logo-primary transition-colors cursor-pointer"
+            className="text-text/50 hover:text-primary-light  hover:border-primary-light transition-colors cursor-pointer"
             title={t("settings.history.copyToClipboard")}
           >
             {showCopied ? (
@@ -275,8 +278,8 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
             onClick={onToggleSaved}
             className={`p-2 rounded-md transition-colors cursor-pointer ${
               entry.saved
-                ? "text-logo-primary hover:text-logo-primary/80"
-                : "text-text/50 hover:text-logo-primary"
+                ? "text-primary-light hover:text-primary-light/80"
+                : "text-text/50 hover:text-primary-light"
             }`}
             title={
               entry.saved
@@ -292,7 +295,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
           </button>
           <button
             onClick={handleDeleteEntry}
-            className="text-text/50 hover:text-logo-primary transition-colors cursor-pointer"
+            className="text-text/50 hover:text-primary-light transition-colors cursor-pointer"
             title={t("settings.history.delete")}
           >
             <Trash2 width={16} height={16} />
@@ -302,7 +305,11 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       <p className="italic text-text/90 text-sm pb-2 select-text cursor-text">
         {entry.transcription_text}
       </p>
-      <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
+      {audioSrc ? (
+        <WaveformPlayer src={audioSrc} className="w-full" />
+      ) : (
+        <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
+      )}
     </div>
   );
 };

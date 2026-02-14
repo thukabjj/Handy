@@ -1,8 +1,10 @@
 pub mod audio;
 pub mod constants;
+pub mod decoder;
 pub mod diarization;
 pub mod text;
 pub mod utils;
+pub mod sound_detector;
 pub mod vad;
 
 pub use audio::{
@@ -12,6 +14,7 @@ pub use diarization::{
     create_shared_diarizer, DiarizationConfig, EnergyBasedDiarizer, SharedDiarizer,
     SpeakerChange, SpeakerDiarizer, SpeakerId,
 };
-pub use text::apply_custom_words;
+pub use text::{apply_custom_words, filter_transcription_output};
 pub use utils::get_cpal_host;
+pub use sound_detector::{SoundDetector, SoundEvent};
 pub use vad::{SileroVad, VoiceActivityDetector};

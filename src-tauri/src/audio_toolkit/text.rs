@@ -132,6 +132,49 @@ fn extract_punctuation(word: &str) -> (&str, &str) {
     (prefix, suffix)
 }
 
+/// Known filler words and common Whisper hallucinations to filter out
+const FILLER_PATTERNS: &[&str] = &[
+    "um",
+    "uh",
+    "you know",
+    "thank you.",
+    "thanks for watching.",
+    "thank you for watching.",
+    "please subscribe.",
+    "like and subscribe.",
+    "subscribe to my channel.",
+];
+
+/// Filters out filler words and common hallucination patterns from transcription output
+///
+/// Whisper and other STT models sometimes produce hallucinated text like
+/// "Thank you for watching" or "Please subscribe" when processing silence or noise.
+/// This function removes those patterns.
+///
+/// # Arguments
+/// * `text` - The transcribed text to filter
+///
+/// # Returns
+/// The filtered text with hallucinations removed
+pub fn filter_transcription_output(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    let lower = trimmed.to_lowercase();
+
+    // If the entire text is a known hallucination, return empty
+    for pattern in FILLER_PATTERNS {
+        if lower == *pattern || lower == format!("{}.", pattern) || lower == format!("{},", pattern)
+        {
+            return String::new();
+        }
+    }
+
+    trimmed.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

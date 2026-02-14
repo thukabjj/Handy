@@ -1,6 +1,6 @@
 # Build Instructions
 
-This guide covers how to set up the development environment and build Handy from source across different platforms.
+This guide covers how to set up the development environment and build Dictum from source across different platforms.
 
 ## Prerequisites
 
@@ -183,7 +183,7 @@ ollama pull llama3.2
 ollama pull nomic-embed-text
 ```
 
-Ollama must be running (`ollama serve`) before using AI features. Handy connects to `http://localhost:11434` by default.
+Ollama must be running (`ollama serve`) before using AI features. Dictum connects to `http://localhost:11434` by default.
 
 ## Makefile Reference
 

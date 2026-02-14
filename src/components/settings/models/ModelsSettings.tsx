@@ -10,7 +10,7 @@ import type { ModelInfo } from "@/bindings";
 
 // check if model supports a language based on its supported_languages list
 const modelSupportsLanguage = (model: ModelInfo, langCode: string): boolean => {
-  return model.supported_languages.includes(langCode);
+  return (model.supported_languages ?? []).includes(langCode);
 };
 
 export const ModelsSettings: React.FC = () => {
@@ -195,7 +195,7 @@ export const ModelsSettings: React.FC = () => {
     return (
       <div className="max-w-3xl w-full mx-auto">
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-2 border-logo-primary border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary-light border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -226,7 +226,7 @@ export const ModelsSettings: React.FC = () => {
                   onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                     languageFilter !== "all"
-                      ? "bg-logo-primary/20 text-logo-primary"
+                      ? "bg-primary-light/20 text-primary-light"
                       : "bg-mid-gray/10 text-text/60 hover:bg-mid-gray/20"
                   }`}
                 >
@@ -265,7 +265,7 @@ export const ModelsSettings: React.FC = () => {
                         placeholder={t(
                           "settings.general.language.searchPlaceholder",
                         )}
-                        className="w-full px-2 py-1 text-sm bg-mid-gray/10 border border-mid-gray/40 rounded-md focus:outline-none focus:ring-1 focus:ring-logo-primary"
+                        className="w-full px-2 py-1 text-sm bg-mid-gray/10 border border-mid-gray/40 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-light"
                       />
                     </div>
                     <div className="max-h-48 overflow-y-auto">
@@ -278,7 +278,7 @@ export const ModelsSettings: React.FC = () => {
                         }}
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           languageFilter === "all"
-                            ? "bg-logo-primary/20 text-logo-primary font-semibold"
+                            ? "bg-primary-light/20 text-primary-light font-semibold"
                             : "hover:bg-mid-gray/10"
                         }`}
                       >
@@ -295,7 +295,7 @@ export const ModelsSettings: React.FC = () => {
                           }}
                           className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                             languageFilter === lang.value
-                              ? "bg-logo-primary/20 text-logo-primary font-semibold"
+                              ? "bg-primary-light/20 text-primary-light font-semibold"
                               : "hover:bg-mid-gray/10"
                           }`}
                         >

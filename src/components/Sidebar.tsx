@@ -1,9 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
+  BookA,
   BookOpen,
   Cog,
   FlaskConical,
+  FolderInput,
   Headphones,
   History,
   Info,
@@ -11,8 +13,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { AppSettings } from "@/bindings";
-import HandyTextLogo from "./icons/HandyTextLogo";
-import HandyHand from "./icons/HandyHand";
+import DictumTextLogo from "./icons/DictumTextLogo";
+import DictumIcon from "./icons/DictumIcon";
 import { useSettings } from "../hooks/useSettings";
 import {
   GeneralSettings,
@@ -24,6 +26,8 @@ import {
   ActiveListeningSettings,
   AskAiSettings,
   KnowledgeBaseSettings,
+  BatchProcessingPanel,
+  VocabularyPanel,
 } from "./settings";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
@@ -47,7 +51,7 @@ interface SectionConfig {
 export const SECTIONS_CONFIG = {
   general: {
     labelKey: "sidebar.general",
-    icon: HandyHand,
+    icon: DictumIcon,
     component: GeneralSettings,
     enabled: () => true,
   },
@@ -80,6 +84,18 @@ export const SECTIONS_CONFIG = {
     icon: BookOpen,
     component: KnowledgeBaseSettings,
     enabled: (settings) => settings?.knowledge_base?.enabled ?? false,
+  },
+  batchimport: {
+    labelKey: "sidebar.batchImport",
+    icon: FolderInput,
+    component: BatchProcessingPanel,
+    enabled: () => true,
+  },
+  vocabulary: {
+    labelKey: "sidebar.vocabulary",
+    icon: BookA,
+    component: VocabularyPanel,
+    enabled: () => true,
   },
   history: {
     labelKey: "sidebar.history",
@@ -119,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="flex flex-col w-40 h-full border-r border-mid-gray/20 items-center px-2">
-      <HandyTextLogo width={120} className="m-4" />
+      <DictumTextLogo width={120} className="m-4" />
       <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-mid-gray/20">
         {availableSections.map((section) => {
           const Icon = section.icon;
@@ -130,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={section.id}
               className={`flex gap-2 items-center p-2 w-full rounded-lg cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-logo-primary/80"
+                  ? "bg-primary-light/15 text-primary-light"
                   : "hover:bg-mid-gray/20 hover:opacity-100 opacity-85"
               }`}
               onClick={() => onSectionChange(section.id)}

@@ -26,11 +26,14 @@ use managers::active_listening::ActiveListeningManager;
 use managers::ask_ai::AskAiManager;
 use managers::ask_ai_history::AskAiHistoryManager;
 use managers::audio::AudioRecordingManager;
+use managers::batch_processor::BatchProcessor;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
 use managers::rag::RagManager;
 use managers::suggestion_engine::SuggestionEngine;
+use managers::task_extractor::TaskExtractor;
 use managers::transcription::TranscriptionManager;
+use managers::vocabulary::VocabularyManager;
 #[cfg(unix)]
 use signal_hook::consts::SIGUSR2;
 #[cfg(unix)]
@@ -170,6 +173,22 @@ fn initialize_core_logic(app_handle: &AppHandle) {
         settings.suggestions.clone(),
     );
 
+    // Initialize Batch Processor
+    let mut batch_processor = BatchProcessor::new();
+    batch_processor.set_app_handle(app_handle.clone());
+
+    // Initialize Task Extractor
+    let mut task_extractor = TaskExtractor::new();
+    task_extractor.set_app_handle(app_handle.clone());
+
+    // Initialize Vocabulary Manager
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .expect("Failed to get app data dir");
+    let vocabulary_manager =
+        VocabularyManager::new(&app_data_dir).expect("Failed to initialize vocabulary manager");
+
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
@@ -180,6 +199,15 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(ask_ai_history_manager.clone());
     app_handle.manage(rag_manager.clone());
     app_handle.manage(suggestion_engine);
+    app_handle.manage(tokio::sync::Mutex::new(batch_processor));
+    app_handle.manage(Mutex::new(task_extractor));
+    app_handle.manage(Mutex::new(vocabulary_manager));
+
+    // Initialize Sound Detector
+    let mut sound_detector = audio_toolkit::SoundDetector::new();
+    let sd_settings = settings::get_settings(app_handle);
+    sound_detector.update_settings(&sd_settings.sound_detection);
+    app_handle.manage(Mutex::new(sound_detector));
 
     // Initialize the shortcuts
     shortcut::init_shortcuts(app_handle);
@@ -509,6 +537,27 @@ pub fn run() {
         commands::suggestions::change_min_confidence,
         commands::suggestions::change_auto_dismiss_on_copy,
         commands::suggestions::change_display_duration,
+        commands::batch_processing::add_to_batch_queue,
+        commands::batch_processing::start_batch_processing,
+        commands::batch_processing::cancel_batch_processing,
+        commands::batch_processing::get_batch_status,
+        commands::batch_processing::remove_batch_item,
+        commands::batch_processing::clear_completed_batch_items,
+        commands::tasks::extract_action_items,
+        commands::tasks::get_action_items,
+        commands::tasks::toggle_action_item,
+        commands::tasks::delete_action_item,
+        commands::tasks::export_action_items,
+        commands::vocabulary::get_vocabulary,
+        commands::vocabulary::add_vocabulary_term,
+        commands::vocabulary::remove_vocabulary_term,
+        commands::vocabulary::import_vocabulary,
+        commands::vocabulary::export_vocabulary,
+        commands::sound_detection::get_sound_detection_settings,
+        commands::sound_detection::change_sound_detection_enabled,
+        commands::sound_detection::change_sound_detection_threshold,
+        commands::sound_detection::change_sound_detection_categories,
+        commands::sound_detection::change_sound_detection_notification,
         helpers::clamshell::is_laptop,
     ]);
 
@@ -534,7 +583,7 @@ pub fn run() {
                 }),
                 // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
                 Target::new(TargetKind::LogDir {
-                    file_name: Some("handy".into()),
+                    file_name: Some("dictum".into()),
                 })
                 .filter(|metadata| {
                     let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);

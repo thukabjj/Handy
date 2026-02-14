@@ -174,7 +174,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
   if (isLoading) {
     return (
       <div className="p-6 text-center">
-        <Loader2 className="h-8 w-8 mx-auto text-logo-primary animate-spin mb-3" />
+        <Loader2 className="h-8 w-8 mx-auto text-primary-light animate-spin mb-3" />
         <p className="text-sm text-mid-gray">
           {t(
             "settings.activeListening.summary.generating",

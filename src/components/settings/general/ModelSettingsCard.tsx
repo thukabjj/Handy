@@ -15,7 +15,7 @@ export const ModelSettingsCard: React.FC = () => {
   const supportsLanguageSelection =
     currentModelInfo?.engine_type === "Whisper" ||
     currentModelInfo?.engine_type === "SenseVoice";
-  const supportsTranslation = currentModelInfo?.supports_translation ?? false;
+  const supportsTranslation = currentModelInfo?.supports_translation === true;
   const hasAnySettings = supportsLanguageSelection || supportsTranslation;
 
   // Don't render anything if no model is selected or no settings available
@@ -33,7 +33,7 @@ export const ModelSettingsCard: React.FC = () => {
         <LanguageSelector
           descriptionMode="tooltip"
           grouped={true}
-          supportedLanguages={currentModelInfo.supported_languages}
+          supportedLanguages={currentModelInfo.supported_languages ?? []}
         />
       )}
       {supportsTranslation && (

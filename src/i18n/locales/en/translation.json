@@ -10,6 +10,29 @@
     "delete": "Delete",
     "export": "Export"
   },
+  "presentationMode": {
+    "title": "Presentation Mode",
+    "description": "Full-screen live transcription display for conferences, lectures, and accessibility.",
+    "open": "Open Presentation Mode",
+    "controls": "Esc: close | +/-: font size | I: toggle insights",
+    "listening": "Listening for speech...",
+    "waiting": "Start Active Listening to begin"
+  },
+  "speakerAnalytics": {
+    "title": "Speaker Analytics",
+    "description": "Talk time, participation, and turn-taking analysis for the current session.",
+    "loading": "Loading analytics...",
+    "empty": "No speaker data available. Start an Active Listening session to see speaker analytics.",
+    "speakers": "Speakers",
+    "duration": "Duration",
+    "totalTurns": "Total Turns",
+    "totalWords": "Total Words",
+    "breakdown": "Speaker Breakdown",
+    "talkTime": "Talk time",
+    "turns": "Turns",
+    "words": "Words",
+    "participationBalance": "Participation Balance"
+  },
   "tray": {
     "settings": "Settings...",
     "checkUpdates": "Check for Updates...",
@@ -25,6 +48,8 @@
     "activeListening": "Active Listen",
     "askAi": "Ask AI",
     "knowledgeBase": "Knowledge",
+    "batchImport": "Batch Import",
+    "vocabulary": "Vocabulary",
     "history": "History",
     "debug": "Debug",
     "about": "About"
@@ -74,7 +99,7 @@
     },
     "permissions": {
       "title": "Permissions Required",
-      "description": "Handy needs a couple of permissions to work properly.",
+      "description": "Dictum needs a couple of permissions to work properly.",
       "microphone": {
         "title": "Microphone Access",
         "description": "Required to hear your voice for transcription."
@@ -94,7 +119,7 @@
     }
   },
   "modelSelector": {
-    "welcome": "Welcome to Handy!",
+    "welcome": "Welcome to Dictum!",
     "downloadPrompt": "Download a model below to get started with transcription.",
     "availableModels": "Available Models",
     "downloadModels": "Download Models",
@@ -120,7 +145,7 @@
     "general": {
       "title": "General",
       "shortcut": {
-        "title": "Handy Shortcuts",
+        "title": "Dictum Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
         "loading": "Loading shortcuts...",
         "none": "No shortcuts configured",
@@ -199,7 +224,7 @@
       },
       "autostart": {
         "label": "Launch on Startup",
-        "description": "Automatically start Handy when you log in to your computer."
+        "description": "Automatically start Dictum when you log in to your computer."
       },
       "overlay": {
         "title": "Overlay Position",
@@ -516,7 +541,16 @@
       "save": "Save transcription",
       "unsave": "Remove from saved",
       "delete": "Delete entry",
-      "deleteError": "Failed to delete entry. Please try again."
+      "deleteError": "Failed to delete entry. Please try again.",
+      "exportAs": "Export as...",
+      "exportAll": "Export All",
+      "exportFormats": {
+        "txt": "Plain Text (.txt)",
+        "srt": "SubRip Subtitles (.srt)",
+        "vtt": "WebVTT Subtitles (.vtt)",
+        "json": "JSON (.json)",
+        "markdown": "Markdown (.md)"
+      }
     },
     "debug": {
       "title": "Debug",
@@ -530,7 +564,7 @@
       },
       "updateChecks": {
         "label": "Check for Updates",
-        "description": "Automatically check for new versions of Handy"
+        "description": "Automatically check for new versions of Dictum"
       },
       "soundTheme": {
         "label": "Sound Theme",
@@ -585,11 +619,11 @@
       "title": "About",
       "version": {
         "title": "Version",
-        "description": "Current version of Handy"
+        "description": "Current version of Dictum"
       },
       "appDataDirectory": {
         "title": "App Data Directory",
-        "description": "Location where Handy stores its data"
+        "description": "Location where Dictum stores its data"
       },
       "logDirectory": {
         "title": "Log Directory",
@@ -602,7 +636,7 @@
       },
       "supportDevelopment": {
         "title": "Support Development",
-        "description": "Help us continue building Handy",
+        "description": "Help us continue building Dictum",
         "button": "Donate"
       },
       "acknowledgments": {
@@ -610,7 +644,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "High-performance inference of OpenAI's Whisper automatic speech recognition model",
-          "details": "Handy uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
+          "details": "Dictum uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
       }
     },
@@ -716,6 +750,17 @@
         "contentPlaceholder": "Paste or type the document content here...",
         "addDocument": "Add to Knowledge Base",
         "uploading": "Adding..."
+      },
+      "chat": {
+        "title": "Chat with Transcripts",
+        "description": "Ask questions about your transcriptions and documents using AI.",
+        "placeholder": "Ask a question about your transcriptions...",
+        "send": "Send",
+        "clearChat": "Clear chat",
+        "you": "You",
+        "ai": "AI",
+        "thinking": "Thinking...",
+        "noDocuments": "Add documents to the knowledge base to start chatting with your transcriptions."
       }
     }
   },
@@ -757,7 +802,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Accessibility Permissions Required",
-    "permissionsDescription": "Handy needs accessibility permissions to type transcribed text.",
+    "permissionsDescription": "Dictum needs accessibility permissions to type transcribed text.",
     "openSettings": "Open System Settings",
     "dismiss": "Dismiss"
   },
@@ -782,7 +827,7 @@
   },
   "appLanguage": {
     "title": "Application Language",
-    "description": "Change the language of the Handy interface"
+    "description": "Change the language of the Dictum interface"
   },
   "overlay": {
     "transcribing": "Transcribing...",
@@ -839,5 +884,115 @@
       "noResults": "No conversations match your search.",
       "search": "Search conversations..."
     }
+  },
+  "actionItems": {
+    "title": "Action Items",
+    "description": "Tasks extracted from your transcription history.",
+    "loading": "Loading action items...",
+    "empty": "No action items yet. Extract tasks from your transcription history.",
+    "stats": "{{total}} tasks, {{completed}} completed",
+    "toggle": "Toggle completed",
+    "delete": "Delete action item",
+    "export": "Export",
+    "exportMarkdown": "Markdown",
+    "exportJson": "JSON",
+    "copiedToClipboard": "Copied to clipboard",
+    "exportFailed": "Failed to export action items",
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    }
+  },
+  "batchProcessing": {
+    "title": "Batch Import",
+    "description": "Transcribe multiple audio files at once. Select files from your computer and process them in a queue.",
+    "selectFiles": "Select Files",
+    "start": "Start Processing",
+    "cancel": "Cancel",
+    "clearCompleted": "Clear Completed",
+    "removeItem": "Remove",
+    "audioFiles": "Audio Files",
+    "empty": "No files in the queue. Click \"Select Files\" to add audio files for batch transcription.",
+    "stats": {
+      "total": "Total",
+      "completed": "Completed",
+      "failed": "Failed",
+      "processing": "Processing"
+    },
+    "status": {
+      "queued": "Queued",
+      "decoding": "Decoding",
+      "transcribing": "Transcribing",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "vocabulary": {
+    "title": "Vocabulary",
+    "description": "Manage custom vocabulary terms to improve transcription accuracy for specialized words, names, and acronyms.",
+    "searchPlaceholder": "Search vocabulary...",
+    "addPlaceholder": "Add a new term",
+    "add": "Add",
+    "remove": "Remove",
+    "import": "Import",
+    "export": "Export",
+    "empty": "No vocabulary terms yet. Add words to improve transcription accuracy.",
+    "term": "Term",
+    "frequency": "Frequency",
+    "category": "Category",
+    "categories": {
+      "general": "General",
+      "medical": "Medical",
+      "legal": "Legal",
+      "tech": "Tech",
+      "names": "Names",
+      "custom": "Custom"
+    },
+    "importSuccess": "Imported {{count}} terms",
+    "importFailed": "Failed to import vocabulary",
+    "exportFailed": "Failed to export vocabulary"
+  },
+  "settingsSearch": {
+    "placeholder": "Search settings...",
+    "noResults": "No matching settings found",
+    "hint": "Navigate to setting"
+  },
+  "soundDetection": {
+    "title": "Sound Detection",
+    "description": "Detect environmental sounds like doorbells, alarms, and more.",
+    "enabled": "Enable Sound Detection",
+    "enabledDescription": "Monitor audio for environmental sounds using AI classification",
+    "threshold": "Detection Threshold",
+    "thresholdDescription": "Minimum confidence level required to trigger a detection (0-100%)",
+    "categories": "Sound Categories",
+    "categoriesDescription": "Select which environmental sounds to detect",
+    "category": {
+      "doorbell": "Doorbell",
+      "alarm": "Alarm",
+      "phone_ring": "Phone Ring",
+      "dog_bark": "Dog Bark",
+      "baby_cry": "Baby Cry",
+      "knocking": "Knocking",
+      "siren": "Siren",
+      "applause": "Applause"
+    },
+    "notification": "Notifications",
+    "notificationDescription": "Show system notifications when a sound is detected",
+    "stubNotice": "Sound detection model is not yet loaded. This feature is currently a framework — detections will activate once a compatible ONNX model is integrated.",
+    "confidence": "{{value}}% confidence"
+  },
+  "audioPlayer": {
+    "play": "Play",
+    "pause": "Pause",
+    "speed": "Speed",
+    "skipForward": "Skip forward",
+    "skipBackward": "Skip backward",
+    "loop": "Loop",
+    "setLoopStart": "Set loop start",
+    "setLoopEnd": "Set loop end",
+    "clearLoop": "Clear loop",
+    "keyboardShortcuts": "Keyboard shortcuts: Space=Play/Pause, ←→=Skip 5s, ↑↓=Speed"
   }
 }

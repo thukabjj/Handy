@@ -268,6 +268,14 @@ async changeUpdateChecksSetting(enabled: boolean) : Promise<Result<null, string>
     else return { status: "error", error: e  as any };
 }
 },
+async changePrivateOverlaySetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_private_overlay_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async triggerUpdateCheck() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("trigger_update_check") };
@@ -450,7 +458,11 @@ async hasAnyModelsOrDownloads() : Promise<Result<boolean, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getRecommendedFirstModel() : Promise<Result<string, string>> {
+/**
+ * Returns the recommended first model for new users.
+ * Picks the smallest available model that balances speed and accuracy.
+ */
+async getRecommendedFirstModel() : Promise<Result<ModelInfo | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_recommended_first_model") };
 } catch (e) {
@@ -1205,6 +1217,354 @@ async changeKbUseInActiveListeningSetting(useInAl: boolean) : Promise<Result<nul
 }
 },
 /**
+ * Get the current suggestions settings
+ */
+async getSuggestionsSettings() : Promise<Result<SuggestionsSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_suggestions_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update the suggestions settings
+ */
+async updateSuggestionsSettings(settings: SuggestionsSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_suggestions_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable the suggestions feature
+ */
+async changeSuggestionsEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_suggestions_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get all quick responses
+ */
+async getQuickResponses() : Promise<Result<QuickResponse[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_quick_responses") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get quick responses by category
+ */
+async getQuickResponsesByCategory(category: string) : Promise<Result<QuickResponse[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_quick_responses_by_category", { category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Add a new quick response
+ */
+async addQuickResponse(response: QuickResponse) : Promise<Result<QuickResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_quick_response", { response }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update an existing quick response
+ */
+async updateQuickResponse(response: QuickResponse) : Promise<Result<QuickResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_quick_response", { response }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete a quick response
+ */
+async deleteQuickResponse(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_quick_response", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Toggle a quick response's enabled state
+ */
+async toggleQuickResponse(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_quick_response", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable RAG suggestions
+ */
+async changeRagSuggestionsEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_rag_suggestions_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable LLM suggestions
+ */
+async changeLlmSuggestionsEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_llm_suggestions_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update max suggestions count
+ */
+async changeMaxSuggestions(maxSuggestions: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_max_suggestions", { maxSuggestions }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update minimum confidence threshold
+ */
+async changeMinConfidence(minConfidence: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_min_confidence", { minConfidence }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update auto-dismiss on copy setting
+ */
+async changeAutoDismissOnCopy(autoDismiss: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_auto_dismiss_on_copy", { autoDismiss }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update display duration setting
+ */
+async changeDisplayDuration(durationSeconds: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_display_duration", { durationSeconds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addToBatchQueue(paths: string[]) : Promise<Result<BatchQueueStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_to_batch_queue", { paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startBatchProcessing() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_batch_processing") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelBatchProcessing() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_batch_processing") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBatchStatus() : Promise<Result<BatchQueueStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_batch_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeBatchItem(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_batch_item", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearCompletedBatchItems() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_completed_batch_items") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async extractActionItems(entryId: number) : Promise<Result<ActionItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("extract_action_items", { entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getActionItems(entryId: number | null) : Promise<Result<ActionItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_action_items", { entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async toggleActionItem(id: number, completed: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_action_item", { id, completed }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteActionItem(id: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_action_item", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportActionItems(entryId: number | null, format: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_action_items", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getVocabulary() : Promise<Result<VocabularyEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addVocabularyTerm(term: string, category: string | null) : Promise<Result<VocabularyEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_vocabulary_term", { term, category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeVocabularyTerm(id: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_vocabulary_term", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async importVocabulary(json: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("import_vocabulary", { json }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportVocabulary() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get current sound detection settings
+ */
+async getSoundDetectionSettings() : Promise<Result<SoundDetectionSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_sound_detection_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable sound detection
+ */
+async changeSoundDetectionEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update the detection confidence threshold
+ */
+async changeSoundDetectionThreshold(threshold: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_threshold", { threshold }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update which sound categories to detect
+ */
+async changeSoundDetectionCategories(categories: SoundCategory[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_categories", { categories }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable sound detection notifications
+ */
+async changeSoundDetectionNotification(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_notification", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Checks if the Mac is a laptop by detecting battery presence
  * 
  * This uses pmset to check for battery information.
@@ -1213,6 +1573,81 @@ async changeKbUseInActiveListeningSetting(useInAl: boolean) : Promise<Result<nul
 async isLaptop() : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("is_laptop") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async initializeShortcuts() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("initialize_shortcuts") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async openPresentationMode() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_presentation_mode") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopHandyKeysRecording() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_handy_keys_recording") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startHandyKeysRecording(bindingId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_handy_keys_recording", { bindingId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeKeyboardImplementationSetting(implementation: string) : Promise<Result<{ reset_bindings: string[] }, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_keyboard_implementation_setting", { implementation }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getExportFilename(entryId: number, format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_export_filename", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTranscription(entryId: number, format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcription", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTranscriptions(entryIds: number[], format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcriptions", { entryIds, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBatchExportFilename(format: ExportFormat) : Promise<string> {
+    return await TAURI_INVOKE("get_batch_export_filename", { format });
+},
+async ragChat(question: string, conversationContext: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_chat", { question, conversationContext }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1230,22 +1665,28 @@ async isLaptop() : Promise<Result<boolean, string>> {
 
 /** user-defined types **/
 
+export type ExportFormat = "txt" | "srt" | "vtt" | "json" | "markdown"
+
 /**
- * An action item extracted from a meeting
+ * An action item extracted from a meeting (simple form)
  */
-export type ActionItem = { 
+export type MeetingActionItem = {
 /**
  * Description of the action
  */
-description: string; 
+description: string;
 /**
  * Person responsible (if mentioned)
  */
-assignee: string | null; 
+assignee: string | null;
 /**
  * Deadline (if mentioned)
  */
 deadline: string | null }
+/**
+ * An action item stored in history
+ */
+export type ActionItem = { id: number; entry_id: number; task: string; assignee: string | null; deadline: string | null; priority: string; completed: boolean; created_at: string }
 /**
  * A prompt template for active listening
  */
@@ -1358,7 +1799,12 @@ export type ActiveListeningState =
  * Error state
  */
 "error"
-export type AppSettings = ({ push_to_talk: boolean; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string }) & { bindings: Partial<{ [key in string]: ShortcutBinding }>; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; active_listening?: ActiveListeningSettings; ask_ai?: AskAiSettings; knowledge_base?: KnowledgeBaseSettings; suggestions?: SuggestionsSettings }
+export type AppSettings = ({ push_to_talk: boolean; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; 
+/**
+ * Hide overlay from screen capture/sharing (Zoom, Teams, etc.)
+ * Enabled by default for privacy during screen sharing
+ */
+private_overlay?: boolean }) & { bindings: Partial<{ [key in string]: ShortcutBinding }>; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; paste_delay_ms?: number; clipboard_handling?: ClipboardHandling; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; active_listening?: ActiveListeningSettings; ask_ai?: AskAiSettings; knowledge_base?: KnowledgeBaseSettings; suggestions?: SuggestionsSettings; sound_detection?: SoundDetectionSettings; experimental_enabled?: boolean; keyboard_implementation?: string }
 /**
  * An Ask AI conversation consisting of multiple turns
  */
@@ -1481,6 +1927,8 @@ export type AudioSourceType =
  * Both microphone and system audio mixed together
  */
 "mixed"
+export type BatchItem = { id: string; file_name: string; file_path: string; status: JobStatus; progress: number; error: string | null; duration_seconds: number | null }
+export type BatchQueueStatus = { items: BatchItem[]; total: number; completed: number; failed: number; is_processing: boolean }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 /**
@@ -1524,8 +1972,9 @@ source_id: string | null;
  * Document title or description
  */
 title: string | null }
-export type EngineType = "Whisper" | "Parakeet" | "Moonshine"
+export type EngineType = "Whisper" | "Parakeet" | "Moonshine" | "SenseVoice"
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null }
+export type JobStatus = "Queued" | "Decoding" | "Transcribing" | "Completed" | "Failed" | "Cancelled"
 /**
  * Settings for the Knowledge Base feature
  */
@@ -1595,11 +2044,11 @@ decisions: string[];
 /**
  * Action items with optional assignees and deadlines
  */
-action_items: ActionItem[]; 
+action_items: MeetingActionItem[];
 /**
  * Main topics discussed
  */
-topics: string[]; 
+topics: string[];
 /**
  * Suggested follow-up questions
  */
@@ -1612,7 +2061,7 @@ duration_minutes: number;
  * When this summary was generated
  */
 generated_at: number }
-export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number }
+export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; is_custom?: boolean; is_recommended?: boolean; supported_languages?: string[]; supports_translation?: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_5"
 /**
@@ -1728,6 +2177,30 @@ speaker_id: number | null;
  */
 speaker_label: string | null }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
+/**
+ * Categories of environmental sounds that can be detected
+ */
+export type SoundCategory = "doorbell" | "alarm" | "phone_ring" | "dog_bark" | "baby_cry" | "knocking" | "siren" | "applause"
+/**
+ * Settings for the Environmental Sound Detection feature
+ */
+export type SoundDetectionSettings = { 
+/**
+ * Whether sound detection is enabled
+ */
+enabled?: boolean; 
+/**
+ * Which sound categories to detect
+ */
+categories?: SoundCategory[]; 
+/**
+ * Minimum confidence threshold for triggering a detection (0.0-1.0)
+ */
+threshold?: number; 
+/**
+ * Whether to show system notifications on detection
+ */
+notification_enabled?: boolean }
 export type SoundTheme = "marimba" | "pop" | "custom"
 /**
  * Stored document representation
@@ -1769,6 +2242,7 @@ auto_dismiss_on_copy?: boolean;
  * Suggestion display duration in seconds (0 = until dismissed)
  */
 display_duration_seconds?: number }
+export type VocabularyEntry = { id: number; term: string; frequency: number; source: string; category: string | null; created_at: string }
 
 /** tauri-specta globals **/
 

@@ -8,6 +8,8 @@ export { PostProcessingSettings } from "./post-processing/PostProcessingSettings
 export { ActiveListeningSettings } from "./active-listening";
 export { AskAiSettings } from "./ask-ai";
 export { KnowledgeBaseSettings } from "./knowledge-base";
+export { BatchProcessingPanel } from "./batch-processing";
+export { VocabularyPanel } from "./vocabulary";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";
@@ -17,7 +19,7 @@ export { AlwaysOnMicrophone } from "./AlwaysOnMicrophone";
 export { PushToTalk } from "./PushToTalk";
 export { AudioFeedback } from "./AudioFeedback";
 export { ShowOverlay } from "./ShowOverlay";
-export { HandyShortcut } from "./HandyShortcut";
+export { ShortcutInput as DictumShortcut } from "./ShortcutInput";
 export { TranslateToEnglish } from "./TranslateToEnglish";
 export { CustomWords } from "./CustomWords";
 export { PostProcessingToggle } from "./PostProcessingToggle";

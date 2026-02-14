@@ -19,6 +19,7 @@ pub enum EngineType {
     Whisper,
     Parakeet,
     Moonshine,
+    SenseVoice,
 }
 
 /// Model info as stored in the JSON configuration file

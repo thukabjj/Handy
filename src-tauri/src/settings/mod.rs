@@ -10,6 +10,7 @@ pub mod active_listening;
 pub mod ask_ai;
 pub mod general;
 pub mod knowledge_base;
+pub mod sound_detection;
 pub mod suggestions;
 
 pub use active_listening::{
@@ -17,6 +18,7 @@ pub use active_listening::{
 };
 pub use ask_ai::AskAiSettings;
 pub use knowledge_base::KnowledgeBaseSettings;
+pub use sound_detection::{SoundCategory, SoundDetectionSettings};
 pub use suggestions::{QuickResponse, SuggestionsSettings, WarningSeverity};
 
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
@@ -279,6 +281,8 @@ pub struct AppSettings {
     pub recording_retention_period: RecordingRetentionPeriod,
     #[serde(default)]
     pub paste_method: PasteMethod,
+    #[serde(default = "default_paste_delay_ms")]
+    pub paste_delay_ms: u64,
     #[serde(default)]
     pub clipboard_handling: ClipboardHandling,
     #[serde(default = "default_post_process_enabled")]
@@ -303,6 +307,8 @@ pub struct AppSettings {
     pub knowledge_base: KnowledgeBaseSettings,
     #[serde(default)]
     pub suggestions: SuggestionsSettings,
+    #[serde(default)]
+    pub sound_detection: SoundDetectionSettings,
 }
 
 fn default_model() -> String {
@@ -354,6 +360,10 @@ fn default_audio_feedback_volume() -> f32 {
 
 fn default_sound_theme() -> SoundTheme {
     SoundTheme::Marimba
+}
+
+fn default_paste_delay_ms() -> u64 {
+    50
 }
 
 fn default_post_process_enabled() -> bool {
@@ -609,6 +619,7 @@ pub fn get_default_settings() -> AppSettings {
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
         paste_method: PasteMethod::default(),
+        paste_delay_ms: default_paste_delay_ms(),
         clipboard_handling: ClipboardHandling::default(),
         post_process_enabled: default_post_process_enabled(),
         post_process_provider_id: default_post_process_provider_id(),
@@ -621,6 +632,7 @@ pub fn get_default_settings() -> AppSettings {
         ask_ai: AskAiSettings::default(),
         knowledge_base: KnowledgeBaseSettings::default(),
         suggestions: SuggestionsSettings::default(),
+        sound_detection: SoundDetectionSettings::default(),
     }
 }
 

@@ -1,0 +1,1 @@
+export { VocabularyPanel } from "./VocabularyPanel";

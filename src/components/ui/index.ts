@@ -6,3 +6,5 @@ export { SettingsGroup } from "./SettingsGroup";
 export { TextDisplay } from "./TextDisplay";
 export { Textarea } from "./Textarea";
 export { Tooltip } from "./Tooltip";
+export { WaveformPlayer } from "./WaveformPlayer";
+export { SpeedControl } from "./SpeedControl";

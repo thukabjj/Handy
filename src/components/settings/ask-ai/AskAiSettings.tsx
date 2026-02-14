@@ -13,7 +13,7 @@ import {
 import { ResetButton } from "../../ui/ResetButton";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
-import { HandyShortcut } from "../HandyShortcut";
+import { ShortcutInput as DictumShortcut } from "../ShortcutInput";
 import { ConversationHistory } from "./ConversationHistory";
 
 const DisabledNotice: React.FC<{ children: React.ReactNode }> = ({
@@ -223,7 +223,7 @@ export const AskAiSettings: React.FC = () => {
           onChange={handleEnableChange}
           grouped={true}
         />
-        {enabled && <HandyShortcut shortcutId="ask_ai" grouped={true} />}
+        {enabled && <DictumShortcut shortcutId="ask_ai" grouped={true} />}
       </SettingsGroup>
 
       {enabled && (

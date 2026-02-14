@@ -117,16 +117,22 @@ pub fn set_screen_capture_excluded(
     overlay_window: &tauri::webview::WebviewWindow,
     excluded: bool,
 ) {
-    use objc2::msg_send;
-    use objc2::runtime::AnyObject;
-
     if let Ok(ns_window) = overlay_window.ns_window() {
-        let ns_window = ns_window as *mut AnyObject;
         // NSWindowSharingType: .none = 0, .readOnly = 1, .readWrite = 2
         // We use .none (0) to exclude from capture, .readOnly (1) to include
         let sharing_type: i64 = if excluded { 0 } else { 1 };
         unsafe {
-            let _: () = msg_send![ns_window, setSharingType: sharing_type];
+            use std::ffi::CString;
+            // Link to the Objective-C runtime directly
+            extern "C" {
+                fn sel_registerName(name: *const std::ffi::c_char) -> *const std::ffi::c_void;
+                fn objc_msgSend();
+            }
+            let sel_name = CString::new("setSharingType:").unwrap();
+            let sel = sel_registerName(sel_name.as_ptr());
+            let send: unsafe extern "C" fn(*mut std::ffi::c_void, *const std::ffi::c_void, i64) =
+                std::mem::transmute(objc_msgSend as *const ());
+            send(ns_window as *mut _, sel, sharing_type);
         }
         debug!(
             "macOS window sharing type set (excluded={}, sharingType={})",

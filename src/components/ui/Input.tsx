@@ -15,7 +15,7 @@ export const Input: React.FC<InputProps> = ({
 
   const interactiveClasses = disabled
     ? "opacity-60 cursor-not-allowed bg-mid-gray/10 border-mid-gray/40"
-    : "hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary";
+    : "hover:bg-primary-light/10 hover:border-primary-light focus:outline-none focus:bg-primary-light/20 focus:border-primary-light";
 
   const variantClasses = {
     default: "px-3 py-2",

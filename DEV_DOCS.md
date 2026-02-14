@@ -1,18 +1,18 @@
-# Handy Developer Documentation
+# Dictum Developer Documentation
 
-This document provides a guide for developers who want to understand, contribute to, or debug the Handy application.
+This document provides a guide for developers who want to understand, contribute to, or debug the Dictum application.
 
 ## Project Overview
 
-Handy is a free, open-source, and extensible speech-to-text application that works completely offline. It is a cross-platform desktop application built with Tauri (Rust + React/TypeScript) that provides simple, privacy-focused speech transcription. The user can press a shortcut, speak, and have their words appear in any text field -- all without sending their voice to the cloud.
+Dictum is a free, open-source, and extensible speech-to-text application that works completely offline. It is a cross-platform desktop application built with Tauri (Rust + React/TypeScript) that provides simple, privacy-focused speech transcription. The user can press a shortcut, speak, and have their words appear in any text field -- all without sending their voice to the cloud.
 
-Beyond core transcription, Handy integrates with a local Ollama instance to provide Active Listening (continuous transcription with AI insights), Ask AI (voice-based LLM conversations), a RAG Knowledge Base (semantic search over past transcriptions), and a Suggestion Engine (context-aware quick responses).
+Beyond core transcription, Dictum integrates with a local Ollama instance to provide Active Listening (continuous transcription with AI insights), Ask AI (voice-based LLM conversations), a RAG Knowledge Base (semantic search over past transcriptions), and a Suggestion Engine (context-aware quick responses).
 
-The goal of Handy is to be the most forkable speech-to-text app, providing a solid foundation for others to build upon.
+The goal of Dictum is to be the most forkable speech-to-text app, providing a solid foundation for others to build upon.
 
 ## Architecture
 
-Handy uses the [Tauri](https://tauri.app/) framework, which allows for building cross-platform desktop applications with a web-based frontend and a Rust backend.
+Dictum uses the [Tauri](https://tauri.app/) framework, which allows for building cross-platform desktop applications with a web-based frontend and a Rust backend.
 
 - **Frontend**: The user interface is a web application built with [React](https://reactjs.org/) and [TypeScript](https://www.typescriptlang.org/). It is rendered in a webview. The frontend is responsible for the settings UI, onboarding, and displaying the recording status.
 - **Backend**: The backend is a Rust application that handles all the heavy lifting, including:
@@ -348,7 +348,7 @@ sequenceDiagram
 ### Ollama
 
 - **Where**: Active Listening, Ask AI, RAG Knowledge Base, and Suggestion Engine features.
-- **Why**: Provides local LLM inference without requiring cloud APIs, maintaining Handy's privacy-first approach.
+- **Why**: Provides local LLM inference without requiring cloud APIs, maintaining Dictum's privacy-first approach.
 - **How**: The `ollama_client.rs` module communicates with a local Ollama instance via its HTTP API (`http://localhost:11434`). It supports streaming responses for real-time AI interaction. The RAG system uses Ollama's embedding endpoint with the `nomic-embed-text` model for semantic search.
 
 ### Swift
@@ -551,7 +551,7 @@ The Suggestion Engine provides context-aware quick responses and suggestions bas
 
 ### Error Handling
 
-Handy uses a structured error handling system centered around `HandyError`.
+Dictum uses a structured error handling system centered around `HandyError`.
 
 **HandyError Fields:**
 
@@ -599,7 +599,7 @@ Use a debugger to set breakpoints and inspect the state of the Rust backend. The
       "version": "0.2.0",
       "configurations": [
         {
-          "name": "Debug Handy Backend",
+          "name": "Debug Dictum Backend",
           "type": "lldb",
           "request": "launch",
           "program": "${workspaceFolder}/src-tauri/target/debug/handy",
@@ -618,7 +618,7 @@ Use a debugger to set breakpoints and inspect the state of the Rust backend. The
     Wait for the frontend to compile.
 4. **Start the debugger in VS Code**:
     - Open the "Run and Debug" view (Ctrl+Shift+D).
-    - Select "Debug Handy Backend" from the dropdown menu.
+    - Select "Debug Dictum Backend" from the dropdown menu.
     - Press F5 to start debugging.
 
 The debugger will attach to the Rust process, and you can now set breakpoints in your Rust code.
@@ -627,7 +627,7 @@ The debugger will attach to the Rust process, and you can now set breakpoints in
 
 ### Debug Mode
 
-Handy includes a built-in debug mode accessible via `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux). This provides diagnostic information about audio devices, model state, and transcription pipeline status.
+Dictum includes a built-in debug mode accessible via `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux). This provides diagnostic information about audio devices, model state, and transcription pipeline status.
 
 ## Progressive Documentation
 
@@ -677,7 +677,7 @@ This demonstrates the type-safe communication flow between the frontend and the 
 
 ## Testing
 
-Handy has a comprehensive test suite covering unit tests, component tests, and end-to-end tests.
+Dictum has a comprehensive test suite covering unit tests, component tests, and end-to-end tests.
 
 ### Running Tests
 
@@ -826,4 +826,4 @@ cd src-tauri && cargo test test_name
 4. **Mock external dependencies**: Tauri commands, network requests, and timers should be mocked.
 5. **Test edge cases**: Empty states, loading states, error states, and boundary conditions.
 
-This document should provide a good starting point for exploring the Handy codebase. For more detailed information, refer to the source code, [CLAUDE.md](CLAUDE.md) for architecture details, and the documentation of the libraries used.
+This document should provide a good starting point for exploring the Dictum codebase. For more detailed information, refer to the source code, [CLAUDE.md](CLAUDE.md) for architecture details, and the documentation of the libraries used.

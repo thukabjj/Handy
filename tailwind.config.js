@@ -5,10 +5,25 @@ export default {
     extend: {
       colors: {
         text: "var(--color-text)",
+        "text-secondary": "var(--color-text-secondary)",
         background: "var(--color-background)",
+        surface: "var(--color-surface)",
+        border: "var(--color-border)",
+        primary: "var(--color-primary)",
+        "primary-light": "var(--color-primary-light)",
+        "primary-dark": "var(--color-primary-dark)",
+        secondary: "var(--color-secondary)",
+        "secondary-light": "var(--color-secondary-light)",
+        accent: "var(--color-accent)",
+        "mid-gray": "var(--color-mid-gray)",
+        // Legacy aliases
         "logo-primary": "var(--color-logo-primary)",
         "logo-stroke": "var(--color-logo-stroke)",
         "text-stroke": "var(--color-text-stroke)",
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       // Typography scale for consistent font sizes
       fontSize: {
