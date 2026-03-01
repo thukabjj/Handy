@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import type { AppSettings as Settings, AudioDevice, LogLevel } from "@/bindings";
+import type { AppSettings as Settings, AudioDevice } from "@/bindings";
 import { commands } from "@/bindings";
 
 interface SettingsStore {
@@ -82,8 +82,6 @@ const settingUpdaters: {
     commands.changeAutostartSetting(value as boolean),
   update_checks_enabled: (value) =>
     commands.changeUpdateChecksSetting(value as boolean),
-  private_overlay: (value) =>
-    commands.changePrivateOverlaySetting(value as boolean),
   push_to_talk: (value) => commands.changePttSetting(value as boolean),
   selected_microphone: (value) =>
     commands.setSelectedMicrophone(
@@ -114,8 +112,14 @@ const settingUpdaters: {
   word_correction_threshold: (value) =>
     commands.changeWordCorrectionThresholdSetting(value as number),
   paste_method: (value) => commands.changePasteMethodSetting(value as string),
+  typing_tool: (value) => commands.changeTypingToolSetting(value as string),
+  external_script_path: (value) =>
+    commands.changeExternalScriptPathSetting(value as string | null),
   clipboard_handling: (value) =>
     commands.changeClipboardHandlingSetting(value as string),
+  auto_submit: (value) => commands.changeAutoSubmitSetting(value as boolean),
+  auto_submit_key: (value) =>
+    commands.changeAutoSubmitKeySetting(value as string),
   history_limit: (value) => commands.updateHistoryLimit(value as number),
   post_process_enabled: (value) =>
     commands.changePostProcessEnabledSetting(value as boolean),
@@ -125,10 +129,12 @@ const settingUpdaters: {
     commands.changeMuteWhileRecordingSetting(value as boolean),
   append_trailing_space: (value) =>
     commands.changeAppendTrailingSpaceSetting(value as boolean),
-  log_level: (value) => commands.setLogLevel(value as LogLevel),
+  log_level: (value) => commands.setLogLevel(value as any),
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
-  // Note: active_listening settings are handled via specific commands in the component
-  // rather than through the generic settingUpdaters pattern since they are nested settings
+  experimental_enabled: (value) =>
+    commands.changeExperimentalEnabledSetting(value as boolean),
+  show_tray_icon: (value) =>
+    commands.changeShowTrayIconSetting(value as boolean),
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -281,9 +287,7 @@ export const useSettingsStore = create<SettingsStore>()(
       if (defaultSettings) {
         const defaultValue = defaultSettings[key];
         if (defaultValue !== undefined) {
-          // Type assertion is safe here because defaultValue comes from defaultSettings[key]
-          // which has the same type as settings[key]
-          await get().updateSetting(key, defaultValue as Settings[typeof key]);
+          await get().updateSetting(key, defaultValue as any);
         }
       }
     },
@@ -370,7 +374,12 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     setPostProcessProvider: async (providerId) => {
-      const { settings, setUpdating, refreshSettings } = get();
+      const {
+        settings,
+        setUpdating,
+        refreshSettings,
+        setPostProcessModelOptions,
+      } = get();
       const updateKey = "post_process_provider_id";
       const previousId = settings?.post_process_provider_id ?? null;
 
@@ -383,6 +392,10 @@ export const useSettingsStore = create<SettingsStore>()(
             : null,
         }));
       }
+
+      // Clear cached model options for the new provider so the dropdown
+      // doesn't show stale models from a previous fetch or base_url.
+      setPostProcessModelOptions(providerId, []);
 
       try {
         await commands.setPostProcessProvider(providerId);
@@ -432,7 +445,49 @@ export const useSettingsStore = create<SettingsStore>()(
     },
 
     updatePostProcessBaseUrl: async (providerId, baseUrl) => {
-      return get().updatePostProcessSetting("base_url", providerId, baseUrl);
+      const { setUpdating, refreshSettings } = get();
+      const updateKey = `post_process_base_url:${providerId}`;
+
+      setUpdating(updateKey, true);
+
+      try {
+        // Persist the new base URL first.
+        const urlResult = await commands.changePostProcessBaseUrlSetting(
+          providerId,
+          baseUrl,
+        );
+        if (urlResult.status === "error") {
+          console.error("Failed to persist base URL:", urlResult.error);
+          return;
+        }
+
+        // Reset the stored model since the previous value is almost certainly
+        // invalid for the new endpoint (e.g. switching Custom from Groq to
+        // Cerebras). Only proceed if the reset succeeds.
+        const modelResult = await commands.changePostProcessModelSetting(
+          providerId,
+          "",
+        );
+        if (modelResult.status === "error") {
+          console.error("Failed to reset model setting:", modelResult.error);
+          return;
+        }
+
+        // Clear cached model options only after both backend writes succeed.
+        set((state) => ({
+          postProcessModelOptions: {
+            ...state.postProcessModelOptions,
+            [providerId]: [],
+          },
+        }));
+
+        // Single refresh after both backend writes.
+        await refreshSettings();
+      } catch (error) {
+        console.error("Failed to update post-process base URL:", error);
+      } finally {
+        setUpdating(updateKey, false);
+      }
     },
 
     updatePostProcessApiKey: async (providerId, apiKey) => {

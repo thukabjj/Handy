@@ -3,49 +3,42 @@ mod actions;
 mod apple_intelligence;
 mod audio_feedback;
 pub mod audio_toolkit;
+pub mod cli;
 mod clipboard;
 mod commands;
-pub mod error;
 mod helpers;
 mod input;
 mod llm_client;
 mod managers;
-mod ollama_client;
 mod overlay;
 mod settings;
 mod shortcut;
 mod signal_handle;
+mod transcription_coordinator;
 mod tray;
 mod tray_i18n;
 mod utils;
+
+pub use cli::CliArgs;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, Builder};
 
 use env_filter::Builder as EnvFilterBuilder;
-use managers::active_listening::ActiveListeningManager;
-use managers::ask_ai::AskAiManager;
-use managers::ask_ai_history::AskAiHistoryManager;
 use managers::audio::AudioRecordingManager;
-use managers::batch_processor::BatchProcessor;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
-use managers::rag::RagManager;
-use managers::suggestion_engine::SuggestionEngine;
-use managers::task_extractor::TaskExtractor;
 use managers::transcription::TranscriptionManager;
-use managers::vocabulary::VocabularyManager;
 #[cfg(unix)]
-use signal_hook::consts::SIGUSR2;
+use signal_hook::consts::{SIGUSR1, SIGUSR2};
 #[cfg(unix)]
 use signal_hook::iterator::Signals;
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicU8, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::image::Image;
+pub use transcription_coordinator::TranscriptionCoordinator;
 
 use tauri::tray::TrayIconBuilder;
-use tauri::Emitter;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Listener, Manager};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_log::{Builder as LogBuilder, RotationStrategy, Target, TargetKind};
 
@@ -89,14 +82,6 @@ fn build_console_filter() -> env_filter::Filter {
     builder.build()
 }
 
-#[derive(Default)]
-struct ShortcutToggleStates {
-    // Map: shortcut_binding_id -> is_active
-    active_toggles: HashMap<String, bool>,
-}
-
-type ManagedToggleState = Mutex<ShortcutToggleStates>;
-
 fn show_main_window(app: &AppHandle) {
     if let Some(main_window) = app.get_webview_window("main") {
         // First, ensure the window is visible
@@ -137,92 +122,30 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     );
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
-    let active_listening_manager = Arc::new(
-        ActiveListeningManager::new(app_handle, transcription_manager.clone())
-            .expect("Failed to initialize active listening manager"),
-    );
-    let ask_ai_manager = Arc::new(
-        AskAiManager::new(app_handle, transcription_manager.clone())
-            .expect("Failed to initialize ask ai manager"),
-    );
-    let ask_ai_history_manager = Arc::new(
-        AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
-    );
-
-    // Initialize RAG manager with Ollama client
-    let settings = settings::get_settings(app_handle);
-    let ollama_base_url = settings.active_listening.ollama_base_url.clone();
-    let rag_db_path = app_handle
-        .path()
-        .app_data_dir()
-        .expect("Failed to get app data dir")
-        .join("rag.db");
-    let ollama_client = Arc::new(
-        ollama_client::OllamaClient::new(&ollama_base_url)
-            .expect("Failed to initialize Ollama client for RAG"),
-    );
-    let rag_manager = Arc::new(
-        RagManager::new(rag_db_path, ollama_client.clone()).expect("Failed to initialize RAG manager"),
-    );
-
-    // Initialize the Suggestion Engine
-    let suggestion_engine = SuggestionEngine::new(
-        app_handle,
-        Some(rag_manager.clone()),
-        ollama_client.clone(),
-        settings.suggestions.clone(),
-    );
-
-    // Initialize Batch Processor
-    let mut batch_processor = BatchProcessor::new();
-    batch_processor.set_app_handle(app_handle.clone());
-
-    // Initialize Task Extractor
-    let mut task_extractor = TaskExtractor::new();
-    task_extractor.set_app_handle(app_handle.clone());
-
-    // Initialize Vocabulary Manager
-    let app_data_dir = app_handle
-        .path()
-        .app_data_dir()
-        .expect("Failed to get app data dir");
-    let vocabulary_manager =
-        VocabularyManager::new(&app_data_dir).expect("Failed to initialize vocabulary manager");
 
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
-    app_handle.manage(active_listening_manager.clone());
-    app_handle.manage(ask_ai_manager.clone());
-    app_handle.manage(ask_ai_history_manager.clone());
-    app_handle.manage(rag_manager.clone());
-    app_handle.manage(suggestion_engine);
-    app_handle.manage(tokio::sync::Mutex::new(batch_processor));
-    app_handle.manage(Mutex::new(task_extractor));
-    app_handle.manage(Mutex::new(vocabulary_manager));
 
-    // Initialize Sound Detector
-    let mut sound_detector = audio_toolkit::SoundDetector::new();
-    let sd_settings = settings::get_settings(app_handle);
-    sound_detector.update_settings(&sd_settings.sound_detection);
-    app_handle.manage(Mutex::new(sound_detector));
-
-    // Initialize the shortcuts
-    shortcut::init_shortcuts(app_handle);
+    // Note: Shortcuts are NOT initialized here.
+    // The frontend is responsible for calling the `initialize_shortcuts` command
+    // after permissions are confirmed (on macOS) or after onboarding completes.
+    // This matches the pattern used for Enigo initialization.
 
     #[cfg(unix)]
-    let signals = Signals::new(&[SIGUSR2]).unwrap();
-    // Set up SIGUSR2 signal handler for toggling transcription
+    let signals = Signals::new(&[SIGUSR1, SIGUSR2]).unwrap();
+    // Set up signal handlers for toggling transcription
     #[cfg(unix)]
     signal_handle::setup_signal_handler(app_handle.clone(), signals);
 
-    // Apply macOS Accessory policy if starting hidden
+    // Apply macOS Accessory policy if starting hidden and tray is available.
+    // If the tray icon is disabled, keep the dock icon so the user can reopen.
     #[cfg(target_os = "macos")]
     {
         let settings = settings::get_settings(app_handle);
-        if settings.general.start_hidden {
+        if settings.start_hidden && settings.show_tray_icon {
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
     }
@@ -250,9 +173,23 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             }
             "check_updates" => {
                 let settings = settings::get_settings(app);
-                if settings.general.update_checks_enabled {
+                if settings.update_checks_enabled {
                     show_main_window(app);
                     let _ = app.emit("check-for-updates", ());
+                }
+            }
+            "copy_last_transcript" => {
+                tray::copy_last_transcript(app);
+            }
+            "unload_model" => {
+                let transcription_manager = app.state::<Arc<TranscriptionManager>>();
+                if !transcription_manager.is_model_loaded() {
+                    log::warn!("No model is currently loaded.");
+                    return;
+                }
+                match transcription_manager.unload_model() {
+                    Ok(()) => log::info!("Model unloaded via tray."),
+                    Err(e) => log::error!("Failed to unload model via tray: {}", e),
                 }
             }
             "cancel" => {
@@ -260,81 +197,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
                 // Use centralized cancellation that handles all operations
                 cancel_current_operation(app);
-            }
-            "start_active_listening" => {
-                let al_manager = app.state::<Arc<ActiveListeningManager>>();
-                let audio_manager = app.state::<Arc<AudioRecordingManager>>();
-
-                // Check if session is already active
-                if al_manager.is_session_active() {
-                    log::warn!("Active listening session already in progress, ignoring start request");
-                    return;
-                }
-
-                // Start session
-                match al_manager.start_session(None) {
-                    Ok(session_id) => {
-                        log::info!("Started active listening session from tray: {}", session_id);
-
-                        // Create callback to forward audio samples
-                        let al_manager_clone = al_manager.inner().clone();
-                        let callback = std::sync::Arc::new(move |samples: &[f32]| {
-                            al_manager_clone.push_audio_samples(samples);
-                        });
-
-                        // Start audio
-                        if let Err(e) = audio_manager.start_active_listening(callback) {
-                            log::error!("Failed to start active listening audio: {}", e);
-                            let _ = al_manager.stop_session();
-                        } else {
-                            // Update tray icon and show overlay
-                            utils::change_tray_icon(app, utils::TrayIconState::ActiveListening);
-                            utils::show_active_listening_overlay(app);
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("Failed to start active listening session: {}", e);
-                    }
-                }
-            }
-            "stop_active_listening" => {
-                let al_manager = app.state::<Arc<ActiveListeningManager>>();
-                let audio_manager = app.state::<Arc<AudioRecordingManager>>();
-
-                // Check if session is active before stopping
-                if !al_manager.is_session_active() {
-                    log::debug!("No active listening session to stop");
-                    return;
-                }
-
-                // Flush remaining audio
-                al_manager.flush_segment();
-
-                // Stop audio
-                if let Err(e) = audio_manager.stop_active_listening() {
-                    log::error!("Failed to stop active listening audio: {}", e);
-                }
-
-                // Stop session
-                match al_manager.stop_session() {
-                    Ok(Some(session)) => {
-                        log::info!(
-                            "Stopped active listening session from tray: {} with {} insights",
-                            session.id,
-                            session.insights.len()
-                        );
-                    }
-                    Ok(None) => {
-                        log::debug!("No active session was running");
-                    }
-                    Err(e) => {
-                        log::error!("Error stopping active listening session: {}", e);
-                    }
-                }
-
-                // Update tray icon and hide overlay
-                utils::change_tray_icon(app, utils::TrayIconState::Idle);
-                utils::hide_recording_overlay(app);
             }
             "quit" => {
                 app.exit(0);
@@ -348,11 +210,23 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     // Initialize tray menu with idle state
     utils::update_tray_menu(app_handle, &utils::TrayIconState::Idle, None);
 
+    // Apply show_tray_icon setting
+    let settings = settings::get_settings(app_handle);
+    if !settings.show_tray_icon {
+        tray::set_tray_visibility(app_handle, false);
+    }
+
+    // Refresh tray menu when model state changes
+    let app_handle_for_listener = app_handle.clone();
+    app_handle.listen("model-state-changed", move |_| {
+        tray::update_tray_menu(&app_handle_for_listener, &tray::TrayIconState::Idle, None);
+    });
+
     // Get the autostart manager and configure based on user setting
     let autostart_manager = app_handle.autolaunch();
     let settings = settings::get_settings(&app_handle);
 
-    if settings.general.autostart_enabled {
+    if settings.autostart_enabled {
         // Enable autostart if user has opted in
         let _ = autostart_manager.enable();
     } else {
@@ -368,7 +242,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 #[specta::specta]
 fn trigger_update_check(app: AppHandle) -> Result<(), String> {
     let settings = settings::get_settings(&app);
-    if !settings.general.update_checks_enabled {
+    if !settings.update_checks_enabled {
         return Ok(());
     }
     app.emit("check-for-updates", ())
@@ -377,7 +251,7 @@ fn trigger_update_check(app: AppHandle) -> Result<(), String> {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run(cli_args: CliArgs) {
     // Parse console logging directives from RUST_LOG, falling back to info-level logging
     // when the variable is unset
     let console_filter = build_console_filter();
@@ -397,8 +271,14 @@ pub fn run() {
         shortcut::change_debug_mode_setting,
         shortcut::change_word_correction_threshold_setting,
         shortcut::change_paste_method_setting,
+        shortcut::get_available_typing_tools,
+        shortcut::change_typing_tool_setting,
+        shortcut::change_external_script_path_setting,
         shortcut::change_clipboard_handling_setting,
+        shortcut::change_auto_submit_setting,
+        shortcut::change_auto_submit_key_setting,
         shortcut::change_post_process_enabled_setting,
+        shortcut::change_experimental_enabled_setting,
         shortcut::change_post_process_base_url_setting,
         shortcut::change_post_process_api_key_setting,
         shortcut::change_post_process_model_setting,
@@ -415,7 +295,11 @@ pub fn run() {
         shortcut::change_append_trailing_space_setting,
         shortcut::change_app_language_setting,
         shortcut::change_update_checks_setting,
-        shortcut::change_private_overlay_setting,
+        shortcut::change_keyboard_implementation_setting,
+        shortcut::get_keyboard_implementation,
+        shortcut::change_show_tray_icon_setting,
+        shortcut::handy_keys::start_handy_keys_recording,
+        shortcut::handy_keys::stop_handy_keys_recording,
         trigger_update_check,
         commands::cancel_operation,
         commands::get_app_dir_path,
@@ -428,6 +312,7 @@ pub fn run() {
         commands::open_app_data_dir,
         commands::check_apple_intelligence_available,
         commands::initialize_enigo,
+        commands::initialize_shortcuts,
         commands::models::get_available_models,
         commands::models::get_model_info,
         commands::models::download_model,
@@ -439,7 +324,6 @@ pub fn run() {
         commands::models::is_model_loading,
         commands::models::has_any_models_available,
         commands::models::has_any_models_or_downloads,
-        commands::models::get_recommended_first_model,
         commands::audio::update_microphone_mode,
         commands::audio::get_microphone_mode,
         commands::audio::get_available_microphones,
@@ -462,102 +346,6 @@ pub fn run() {
         commands::history::delete_history_entry,
         commands::history::update_history_limit,
         commands::history::update_recording_retention_period,
-        commands::active_listening::start_active_listening_session,
-        commands::active_listening::stop_active_listening_session,
-        commands::active_listening::get_active_listening_state,
-        commands::active_listening::get_active_listening_session,
-        commands::active_listening::check_ollama_connection,
-        commands::active_listening::fetch_ollama_models,
-        commands::active_listening::change_active_listening_enabled_setting,
-        commands::active_listening::change_active_listening_segment_duration_setting,
-        commands::active_listening::change_ollama_base_url_setting,
-        commands::active_listening::change_ollama_model_setting,
-        commands::active_listening::change_active_listening_context_window_setting,
-        commands::active_listening::change_audio_source_type_setting,
-        commands::active_listening::change_audio_mix_ratio_setting,
-        commands::active_listening::get_audio_source_type,
-        commands::active_listening::get_audio_mix_ratio,
-        commands::active_listening::get_loopback_support_level,
-        commands::active_listening::is_loopback_supported,
-        commands::active_listening::list_loopback_devices,
-        commands::active_listening::add_active_listening_prompt,
-        commands::active_listening::update_active_listening_prompt,
-        commands::active_listening::delete_active_listening_prompt,
-        commands::active_listening::set_active_listening_selected_prompt,
-        commands::active_listening::generate_meeting_summary,
-        commands::active_listening::export_meeting_summary,
-        commands::ask_ai::get_ask_ai_state,
-        commands::ask_ai::is_ask_ai_active,
-        commands::ask_ai::get_ask_ai_question,
-        commands::ask_ai::get_ask_ai_response,
-        commands::ask_ai::get_ask_ai_conversation,
-        commands::ask_ai::can_start_ask_ai_recording,
-        commands::ask_ai::cancel_ask_ai_session,
-        commands::ask_ai::reset_ask_ai_session,
-        commands::ask_ai::dismiss_ask_ai_session,
-        commands::ask_ai::start_new_ask_ai_conversation,
-        commands::ask_ai::change_ask_ai_enabled_setting,
-        commands::ask_ai::change_ask_ai_ollama_base_url_setting,
-        commands::ask_ai::change_ask_ai_ollama_model_setting,
-        commands::ask_ai::change_ask_ai_system_prompt_setting,
-        commands::ask_ai::get_ask_ai_settings,
-        commands::ask_ai::save_ask_ai_window_bounds,
-        commands::ask_ai::get_ask_ai_window_bounds,
-        commands::ask_ai::save_ask_ai_conversation_to_history,
-        commands::ask_ai::list_ask_ai_conversations,
-        commands::ask_ai::get_ask_ai_conversation_from_history,
-        commands::ask_ai::delete_ask_ai_conversation_from_history,
-        commands::rag::rag_add_document,
-        commands::rag::rag_search,
-        commands::rag::rag_delete_document,
-        commands::rag::rag_list_documents,
-        commands::rag::rag_get_stats,
-        commands::rag::rag_get_embedding_model,
-        commands::rag::rag_set_embedding_model,
-        commands::rag::rag_clear_all,
-        commands::rag::get_knowledge_base_settings,
-        commands::rag::change_knowledge_base_enabled_setting,
-        commands::rag::change_auto_index_transcriptions_setting,
-        commands::rag::change_kb_embedding_model_setting,
-        commands::rag::change_kb_top_k_setting,
-        commands::rag::change_kb_similarity_threshold_setting,
-        commands::rag::change_kb_use_in_active_listening_setting,
-        commands::suggestions::get_suggestions_settings,
-        commands::suggestions::update_suggestions_settings,
-        commands::suggestions::change_suggestions_enabled_setting,
-        commands::suggestions::get_quick_responses,
-        commands::suggestions::get_quick_responses_by_category,
-        commands::suggestions::add_quick_response,
-        commands::suggestions::update_quick_response,
-        commands::suggestions::delete_quick_response,
-        commands::suggestions::toggle_quick_response,
-        commands::suggestions::change_rag_suggestions_enabled,
-        commands::suggestions::change_llm_suggestions_enabled,
-        commands::suggestions::change_max_suggestions,
-        commands::suggestions::change_min_confidence,
-        commands::suggestions::change_auto_dismiss_on_copy,
-        commands::suggestions::change_display_duration,
-        commands::batch_processing::add_to_batch_queue,
-        commands::batch_processing::start_batch_processing,
-        commands::batch_processing::cancel_batch_processing,
-        commands::batch_processing::get_batch_status,
-        commands::batch_processing::remove_batch_item,
-        commands::batch_processing::clear_completed_batch_items,
-        commands::tasks::extract_action_items,
-        commands::tasks::get_action_items,
-        commands::tasks::toggle_action_item,
-        commands::tasks::delete_action_item,
-        commands::tasks::export_action_items,
-        commands::vocabulary::get_vocabulary,
-        commands::vocabulary::add_vocabulary_term,
-        commands::vocabulary::remove_vocabulary_term,
-        commands::vocabulary::import_vocabulary,
-        commands::vocabulary::export_vocabulary,
-        commands::sound_detection::get_sound_detection_settings,
-        commands::sound_detection::change_sound_detection_enabled,
-        commands::sound_detection::change_sound_detection_threshold,
-        commands::sound_detection::change_sound_detection_categories,
-        commands::sound_detection::change_sound_detection_notification,
         helpers::clamshell::is_laptop,
     ]);
 
@@ -569,29 +357,32 @@ pub fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    let mut builder = tauri::Builder::default().plugin(
-        LogBuilder::new()
-            .level(log::LevelFilter::Trace) // Set to most verbose level globally
-            .max_file_size(500_000)
-            .rotation_strategy(RotationStrategy::KeepOne)
-            .clear_targets()
-            .targets([
-                // Console output respects RUST_LOG environment variable
-                Target::new(TargetKind::Stdout).filter({
-                    let console_filter = console_filter.clone();
-                    move |metadata| console_filter.enabled(metadata)
-                }),
-                // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
-                Target::new(TargetKind::LogDir {
-                    file_name: Some("dictum".into()),
-                })
-                .filter(|metadata| {
-                    let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
-                    metadata.level() <= level_filter_from_u8(file_level)
-                }),
-            ])
-            .build(),
-    );
+    let mut builder = tauri::Builder::default()
+        .device_event_filter(tauri::DeviceEventFilter::Always)
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            LogBuilder::new()
+                .level(log::LevelFilter::Trace) // Set to most verbose level globally
+                .max_file_size(500_000)
+                .rotation_strategy(RotationStrategy::KeepOne)
+                .clear_targets()
+                .targets([
+                    // Console output respects RUST_LOG environment variable
+                    Target::new(TargetKind::Stdout).filter({
+                        let console_filter = console_filter.clone();
+                        move |metadata| console_filter.enabled(metadata)
+                    }),
+                    // File logs respect the user's settings (stored in FILE_LOG_LEVEL atomic)
+                    Target::new(TargetKind::LogDir {
+                        file_name: Some("handy".into()),
+                    })
+                    .filter(|metadata| {
+                        let file_level = FILE_LOG_LEVEL.load(Ordering::Relaxed);
+                        metadata.level() <= level_filter_from_u8(file_level)
+                    }),
+                ])
+                .build(),
+        );
 
     #[cfg(target_os = "macos")]
     {
@@ -599,8 +390,16 @@ pub fn run() {
     }
 
     builder
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            show_main_window(app);
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if args.iter().any(|a| a == "--toggle-transcription") {
+                signal_handle::send_transcription_input(app, "transcribe", "CLI");
+            } else if args.iter().any(|a| a == "--toggle-post-process") {
+                signal_handle::send_transcription_input(app, "transcribe_with_post_process", "CLI");
+            } else if args.iter().any(|a| a == "--cancel") {
+                crate::utils::cancel_current_operation(app);
+            } else {
+                show_main_window(app);
+            }
         }))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
@@ -615,19 +414,38 @@ pub fn run() {
             MacosLauncher::LaunchAgent,
             Some(vec![]),
         ))
-        .manage(Mutex::new(ShortcutToggleStates::default()))
+        .manage(cli_args.clone())
         .setup(move |app| {
-            let settings = get_settings(&app.handle());
+            let mut settings = get_settings(&app.handle());
+
+            // CLI --debug flag overrides debug_mode and log level (runtime-only, not persisted)
+            if cli_args.debug {
+                settings.debug_mode = true;
+                settings.log_level = settings::LogLevel::Trace;
+            }
+
             let tauri_log_level: tauri_plugin_log::LogLevel = settings.log_level.into();
             let file_log_level: log::Level = tauri_log_level.into();
             // Store the file log level in the atomic for the filter to use
             FILE_LOG_LEVEL.store(file_log_level.to_level_filter() as u8, Ordering::Relaxed);
             let app_handle = app.handle().clone();
+            app.manage(TranscriptionCoordinator::new(app_handle.clone()));
 
             initialize_core_logic(&app_handle);
 
+            // Hide tray icon if --no-tray was passed
+            if cli_args.no_tray {
+                tray::set_tray_visibility(&app_handle, false);
+            }
+
             // Show main window only if not starting hidden
-            if !settings.general.start_hidden {
+            // CLI --start-hidden flag overrides the setting
+            let should_hide = settings.start_hidden || cli_args.start_hidden;
+
+            // If start_hidden but tray is disabled, we must show the window
+            // anyway. Without a tray icon, the dock is the only way back in.
+            let tray_available = settings.show_tray_icon && !cli_args.no_tray;
+            if !should_hide || !tray_available {
                 if let Some(main_window) = app_handle.get_webview_window("main") {
                     main_window.show().unwrap();
                     main_window.set_focus().unwrap();
@@ -640,14 +458,23 @@ pub fn run() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
                 let _res = window.hide();
+
+                let settings = get_settings(&window.app_handle());
+                let tray_visible =
+                    settings.show_tray_icon && !window.app_handle().state::<CliArgs>().no_tray;
+
                 #[cfg(target_os = "macos")]
                 {
-                    let res = window
-                        .app_handle()
-                        .set_activation_policy(tauri::ActivationPolicy::Accessory);
-                    if let Err(e) = res {
-                        log::error!("Failed to set activation policy: {}", e);
+                    if tray_visible {
+                        // Tray is available: hide the dock icon, app lives in the tray
+                        let res = window
+                            .app_handle()
+                            .set_activation_policy(tauri::ActivationPolicy::Accessory);
+                        if let Err(e) = res {
+                            log::error!("Failed to set activation policy: {}", e);
+                        }
                     }
+                    // No tray: keep the dock icon visible so the user can reopen
                 }
             }
             tauri::WindowEvent::ThemeChanged(theme) => {
@@ -658,6 +485,13 @@ pub fn run() {
             _ => {}
         })
         .invoke_handler(specta_builder.invoke_handler())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = &event {
+                show_main_window(app);
+            }
+            let _ = (app, event); // suppress unused warnings on non-macOS
+        });
 }

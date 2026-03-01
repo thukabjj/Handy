@@ -34,4 +34,6 @@ recording_*
 playwright-report/
 test-results/
 blob-report/
-.gemini-summary.md
+
+.direnv
+.envrc

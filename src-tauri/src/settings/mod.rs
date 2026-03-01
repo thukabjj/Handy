@@ -6,21 +6,6 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 
-pub mod active_listening;
-pub mod ask_ai;
-pub mod general;
-pub mod knowledge_base;
-pub mod sound_detection;
-pub mod suggestions;
-
-pub use active_listening::{
-    ActiveListeningPrompt, ActiveListeningSettings, AudioSourceType, PromptCategory,
-};
-pub use ask_ai::AskAiSettings;
-pub use knowledge_base::KnowledgeBaseSettings;
-pub use sound_detection::{SoundCategory, SoundDetectionSettings};
-pub use suggestions::{QuickResponse, SuggestionsSettings, WarningSeverity};
-
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
 pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
 
@@ -116,6 +101,8 @@ pub struct PostProcessProvider {
     pub allow_base_url_edit: bool,
     #[serde(default)]
     pub models_endpoint: Option<String>,
+    #[serde(default)]
+    pub supports_structured_output: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -147,6 +134,7 @@ pub enum PasteMethod {
     None,
     ShiftInsert,
     CtrlShiftV,
+    ExternalScript,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -158,12 +146,38 @@ pub enum ClipboardHandling {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
+pub enum AutoSubmitKey {
+    Enter,
+    CtrlEnter,
+    CmdEnter,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum RecordingRetentionPeriod {
     Never,
     PreserveLimit,
     Days3,
     Weeks2,
     Months3,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum KeyboardImplementation {
+    Tauri,
+    HandyKeys,
+}
+
+impl Default for KeyboardImplementation {
+    fn default() -> Self {
+        // Default to HandyKeys only on macOS where it's well-tested.
+        // Windows and Linux use Tauri by default (handy-keys not sufficiently tested yet).
+        #[cfg(target_os = "macos")]
+        return KeyboardImplementation::HandyKeys;
+        #[cfg(not(target_os = "macos"))]
+        return KeyboardImplementation::Tauri;
+    }
 }
 
 impl Default for ModelUnloadTimeout {
@@ -185,6 +199,12 @@ impl Default for PasteMethod {
 impl Default for ClipboardHandling {
     fn default() -> Self {
         ClipboardHandling::DontModify
+    }
+}
+
+impl Default for AutoSubmitKey {
+    fn default() -> Self {
+        AutoSubmitKey::Enter
     }
 }
 
@@ -238,17 +258,39 @@ impl SoundTheme {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum TypingTool {
+    Auto,
+    Wtype,
+    Kwtype,
+    Dotool,
+    Ydotool,
+    Xdotool,
+}
+
+impl Default for TypingTool {
+    fn default() -> Self {
+        TypingTool::Auto
+    }
+}
+
 /* still handy for composing the initial JSON in the store ------------- */
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AppSettings {
-    #[serde(flatten)]
-    pub general: general::GeneralSettings,
     pub bindings: HashMap<String, ShortcutBinding>,
+    pub push_to_talk: bool,
     pub audio_feedback: bool,
     #[serde(default = "default_audio_feedback_volume")]
     pub audio_feedback_volume: f32,
     #[serde(default = "default_sound_theme")]
     pub sound_theme: SoundTheme,
+    #[serde(default = "default_start_hidden")]
+    pub start_hidden: bool,
+    #[serde(default = "default_autostart_enabled")]
+    pub autostart_enabled: bool,
+    #[serde(default = "default_update_checks_enabled")]
+    pub update_checks_enabled: bool,
     #[serde(default = "default_model")]
     pub selected_model: String,
     #[serde(default = "default_always_on_microphone")]
@@ -281,10 +323,12 @@ pub struct AppSettings {
     pub recording_retention_period: RecordingRetentionPeriod,
     #[serde(default)]
     pub paste_method: PasteMethod,
-    #[serde(default = "default_paste_delay_ms")]
-    pub paste_delay_ms: u64,
     #[serde(default)]
     pub clipboard_handling: ClipboardHandling,
+    #[serde(default = "default_auto_submit")]
+    pub auto_submit: bool,
+    #[serde(default)]
+    pub auto_submit_key: AutoSubmitKey,
     #[serde(default = "default_post_process_enabled")]
     pub post_process_enabled: bool,
     #[serde(default = "default_post_process_provider_id")]
@@ -300,15 +344,22 @@ pub struct AppSettings {
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
     #[serde(default)]
-    pub active_listening: ActiveListeningSettings,
+    pub mute_while_recording: bool,
     #[serde(default)]
-    pub ask_ai: AskAiSettings,
+    pub append_trailing_space: bool,
+    #[serde(default = "default_app_language")]
+    pub app_language: String,
     #[serde(default)]
-    pub knowledge_base: KnowledgeBaseSettings,
+    pub experimental_enabled: bool,
     #[serde(default)]
-    pub suggestions: SuggestionsSettings,
-    #[serde(default)]
-    pub sound_detection: SoundDetectionSettings,
+    pub keyboard_implementation: KeyboardImplementation,
+    #[serde(default = "default_show_tray_icon")]
+    pub show_tray_icon: bool,
+    #[serde(default = "default_paste_delay_ms")]
+    pub paste_delay_ms: u64,
+    #[serde(default = "default_typing_tool")]
+    pub typing_tool: TypingTool,
+    pub external_script_path: Option<String>,
 }
 
 fn default_model() -> String {
@@ -321,6 +372,18 @@ fn default_always_on_microphone() -> bool {
 
 fn default_translate_to_english() -> bool {
     false
+}
+
+fn default_start_hidden() -> bool {
+    false
+}
+
+fn default_autostart_enabled() -> bool {
+    false
+}
+
+fn default_update_checks_enabled() -> bool {
+    true
 }
 
 fn default_selected_language() -> String {
@@ -346,6 +409,14 @@ fn default_word_correction_threshold() -> f64 {
     0.18
 }
 
+fn default_paste_delay_ms() -> u64 {
+    60
+}
+
+fn default_auto_submit() -> bool {
+    false
+}
+
 fn default_history_limit() -> usize {
     5
 }
@@ -362,12 +433,18 @@ fn default_sound_theme() -> SoundTheme {
     SoundTheme::Marimba
 }
 
-fn default_paste_delay_ms() -> u64 {
-    50
-}
-
 fn default_post_process_enabled() -> bool {
     false
+}
+
+fn default_app_language() -> String {
+    tauri_plugin_os::locale()
+        .map(|l| l.replace('_', "-"))
+        .unwrap_or_else(|| "en".to_string())
+}
+
+fn default_show_tray_icon() -> bool {
+    true
 }
 
 fn default_post_process_provider_id() -> String {
@@ -382,6 +459,15 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "https://api.openai.com/v1".to_string(),
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
+        },
+        PostProcessProvider {
+            id: "zai".to_string(),
+            label: "Z.AI".to_string(),
+            base_url: "https://api.z.ai/api/paas/v4".to_string(),
+            allow_base_url_edit: false,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
         },
         PostProcessProvider {
             id: "openrouter".to_string(),
@@ -389,6 +475,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "https://openrouter.ai/api/v1".to_string(),
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
         },
         PostProcessProvider {
             id: "anthropic".to_string(),
@@ -396,6 +483,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "https://api.anthropic.com/v1".to_string(),
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
+            supports_structured_output: false,
         },
         PostProcessProvider {
             id: "groq".to_string(),
@@ -403,6 +491,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "https://api.groq.com/openai/v1".to_string(),
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
+            supports_structured_output: false,
         },
         PostProcessProvider {
             id: "cerebras".to_string(),
@@ -410,6 +499,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "https://api.cerebras.ai/v1".to_string(),
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
         },
     ];
 
@@ -425,6 +515,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             base_url: "apple-intelligence://local".to_string(),
             allow_base_url_edit: false,
             models_endpoint: None,
+            supports_structured_output: true,
         });
     }
 
@@ -435,6 +526,7 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         base_url: "http://localhost:11434/v1".to_string(),
         allow_base_url_edit: true,
         models_endpoint: Some("/models".to_string()),
+        supports_structured_output: false,
     });
 
     providers
@@ -474,16 +566,37 @@ fn default_post_process_prompts() -> Vec<LLMPrompt> {
     }]
 }
 
+fn default_typing_tool() -> TypingTool {
+    TypingTool::Auto
+}
+
 fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     let mut changed = false;
     for provider in default_post_process_providers() {
-        if settings
+        // Use match to do a single lookup - either sync existing or add new
+        match settings
             .post_process_providers
-            .iter()
-            .all(|existing| existing.id != provider.id)
+            .iter_mut()
+            .find(|p| p.id == provider.id)
         {
-            settings.post_process_providers.push(provider.clone());
-            changed = true;
+            Some(existing) => {
+                // Sync supports_structured_output field for existing providers (migration)
+                if existing.supports_structured_output != provider.supports_structured_output {
+                    debug!(
+                        "Updating supports_structured_output for provider '{}' from {} to {}",
+                        provider.id,
+                        existing.supports_structured_output,
+                        provider.supports_structured_output
+                    );
+                    existing.supports_structured_output = provider.supports_structured_output;
+                    changed = true;
+                }
+            }
+            None => {
+                // Provider doesn't exist, add it
+                settings.post_process_providers.push(provider.clone());
+                changed = true;
+            }
         }
 
         if !settings.post_process_api_keys.contains_key(&provider.id) {
@@ -525,24 +638,6 @@ pub fn get_default_settings() -> AppSettings {
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     let default_shortcut = "alt+space";
 
-    // Active listening shortcut
-    #[cfg(target_os = "macos")]
-    let active_listening_shortcut = "cmd+shift+l";
-    #[cfg(not(target_os = "macos"))]
-    let active_listening_shortcut = "ctrl+shift+l";
-
-    // Ask AI shortcut
-    #[cfg(target_os = "macos")]
-    let ask_ai_shortcut = "cmd+shift+a";
-    #[cfg(not(target_os = "macos"))]
-    let ask_ai_shortcut = "ctrl+shift+a";
-
-    // Toggle overlay visibility shortcut
-    #[cfg(target_os = "macos")]
-    let toggle_overlay_shortcut = "cmd+shift+h";
-    #[cfg(not(target_os = "macos"))]
-    let toggle_overlay_shortcut = "ctrl+shift+h";
-
     let mut bindings = HashMap::new();
     bindings.insert(
         "transcribe".to_string(),
@@ -552,6 +647,26 @@ pub fn get_default_settings() -> AppSettings {
             description: "Converts your speech into text.".to_string(),
             default_binding: default_shortcut.to_string(),
             current_binding: default_shortcut.to_string(),
+        },
+    );
+    #[cfg(target_os = "windows")]
+    let default_post_process_shortcut = "ctrl+shift+space";
+    #[cfg(target_os = "macos")]
+    let default_post_process_shortcut = "option+shift+space";
+    #[cfg(target_os = "linux")]
+    let default_post_process_shortcut = "ctrl+shift+space";
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    let default_post_process_shortcut = "alt+shift+space";
+
+    bindings.insert(
+        "transcribe_with_post_process".to_string(),
+        ShortcutBinding {
+            id: "transcribe_with_post_process".to_string(),
+            name: "Transcribe with Post-Processing".to_string(),
+            description: "Converts your speech into text and applies AI post-processing."
+                .to_string(),
+            default_binding: default_post_process_shortcut.to_string(),
+            current_binding: default_post_process_shortcut.to_string(),
         },
     );
     bindings.insert(
@@ -564,45 +679,16 @@ pub fn get_default_settings() -> AppSettings {
             current_binding: "escape".to_string(),
         },
     );
-    bindings.insert(
-        "active_listening".to_string(),
-        ShortcutBinding {
-            id: "active_listening".to_string(),
-            name: "Active Listening".to_string(),
-            description:
-                "Toggle active listening mode for continuous transcription with AI insights."
-                    .to_string(),
-            default_binding: active_listening_shortcut.to_string(),
-            current_binding: active_listening_shortcut.to_string(),
-        },
-    );
-    bindings.insert(
-        "ask_ai".to_string(),
-        ShortcutBinding {
-            id: "ask_ai".to_string(),
-            name: "Ask AI".to_string(),
-            description: "Record a voice question and get an AI response using Ollama.".to_string(),
-            default_binding: ask_ai_shortcut.to_string(),
-            current_binding: ask_ai_shortcut.to_string(),
-        },
-    );
-    bindings.insert(
-        "toggle_overlay".to_string(),
-        ShortcutBinding {
-            id: "toggle_overlay".to_string(),
-            name: "Toggle Overlay".to_string(),
-            description: "Temporarily hide or show the recording overlay.".to_string(),
-            default_binding: toggle_overlay_shortcut.to_string(),
-            current_binding: toggle_overlay_shortcut.to_string(),
-        },
-    );
 
     AppSettings {
-        general: general::GeneralSettings::default(),
         bindings,
+        push_to_talk: true,
         audio_feedback: false,
         audio_feedback_volume: default_audio_feedback_volume(),
         sound_theme: default_sound_theme(),
+        start_hidden: default_start_hidden(),
+        autostart_enabled: default_autostart_enabled(),
+        update_checks_enabled: default_update_checks_enabled(),
         selected_model: "".to_string(),
         always_on_microphone: false,
         selected_microphone: None,
@@ -619,8 +705,9 @@ pub fn get_default_settings() -> AppSettings {
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
         paste_method: PasteMethod::default(),
-        paste_delay_ms: default_paste_delay_ms(),
         clipboard_handling: ClipboardHandling::default(),
+        auto_submit: default_auto_submit(),
+        auto_submit_key: AutoSubmitKey::default(),
         post_process_enabled: default_post_process_enabled(),
         post_process_provider_id: default_post_process_provider_id(),
         post_process_providers: default_post_process_providers(),
@@ -628,11 +715,15 @@ pub fn get_default_settings() -> AppSettings {
         post_process_models: default_post_process_models(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
-        active_listening: ActiveListeningSettings::default(),
-        ask_ai: AskAiSettings::default(),
-        knowledge_base: KnowledgeBaseSettings::default(),
-        suggestions: SuggestionsSettings::default(),
-        sound_detection: SoundDetectionSettings::default(),
+        mute_while_recording: false,
+        append_trailing_space: false,
+        app_language: default_app_language(),
+        experimental_enabled: false,
+        keyboard_implementation: KeyboardImplementation::default(),
+        show_tray_icon: default_show_tray_icon(),
+        paste_delay_ms: default_paste_delay_ms(),
+        typing_tool: default_typing_tool(),
+        external_script_path: None,
     }
 }
 
@@ -703,12 +794,7 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    let mut post_changed = ensure_post_process_defaults(&mut settings);
-    post_changed |=
-        active_listening::ensure_active_listening_defaults(&mut settings.active_listening);
-    post_changed |= suggestions::ensure_suggestions_defaults(&mut settings.suggestions);
-
-    if post_changed {
+    if ensure_post_process_defaults(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -732,11 +818,7 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    let mut changed = ensure_post_process_defaults(&mut settings);
-    changed |= active_listening::ensure_active_listening_defaults(&mut settings.active_listening);
-    changed |= suggestions::ensure_suggestions_defaults(&mut settings.suggestions);
-
-    if changed {
+    if ensure_post_process_defaults(&mut settings) {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -780,404 +862,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_default_settings_has_required_bindings() {
+    fn default_settings_disable_auto_submit() {
         let settings = get_default_settings();
-
-        assert!(
-            settings.bindings.contains_key("transcribe"),
-            "transcribe binding should exist"
-        );
-        assert!(
-            settings.bindings.contains_key("cancel"),
-            "cancel binding should exist"
-        );
-        assert!(
-            settings.bindings.contains_key("active_listening"),
-            "active_listening binding should exist"
-        );
-        assert!(
-            settings.bindings.contains_key("ask_ai"),
-            "ask_ai binding should exist"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_binding_structure() {
-        let settings = get_default_settings();
-
-        let transcribe_binding = settings
-            .bindings
-            .get("transcribe")
-            .expect("transcribe binding should exist");
-
-        assert_eq!(transcribe_binding.id, "transcribe");
-        assert!(!transcribe_binding.name.is_empty());
-        assert!(!transcribe_binding.description.is_empty());
-        assert!(!transcribe_binding.default_binding.is_empty());
-        assert_eq!(
-            transcribe_binding.default_binding, transcribe_binding.current_binding,
-            "default and current binding should be the same initially"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_audio_feedback() {
-        let settings = get_default_settings();
-
-        assert!(!settings.audio_feedback, "audio feedback should be off by default");
-        assert_eq!(
-            settings.audio_feedback_volume, 1.0,
-            "audio feedback volume should default to 1.0"
-        );
-        assert_eq!(
-            settings.sound_theme,
-            SoundTheme::Marimba,
-            "default sound theme should be Marimba"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_transcription_options() {
-        let settings = get_default_settings();
-
-        assert!(
-            !settings.translate_to_english,
-            "translate_to_english should be off by default"
-        );
-        assert_eq!(
-            settings.selected_language, "auto",
-            "selected_language should default to 'auto'"
-        );
-        assert!(
-            settings.custom_words.is_empty(),
-            "custom_words should be empty by default"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_model_options() {
-        let settings = get_default_settings();
-
-        assert!(
-            settings.selected_model.is_empty(),
-            "selected_model should be empty by default"
-        );
-        assert_eq!(
-            settings.model_unload_timeout,
-            ModelUnloadTimeout::Never,
-            "model_unload_timeout should default to Never"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_microphone_options() {
-        let settings = get_default_settings();
-
-        assert!(
-            !settings.always_on_microphone,
-            "always_on_microphone should be off by default"
-        );
-        assert!(
-            settings.selected_microphone.is_none(),
-            "selected_microphone should be None by default"
-        );
-        assert!(
-            settings.clamshell_microphone.is_none(),
-            "clamshell_microphone should be None by default"
-        );
-        assert!(
-            settings.selected_output_device.is_none(),
-            "selected_output_device should be None by default"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_debug_options() {
-        let settings = get_default_settings();
-
-        assert!(!settings.debug_mode, "debug_mode should be off by default");
-        assert_eq!(
-            settings.log_level,
-            LogLevel::Debug,
-            "log_level should default to Debug"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_history_options() {
-        let settings = get_default_settings();
-
-        assert_eq!(settings.history_limit, 5, "history_limit should default to 5");
-        assert_eq!(
-            settings.recording_retention_period,
-            RecordingRetentionPeriod::PreserveLimit,
-            "recording_retention_period should default to PreserveLimit"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_post_process_options() {
-        let settings = get_default_settings();
-
-        assert!(
-            !settings.post_process_enabled,
-            "post_process_enabled should be off by default"
-        );
-        assert_eq!(
-            settings.post_process_provider_id, "openai",
-            "default provider should be openai"
-        );
-        assert!(
-            !settings.post_process_providers.is_empty(),
-            "post_process_providers should not be empty"
-        );
-        assert!(
-            !settings.post_process_prompts.is_empty(),
-            "post_process_prompts should have at least one default prompt"
-        );
-    }
-
-    #[test]
-    fn test_default_settings_clipboard_options() {
-        let settings = get_default_settings();
-
-        assert_eq!(
-            settings.clipboard_handling,
-            ClipboardHandling::DontModify,
-            "clipboard_handling should default to DontModify"
-        );
-    }
-
-    #[test]
-    fn test_model_unload_timeout_to_minutes() {
-        assert_eq!(ModelUnloadTimeout::Never.to_minutes(), None);
-        assert_eq!(ModelUnloadTimeout::Immediately.to_minutes(), Some(0));
-        assert_eq!(ModelUnloadTimeout::Min2.to_minutes(), Some(2));
-        assert_eq!(ModelUnloadTimeout::Min5.to_minutes(), Some(5));
-        assert_eq!(ModelUnloadTimeout::Min10.to_minutes(), Some(10));
-        assert_eq!(ModelUnloadTimeout::Min15.to_minutes(), Some(15));
-        assert_eq!(ModelUnloadTimeout::Hour1.to_minutes(), Some(60));
-        assert_eq!(ModelUnloadTimeout::Sec5.to_minutes(), Some(0)); // Special debug case
-    }
-
-    #[test]
-    fn test_model_unload_timeout_to_seconds() {
-        assert_eq!(ModelUnloadTimeout::Never.to_seconds(), None);
-        assert_eq!(ModelUnloadTimeout::Immediately.to_seconds(), Some(0));
-        assert_eq!(ModelUnloadTimeout::Min2.to_seconds(), Some(120));
-        assert_eq!(ModelUnloadTimeout::Min5.to_seconds(), Some(300));
-        assert_eq!(ModelUnloadTimeout::Min10.to_seconds(), Some(600));
-        assert_eq!(ModelUnloadTimeout::Min15.to_seconds(), Some(900));
-        assert_eq!(ModelUnloadTimeout::Hour1.to_seconds(), Some(3600));
-        assert_eq!(ModelUnloadTimeout::Sec5.to_seconds(), Some(5)); // Special debug case
-    }
-
-    #[test]
-    fn test_sound_theme_paths() {
-        assert_eq!(SoundTheme::Marimba.to_start_path(), "resources/marimba_start.wav");
-        assert_eq!(SoundTheme::Marimba.to_stop_path(), "resources/marimba_stop.wav");
-        assert_eq!(SoundTheme::Pop.to_start_path(), "resources/pop_start.wav");
-        assert_eq!(SoundTheme::Pop.to_stop_path(), "resources/pop_stop.wav");
-        assert_eq!(SoundTheme::Custom.to_start_path(), "resources/custom_start.wav");
-        assert_eq!(SoundTheme::Custom.to_stop_path(), "resources/custom_stop.wav");
-    }
-
-    #[test]
-    fn test_app_settings_active_provider_lookup() {
-        let settings = get_default_settings();
-
-        let provider = settings.active_post_process_provider();
-        assert!(provider.is_some(), "should find the active provider");
-
-        let provider = provider.unwrap();
-        assert_eq!(provider.id, "openai");
-        assert_eq!(provider.label, "OpenAI");
-    }
-
-    #[test]
-    fn test_app_settings_provider_by_id() {
-        let settings = get_default_settings();
-
-        let openai = settings.post_process_provider("openai");
-        assert!(openai.is_some());
-        assert_eq!(openai.unwrap().label, "OpenAI");
-
-        let anthropic = settings.post_process_provider("anthropic");
-        assert!(anthropic.is_some());
-        assert_eq!(anthropic.unwrap().label, "Anthropic");
-
-        let nonexistent = settings.post_process_provider("nonexistent");
-        assert!(nonexistent.is_none());
-    }
-
-    #[test]
-    fn test_app_settings_provider_mut() {
-        let mut settings = get_default_settings();
-
-        if let Some(custom) = settings.post_process_provider_mut("custom") {
-            custom.base_url = "http://new-url.local:8080/v1".to_string();
-        }
-
-        let custom = settings.post_process_provider("custom").unwrap();
-        assert_eq!(custom.base_url, "http://new-url.local:8080/v1");
-    }
-
-    #[test]
-    fn test_default_post_process_providers_include_expected() {
-        let settings = get_default_settings();
-
-        let provider_ids: Vec<&str> = settings
-            .post_process_providers
-            .iter()
-            .map(|p| p.id.as_str())
-            .collect();
-
-        assert!(provider_ids.contains(&"openai"), "should include openai");
-        assert!(provider_ids.contains(&"anthropic"), "should include anthropic");
-        assert!(provider_ids.contains(&"groq"), "should include groq");
-        assert!(provider_ids.contains(&"openrouter"), "should include openrouter");
-        assert!(provider_ids.contains(&"custom"), "should include custom");
-    }
-
-    #[test]
-    fn test_custom_provider_allows_base_url_edit() {
-        let settings = get_default_settings();
-
-        let custom = settings.post_process_provider("custom");
-        assert!(custom.is_some());
-        assert!(
-            custom.unwrap().allow_base_url_edit,
-            "custom provider should allow base URL editing"
-        );
-
-        let openai = settings.post_process_provider("openai");
-        assert!(openai.is_some());
-        assert!(
-            !openai.unwrap().allow_base_url_edit,
-            "openai provider should not allow base URL editing"
-        );
-    }
-
-    #[test]
-    fn test_default_prompts_structure() {
-        let settings = get_default_settings();
-
-        assert!(!settings.post_process_prompts.is_empty());
-
-        let first_prompt = &settings.post_process_prompts[0];
-        assert!(!first_prompt.id.is_empty());
-        assert!(!first_prompt.name.is_empty());
-        assert!(!first_prompt.prompt.is_empty());
-        assert!(
-            first_prompt.prompt.contains("${output}"),
-            "default prompt should contain ${{output}} placeholder"
-        );
-    }
-
-    #[test]
-    fn test_settings_serialization_roundtrip() {
-        let settings = get_default_settings();
-
-        // Serialize to JSON
-        let json = serde_json::to_string(&settings).expect("should serialize");
-
-        // Deserialize back
-        let deserialized: AppSettings =
-            serde_json::from_str(&json).expect("should deserialize");
-
-        // Verify key fields match
-        assert_eq!(settings.audio_feedback, deserialized.audio_feedback);
-        assert_eq!(settings.debug_mode, deserialized.debug_mode);
-        assert_eq!(settings.history_limit, deserialized.history_limit);
-        assert_eq!(settings.bindings.len(), deserialized.bindings.len());
-    }
-
-    #[test]
-    fn test_log_level_serialization() {
-        // Test string format
-        let json = r#""debug""#;
-        let level: LogLevel = serde_json::from_str(json).expect("should parse string format");
-        assert_eq!(level, LogLevel::Debug);
-
-        // Test numeric format (legacy)
-        let json = "3";
-        let level: LogLevel = serde_json::from_str(json).expect("should parse numeric format");
-        assert_eq!(level, LogLevel::Info);
-    }
-
-    #[test]
-    fn test_general_settings_defaults() {
-        let settings = get_default_settings();
-
-        assert!(
-            settings.general.push_to_talk,
-            "push_to_talk should be true by default"
-        );
-        assert!(
-            !settings.general.start_hidden,
-            "start_hidden should be false by default"
-        );
-        assert!(
-            !settings.general.autostart_enabled,
-            "autostart_enabled should be false by default"
-        );
-        assert!(
-            settings.general.update_checks_enabled,
-            "update_checks_enabled should be true by default"
-        );
-    }
-
-    #[test]
-    fn test_active_listening_defaults() {
-        let settings = get_default_settings();
-
-        assert!(
-            !settings.active_listening.enabled,
-            "active_listening should be disabled by default"
-        );
-        assert!(
-            settings.active_listening.segment_duration_seconds > 0,
-            "segment_duration_seconds should be positive"
-        );
-        assert!(
-            !settings.active_listening.ollama_base_url.is_empty(),
-            "ollama_base_url should have a default"
-        );
-    }
-
-    #[test]
-    fn test_ask_ai_defaults() {
-        let settings = get_default_settings();
-
-        assert!(
-            settings.ask_ai.enabled,
-            "ask_ai should be enabled by default"
-        );
-    }
-
-    #[test]
-    fn test_suggestions_defaults() {
-        let settings = get_default_settings();
-
-        assert!(
-            !settings.suggestions.enabled,
-            "suggestions should be disabled by default"
-        );
-        assert!(
-            !settings.suggestions.quick_responses.is_empty(),
-            "quick_responses should have default entries"
-        );
-        assert!(
-            settings.suggestions.rag_suggestions_enabled,
-            "rag_suggestions_enabled should be true by default"
-        );
-        assert!(
-            settings.suggestions.llm_suggestions_enabled,
-            "llm_suggestions_enabled should be true by default"
-        );
-        assert_eq!(
-            settings.suggestions.max_suggestions, 3,
-            "max_suggestions should default to 3"
-        );
+        assert!(!settings.auto_submit);
+        assert_eq!(settings.auto_submit_key, AutoSubmitKey::Enter);
     }
 }
