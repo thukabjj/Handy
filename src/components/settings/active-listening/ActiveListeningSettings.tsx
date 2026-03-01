@@ -15,7 +15,7 @@ import { Button } from "../../ui/Button";
 import { ResetButton } from "../../ui/ResetButton";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
-import { ShortcutInput as DictumShortcut } from "../ShortcutInput";
+import { ShortcutInput as HandyShortcut } from "../ShortcutInput";
 import { SessionViewer } from "./SessionViewer";
 import { AudioSourceSettings } from "./AudioSourceSettings";
 
@@ -587,7 +587,7 @@ export const ActiveListeningSettings: React.FC = () => {
           grouped={true}
         />
         {enabled && (
-          <DictumShortcut shortcutId="active_listening" grouped={true} />
+          <HandyShortcut shortcutId="active_listening" grouped={true} />
         )}
       </SettingsGroup>
 

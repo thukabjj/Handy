@@ -19,7 +19,7 @@ export { AlwaysOnMicrophone } from "./AlwaysOnMicrophone";
 export { PushToTalk } from "./PushToTalk";
 export { AudioFeedback } from "./AudioFeedback";
 export { ShowOverlay } from "./ShowOverlay";
-export { ShortcutInput as DictumShortcut } from "./ShortcutInput";
+export { ShortcutInput as HandyShortcut } from "./ShortcutInput";
 export { TranslateToEnglish } from "./TranslateToEnglish";
 export { CustomWords } from "./CustomWords";
 export { PostProcessingToggle } from "./PostProcessingToggle";

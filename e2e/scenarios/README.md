@@ -1,6 +1,6 @@
 # E2E Scenario Documentation
 
-Step-by-step guides for testing Dictum's frontend using Claude Code's Playwright MCP tools.
+Step-by-step guides for testing Handy's frontend using Claude Code's Playwright MCP tools.
 
 ## How It Works
 

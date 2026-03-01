@@ -1,11 +1,11 @@
 [package]
-name = "dictum"
+name = "handy"
 version = "0.8.0"
-description = "Dictum — Privacy-first desktop speech-to-text"
+description = "Handy"
 authors = ["cjpais"]
 edition = "2021"
 license = "MIT"
-default-run = "dictum"
+default-run = "handy"
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
@@ -16,7 +16,7 @@ incremental = true # Compile your binary in smaller steps.
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "dictum_app_lib"
+name = "handy_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 # [[bin]]

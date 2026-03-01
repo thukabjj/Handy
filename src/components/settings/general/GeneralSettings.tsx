@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { MicrophoneSelector } from "../MicrophoneSelector";
 import { LanguageSelector } from "../LanguageSelector";
-import { ShortcutInput as DictumShortcut } from "../ShortcutInput";
+import { ShortcutInput as HandyShortcut } from "../ShortcutInput";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { OutputDeviceSelector } from "../OutputDeviceSelector";
 import { PushToTalk } from "../PushToTalk";
@@ -25,7 +25,7 @@ export const GeneralSettings: React.FC = () => {
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       <SettingsGroup title={t("settings.general.title")}>
-        <DictumShortcut shortcutId="transcribe" grouped={true} />
+        <HandyShortcut shortcutId="transcribe" grouped={true} />
         {showLanguageSelector && (
           <LanguageSelector descriptionMode="tooltip" grouped={true} />
         )}
@@ -35,7 +35,7 @@ export const GeneralSettings: React.FC = () => {
       <SettingsGroup title={t("settings.advanced.experimental.title")}>
         <ActiveListeningToggle descriptionMode="tooltip" grouped={true} />
         <AskAiToggle descriptionMode="tooltip" grouped={true} />
-        {askAiEnabled && <DictumShortcut shortcutId="ask_ai" grouped={true} />}
+        {askAiEnabled && <HandyShortcut shortcutId="ask_ai" grouped={true} />}
         <KnowledgeBaseToggle />
       </SettingsGroup>
       <SoundDetectionSettings />

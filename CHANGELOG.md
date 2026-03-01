@@ -534,7 +534,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- **Initial release** of Dictum
+- **Initial release** of Handy
 - Basic speech-to-text transcription functionality
 - Voice Activity Detection (VAD) for automatic recording
 - Cross-platform support (macOS, Windows, Linux)

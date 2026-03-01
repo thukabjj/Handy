@@ -62,7 +62,7 @@
     },
     "permissions": {
       "title": "Berechtigungen erforderlich",
-      "description": "Dictum benötigt einige Berechtigungen, um richtig zu funktionieren.",
+      "description": "Handy benötigt einige Berechtigungen, um richtig zu funktionieren.",
       "microphone": {
         "title": "Mikrofonzugriff",
         "description": "Erforderlich, um Ihre Stimme für die Transkription zu hören."
@@ -136,7 +136,7 @@
     "general": {
       "title": "Allgemein",
       "shortcut": {
-        "title": "Dictum-Tastenkürzel",
+        "title": "Handy-Tastenkürzel",
         "description": "Tastenkürzel für die Sprachaufnahme konfigurieren",
         "loading": "Tastenkürzel werden geladen...",
         "none": "Keine Tastenkürzel konfiguriert",
@@ -217,7 +217,7 @@
       },
       "autostart": {
         "label": "Beim Start ausführen",
-        "description": "Dictum automatisch beim Anmelden starten."
+        "description": "Handy automatisch beim Anmelden starten."
       },
       "overlay": {
         "title": "Overlay-Position",
@@ -357,7 +357,7 @@
       },
       "updateChecks": {
         "label": "Nach Updates suchen",
-        "description": "Automatisch nach neuen Versionen von Dictum suchen"
+        "description": "Automatisch nach neuen Versionen von Handy suchen"
       },
       "soundTheme": {
         "label": "Sound-Thema",
@@ -421,11 +421,11 @@
       "title": "Info",
       "version": {
         "title": "Version",
-        "description": "Aktuelle Version von Dictum"
+        "description": "Aktuelle Version von Handy"
       },
       "appDataDirectory": {
         "title": "App-Datenverzeichnis",
-        "description": "Speicherort der Dictum-Daten"
+        "description": "Speicherort der Handy-Daten"
       },
       "sourceCode": {
         "title": "Quellcode",
@@ -434,7 +434,7 @@
       },
       "supportDevelopment": {
         "title": "Entwicklung unterstützen",
-        "description": "Hilf uns, Dictum weiterzuentwickeln",
+        "description": "Hilf uns, Handy weiterzuentwickeln",
         "button": "Spenden"
       },
       "acknowledgments": {
@@ -442,7 +442,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "Hochleistungs-Inferenz des Whisper-Spracherkennungsmodells von OpenAI",
-          "details": "Dictum verwendet Whisper.cpp für schnelle, lokale Sprach-zu-Text-Verarbeitung. Dank an Georgi Gerganov und die Mitwirkenden für ihre großartige Arbeit."
+          "details": "Handy verwendet Whisper.cpp für schnelle, lokale Sprach-zu-Text-Verarbeitung. Dank an Georgi Gerganov und die Mitwirkenden für ihre großartige Arbeit."
         }
       }
     }
@@ -485,7 +485,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Bedienungshilfen-Berechtigungen erforderlich",
-    "permissionsDescription": "Dictum benötigt Bedienungshilfen-Berechtigungen, um transkribierten Text einzugeben.",
+    "permissionsDescription": "Handy benötigt Bedienungshilfen-Berechtigungen, um transkribierten Text einzugeben.",
     "openSettings": "Systemeinstellungen öffnen",
     "dismiss": "Schließen"
   },
@@ -494,7 +494,7 @@
   },
   "appLanguage": {
     "title": "Anwendungssprache",
-    "description": "Sprache der Dictum-Oberfläche ändern"
+    "description": "Sprache der Handy-Oberfläche ändern"
   },
   "overlay": {
     "transcribing": "Transkribiere...",

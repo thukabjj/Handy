@@ -99,7 +99,7 @@
     },
     "permissions": {
       "title": "Permissions Required",
-      "description": "Dictum needs a couple of permissions to work properly.",
+      "description": "Handy needs a couple of permissions to work properly.",
       "microphone": {
         "title": "Microphone Access",
         "description": "Required to hear your voice for transcription."
@@ -119,7 +119,7 @@
     }
   },
   "modelSelector": {
-    "welcome": "Welcome to Dictum!",
+    "welcome": "Welcome to Handy!",
     "downloadPrompt": "Download a model below to get started with transcription.",
     "availableModels": "Available Models",
     "downloadModels": "Download Models",
@@ -145,7 +145,7 @@
     "general": {
       "title": "General",
       "shortcut": {
-        "title": "Dictum Shortcuts",
+        "title": "Handy Shortcuts",
         "description": "Configure keyboard shortcuts to trigger speech-to-text recording",
         "loading": "Loading shortcuts...",
         "none": "No shortcuts configured",
@@ -224,7 +224,7 @@
       },
       "autostart": {
         "label": "Launch on Startup",
-        "description": "Automatically start Dictum when you log in to your computer."
+        "description": "Automatically start Handy when you log in to your computer."
       },
       "overlay": {
         "title": "Overlay Position",
@@ -564,7 +564,7 @@
       },
       "updateChecks": {
         "label": "Check for Updates",
-        "description": "Automatically check for new versions of Dictum"
+        "description": "Automatically check for new versions of Handy"
       },
       "soundTheme": {
         "label": "Sound Theme",
@@ -619,11 +619,11 @@
       "title": "About",
       "version": {
         "title": "Version",
-        "description": "Current version of Dictum"
+        "description": "Current version of Handy"
       },
       "appDataDirectory": {
         "title": "App Data Directory",
-        "description": "Location where Dictum stores its data"
+        "description": "Location where Handy stores its data"
       },
       "logDirectory": {
         "title": "Log Directory",
@@ -636,7 +636,7 @@
       },
       "supportDevelopment": {
         "title": "Support Development",
-        "description": "Help us continue building Dictum",
+        "description": "Help us continue building Handy",
         "button": "Donate"
       },
       "acknowledgments": {
@@ -644,7 +644,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "High-performance inference of OpenAI's Whisper automatic speech recognition model",
-          "details": "Dictum uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
+          "details": "Handy uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
         }
       }
     },
@@ -802,7 +802,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Accessibility Permissions Required",
-    "permissionsDescription": "Dictum needs accessibility permissions to type transcribed text.",
+    "permissionsDescription": "Handy needs accessibility permissions to type transcribed text.",
     "openSettings": "Open System Settings",
     "dismiss": "Dismiss"
   },
@@ -827,7 +827,7 @@
   },
   "appLanguage": {
     "title": "Application Language",
-    "description": "Change the language of the Dictum interface"
+    "description": "Change the language of the Handy interface"
   },
   "overlay": {
     "transcribing": "Transcribing...",

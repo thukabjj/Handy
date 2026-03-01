@@ -62,7 +62,7 @@
     },
     "permissions": {
       "title": "Cần cấp quyền",
-      "description": "Dictum cần một số quyền để hoạt động bình thường.",
+      "description": "Handy cần một số quyền để hoạt động bình thường.",
       "microphone": {
         "title": "Quyền truy cập Micrô",
         "description": "Cần thiết để nghe giọng nói của bạn để chuyển đổi."
@@ -136,7 +136,7 @@
     "general": {
       "title": "Chung",
       "shortcut": {
-        "title": "Phím tắt Dictum",
+        "title": "Phím tắt Handy",
         "description": "Cấu hình phím tắt để kích hoạt ghi âm chuyển đổi giọng nói thành văn bản",
         "loading": "Đang tải phím tắt...",
         "none": "Chưa cấu hình phím tắt",
@@ -217,7 +217,7 @@
       },
       "autostart": {
         "label": "Khởi động cùng hệ thống",
-        "description": "Tự động khởi động Dictum khi bạn đăng nhập vào máy tính."
+        "description": "Tự động khởi động Handy khi bạn đăng nhập vào máy tính."
       },
       "overlay": {
         "title": "Vị trí lớp phủ",
@@ -357,7 +357,7 @@
       },
       "updateChecks": {
         "label": "Kiểm tra cập nhật",
-        "description": "Tự động kiểm tra phiên bản mới của Dictum"
+        "description": "Tự động kiểm tra phiên bản mới của Handy"
       },
       "soundTheme": {
         "label": "Chủ đề âm thanh",
@@ -421,11 +421,11 @@
       "title": "Giới thiệu",
       "version": {
         "title": "Phiên bản",
-        "description": "Phiên bản hiện tại của Dictum"
+        "description": "Phiên bản hiện tại của Handy"
       },
       "appDataDirectory": {
         "title": "Thư mục dữ liệu ứng dụng",
-        "description": "Vị trí Dictum lưu trữ dữ liệu"
+        "description": "Vị trí Handy lưu trữ dữ liệu"
       },
       "sourceCode": {
         "title": "Mã nguồn",
@@ -434,7 +434,7 @@
       },
       "supportDevelopment": {
         "title": "Hỗ trợ phát triển",
-        "description": "Giúp chúng tôi tiếp tục xây dựng Dictum",
+        "description": "Giúp chúng tôi tiếp tục xây dựng Handy",
         "button": "Quyên góp"
       },
       "acknowledgments": {
@@ -442,7 +442,7 @@
         "whisper": {
           "title": "Whisper.cpp",
           "description": "Suy luận hiệu suất cao của mô hình nhận dạng giọng nói tự động Whisper của OpenAI",
-          "details": "Dictum sử dụng Whisper.cpp để xử lý chuyển đổi giọng nói thành văn bản nhanh, cục bộ. Cảm ơn công việc tuyệt vời của Georgi Gerganov và các cộng tác viên."
+          "details": "Handy sử dụng Whisper.cpp để xử lý chuyển đổi giọng nói thành văn bản nhanh, cục bộ. Cảm ơn công việc tuyệt vời của Georgi Gerganov và các cộng tác viên."
         }
       }
     }
@@ -485,7 +485,7 @@
   },
   "accessibility": {
     "permissionsRequired": "Cần quyền truy cập",
-    "permissionsDescription": "Dictum cần quyền truy cập để gõ văn bản đã chuyển đổi.",
+    "permissionsDescription": "Handy cần quyền truy cập để gõ văn bản đã chuyển đổi.",
     "openSettings": "Mở Cài đặt Hệ thống",
     "dismiss": "Bỏ qua"
   },
@@ -494,7 +494,7 @@
   },
   "appLanguage": {
     "title": "Ngôn ngữ ứng dụng",
-    "description": "Thay đổi ngôn ngữ giao diện của Dictum"
+    "description": "Thay đổi ngôn ngữ giao diện của Handy"
   },
   "overlay": {
     "transcribing": "Đang chuyển đổi...",
