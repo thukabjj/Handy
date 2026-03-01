@@ -23,10 +23,17 @@ pub use cli::CliArgs;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, Builder};
 
+mod ollama_client;
+
 use env_filter::Builder as EnvFilterBuilder;
+use managers::active_listening::ActiveListeningManager;
+use managers::ask_ai::AskAiManager;
+use managers::ask_ai_history::AskAiHistoryManager;
 use managers::audio::AudioRecordingManager;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
+use managers::rag::RagManager;
+use managers::suggestion_engine::SuggestionEngine;
 use managers::transcription::TranscriptionManager;
 #[cfg(unix)]
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
@@ -123,11 +130,33 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
 
+    // Initialize local feature managers
+    let active_listening_manager = Arc::new(
+        ActiveListeningManager::new(app_handle).expect("Failed to initialize active listening manager"),
+    );
+    let ask_ai_manager = Arc::new(
+        AskAiManager::new(app_handle).expect("Failed to initialize ask ai manager"),
+    );
+    let ask_ai_history_manager = Arc::new(
+        AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
+    );
+    let rag_manager = Arc::new(
+        RagManager::new(app_handle).expect("Failed to initialize rag manager"),
+    );
+    let suggestion_engine = Arc::new(
+        SuggestionEngine::new(app_handle).expect("Failed to initialize suggestion engine"),
+    );
+
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
+    app_handle.manage(active_listening_manager.clone());
+    app_handle.manage(ask_ai_manager.clone());
+    app_handle.manage(ask_ai_history_manager.clone());
+    app_handle.manage(rag_manager.clone());
+    app_handle.manage(suggestion_engine.clone());
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -347,6 +376,85 @@ pub fn run(cli_args: CliArgs) {
         commands::history::update_history_limit,
         commands::history::update_recording_retention_period,
         helpers::clamshell::is_laptop,
+        // Active Listening commands
+        commands::active_listening::start_active_listening_session,
+        commands::active_listening::stop_active_listening_session,
+        commands::active_listening::get_active_listening_state,
+        commands::active_listening::get_active_listening_session,
+        commands::active_listening::check_ollama_connection,
+        commands::active_listening::fetch_ollama_models,
+        commands::active_listening::change_active_listening_enabled_setting,
+        commands::active_listening::change_active_listening_segment_duration_setting,
+        commands::active_listening::change_ollama_base_url_setting,
+        commands::active_listening::change_ollama_model_setting,
+        commands::active_listening::change_active_listening_context_window_setting,
+        commands::active_listening::change_audio_source_type_setting,
+        commands::active_listening::change_audio_mix_ratio_setting,
+        commands::active_listening::get_audio_source_type,
+        commands::active_listening::get_audio_mix_ratio,
+        commands::active_listening::add_active_listening_prompt,
+        commands::active_listening::update_active_listening_prompt,
+        commands::active_listening::delete_active_listening_prompt,
+        commands::active_listening::set_active_listening_selected_prompt,
+        commands::active_listening::get_loopback_support_level,
+        commands::active_listening::is_loopback_supported,
+        commands::active_listening::list_loopback_devices,
+        commands::active_listening::generate_meeting_summary,
+        commands::active_listening::export_meeting_summary,
+        // Ask AI commands
+        commands::ask_ai::get_ask_ai_state,
+        commands::ask_ai::is_ask_ai_active,
+        commands::ask_ai::get_ask_ai_question,
+        commands::ask_ai::get_ask_ai_response,
+        commands::ask_ai::get_ask_ai_conversation,
+        commands::ask_ai::can_start_ask_ai_recording,
+        commands::ask_ai::cancel_ask_ai_session,
+        commands::ask_ai::reset_ask_ai_session,
+        commands::ask_ai::dismiss_ask_ai_session,
+        commands::ask_ai::start_new_ask_ai_conversation,
+        commands::ask_ai::change_ask_ai_enabled_setting,
+        commands::ask_ai::change_ask_ai_ollama_base_url_setting,
+        commands::ask_ai::change_ask_ai_ollama_model_setting,
+        commands::ask_ai::change_ask_ai_system_prompt_setting,
+        commands::ask_ai::get_ask_ai_settings,
+        commands::ask_ai::save_ask_ai_window_bounds,
+        commands::ask_ai::get_ask_ai_window_bounds,
+        commands::ask_ai::save_ask_ai_conversation_to_history,
+        commands::ask_ai::list_ask_ai_conversations,
+        commands::ask_ai::get_ask_ai_conversation_from_history,
+        commands::ask_ai::delete_ask_ai_conversation_from_history,
+        // RAG commands
+        commands::rag::rag_add_document,
+        commands::rag::rag_search,
+        commands::rag::rag_delete_document,
+        commands::rag::rag_list_documents,
+        commands::rag::rag_get_stats,
+        commands::rag::rag_get_embedding_model,
+        commands::rag::rag_set_embedding_model,
+        commands::rag::rag_clear_all,
+        commands::rag::get_knowledge_base_settings,
+        commands::rag::change_knowledge_base_enabled_setting,
+        commands::rag::change_auto_index_transcriptions_setting,
+        commands::rag::change_kb_embedding_model_setting,
+        commands::rag::change_kb_top_k_setting,
+        commands::rag::change_kb_similarity_threshold_setting,
+        commands::rag::change_kb_use_in_active_listening_setting,
+        // Suggestions commands
+        commands::suggestions::get_suggestions_settings,
+        commands::suggestions::update_suggestions_settings,
+        commands::suggestions::change_suggestions_enabled_setting,
+        commands::suggestions::get_quick_responses,
+        commands::suggestions::get_quick_responses_by_category,
+        commands::suggestions::add_quick_response,
+        commands::suggestions::update_quick_response,
+        commands::suggestions::delete_quick_response,
+        commands::suggestions::toggle_quick_response,
+        commands::suggestions::change_rag_suggestions_enabled,
+        commands::suggestions::change_llm_suggestions_enabled,
+        commands::suggestions::change_max_suggestions,
+        commands::suggestions::change_min_confidence,
+        commands::suggestions::change_auto_dismiss_on_copy,
+        commands::suggestions::change_display_duration,
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
