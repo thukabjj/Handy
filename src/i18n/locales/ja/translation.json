@@ -14,7 +14,15 @@
     "postProcessing": "後処理",
     "history": "履歴",
     "debug": "デバッグ",
-    "about": "概要"
+    "about": "概要",
+    "home": "文字起こし",
+    "labs": "Labs",
+    "settings": "設定",
+    "activeListening": "アクティブリスニング",
+    "askAi": "AIに質問",
+    "knowledgeBase": "ナレッジベース",
+    "batchImport": "一括インポート",
+    "vocabulary": "語彙"
   },
   "onboarding": {
     "subtitle": "開始するには、文字起こしモデルを選択してください",
@@ -549,5 +557,90 @@
   "overlay": {
     "transcribing": "文字起こし中...",
     "processing": "処理中..."
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "接続を確認中...",
+        "connected": "接続済み",
+        "disconnected": "未接続"
+      },
+      "refreshConnection": "接続を更新",
+      "baseUrl": {
+        "title": "Ollama URL",
+        "description": "Ollamaサーバーのベース URL"
+      },
+      "model": {
+        "title": "モデル",
+        "description": "AI処理に使用するモデルを選択",
+        "placeholder": "モデルを選択",
+        "placeholderNoModels": "利用可能なモデルがありません",
+        "refresh": "モデルを更新"
+      }
+    }
+  },
+  "home": {
+    "title": "文字起こし準備完了",
+    "modelStatus": "モデルの状態",
+    "shortcutHint": "{{shortcut}} を押して録音を開始",
+    "noModelSelected": "モデルが選択されていません",
+    "downloadModel": "モデルをダウンロード",
+    "quickStart": {
+      "title": "クイックスタート",
+      "step1": "ショートカットキーを押して録音を開始",
+      "step2": "マイクに向かって明確に話す",
+      "step3": "リリースして文字起こしとテキストを貼り付け"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "変更または削除される可能性のある実験的機能。",
+    "configuredWith": "使用中",
+    "notConfigured": "未設定 - Ollamaが必要です",
+    "activeListening": {
+      "title": "アクティブリスニング",
+      "description": "OllamaによるAI生成のインサイトを含む継続的な文字起こし"
+    },
+    "askAi": {
+      "title": "AIに質問",
+      "description": "ローカルLLMとのマルチターン音声会話"
+    },
+    "knowledgeBase": {
+      "title": "ナレッジベース",
+      "description": "AI応答のためのRAG対応ドキュメント検索"
+    },
+    "postProcessing": {
+      "title": "後処理",
+      "description": "文字起こし後のLLMによるテキストクリーンアップとフォーマット"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "出力",
+      "description": "文字起こしテキストの処理方法を設定"
+    },
+    "audio": {
+      "title": "オーディオ",
+      "description": "オーディオ入力とフィードバックの設定"
+    },
+    "vocabulary": {
+      "title": "語彙",
+      "description": "文字起こし精度を向上させるカスタム単語",
+      "manage": "語彙を管理"
+    },
+    "replacements": {
+      "title": "置換",
+      "description": "文字起こし後の自動テキスト置換",
+      "manage": "置換を管理"
+    },
+    "advanced": {
+      "title": "詳細設定",
+      "description": "開発者オプションと実験的設定"
+    }
+  },
+  "historyEmpty": {
+    "title": "まだ文字起こしがありません",
+    "description": "録音を開始すると、文字起こし履歴がここに表示されます。",
+    "action": "文字起こしを開始"
   }
 }

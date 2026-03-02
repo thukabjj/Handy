@@ -14,7 +14,15 @@
     "postProcessing": "Nachbearbeitung",
     "history": "Verlauf",
     "debug": "Debug",
-    "about": "Info"
+    "about": "Info",
+    "home": "Transkribieren",
+    "labs": "Labs",
+    "settings": "Einstellungen",
+    "activeListening": "Aktives Zuhören",
+    "askAi": "KI fragen",
+    "knowledgeBase": "Wissensdatenbank",
+    "batchImport": "Stapelimport",
+    "vocabulary": "Vokabular"
   },
   "onboarding": {
     "subtitle": "Wähle ein Transkriptionsmodell, um loszulegen",
@@ -549,5 +557,90 @@
   "overlay": {
     "transcribing": "Transkribiere...",
     "processing": "Verarbeite..."
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Verbindung wird geprüft...",
+        "connected": "Verbunden",
+        "disconnected": "Nicht verbunden"
+      },
+      "refreshConnection": "Verbindung aktualisieren",
+      "baseUrl": {
+        "title": "Ollama URL",
+        "description": "Die Basis-URL Ihres Ollama-Servers"
+      },
+      "model": {
+        "title": "Modell",
+        "description": "Wählen Sie das Modell für die KI-Verarbeitung",
+        "placeholder": "Modell auswählen",
+        "placeholderNoModels": "Keine Modelle verfügbar",
+        "refresh": "Modelle aktualisieren"
+      }
+    }
+  },
+  "home": {
+    "title": "Bereit zum Transkribieren",
+    "modelStatus": "Modellstatus",
+    "shortcutHint": "Drücken Sie {{shortcut}} um die Aufnahme zu starten",
+    "noModelSelected": "Kein Modell ausgewählt",
+    "downloadModel": "Ein Modell herunterladen",
+    "quickStart": {
+      "title": "Schnellstart",
+      "step1": "Drücken Sie Ihr Tastenkürzel, um die Aufnahme zu starten",
+      "step2": "Sprechen Sie deutlich in Ihr Mikrofon",
+      "step3": "Loslassen, um zu transkribieren und den Text einzufügen"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Experimentelle Funktionen, die sich ändern oder entfernt werden können.",
+    "configuredWith": "Verwendet",
+    "notConfigured": "Nicht konfiguriert - erfordert Ollama",
+    "activeListening": {
+      "title": "Aktives Zuhören",
+      "description": "Kontinuierliche Transkription mit KI-generierten Erkenntnissen über Ollama"
+    },
+    "askAi": {
+      "title": "KI fragen",
+      "description": "Mehrteilige Sprachgespräche mit Ihrem lokalen LLM"
+    },
+    "knowledgeBase": {
+      "title": "Wissensdatenbank",
+      "description": "RAG-gestützte Dokumentensuche für KI-Antworten"
+    },
+    "postProcessing": {
+      "title": "Nachbearbeitung",
+      "description": "LLM-gestützte Textbereinigung und Formatierung nach der Transkription"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Ausgabe",
+      "description": "Konfigurieren Sie, wie transkribierter Text verarbeitet wird"
+    },
+    "audio": {
+      "title": "Audio",
+      "description": "Audio-Eingabe- und Feedback-Einstellungen"
+    },
+    "vocabulary": {
+      "title": "Vokabular",
+      "description": "Benutzerdefinierte Wörter für bessere Transkriptionsgenauigkeit",
+      "manage": "Vokabular verwalten"
+    },
+    "replacements": {
+      "title": "Ersetzungen",
+      "description": "Automatische Textersetzungen nach der Transkription",
+      "manage": "Ersetzungen verwalten"
+    },
+    "advanced": {
+      "title": "Erweitert",
+      "description": "Entwickleroptionen und experimentelle Einstellungen"
+    }
+  },
+  "historyEmpty": {
+    "title": "Noch keine Transkriptionen",
+    "description": "Ihr Transkriptionsverlauf erscheint hier, sobald Sie mit der Aufnahme beginnen.",
+    "action": "Mit Transkribieren beginnen"
   }
 }

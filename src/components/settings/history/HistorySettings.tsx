@@ -3,13 +3,14 @@ import { useTranslation } from "react-i18next";
 import { AudioPlayer } from "../../ui/AudioPlayer";
 import { WaveformPlayer } from "../../ui/WaveformPlayer";
 import { Button } from "../../ui/Button";
-import { Copy, Star, Check, Trash2, FolderOpen } from "lucide-react";
+import { Copy, Star, Check, Trash2, FolderOpen, Mic } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { commands, type HistoryEntry } from "@/bindings";
 import { formatDateTime } from "@/utils/dateFormat";
 import { useOsType } from "@/hooks/useOsType";
+import { EmptyState } from "../shared/EmptyState";
 
 interface OpenRecordingsButtonProps {
   onClick: () => void;
@@ -174,9 +175,11 @@ export const HistorySettings: React.FC = () => {
             />
           </div>
           <div className="bg-background border border-mid-gray/20 rounded-lg overflow-visible">
-            <div className="px-4 py-3 text-center text-text/60">
-              {t("settings.history.empty")}
-            </div>
+            <EmptyState
+              icon={<Mic className="w-12 h-12" />}
+              title={t("historyEmpty.title")}
+              description={t("historyEmpty.description")}
+            />
           </div>
         </div>
       </div>

@@ -14,7 +14,15 @@
     "postProcessing": "Následné zpracování",
     "history": "Historie",
     "debug": "Ladění",
-    "about": "O aplikaci"
+    "about": "O aplikaci",
+    "home": "Přepis",
+    "labs": "Labs",
+    "settings": "Nastavení",
+    "activeListening": "Aktivní naslouchání",
+    "askAi": "Zeptat se AI",
+    "knowledgeBase": "Znalostní báze",
+    "batchImport": "Hromadný import",
+    "vocabulary": "Slovník"
   },
   "onboarding": {
     "subtitle": "Pro začátek vyberte model pro přepis",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "Jazyk aplikace",
     "description": "Změňte jazyk rozhraní Handy"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Kontrola připojení...",
+        "connected": "Připojeno",
+        "disconnected": "Odpojeno"
+      },
+      "refreshConnection": "Obnovit připojení",
+      "baseUrl": {
+        "title": "Ollama URL",
+        "description": "Základní URL vašeho Ollama serveru"
+      },
+      "model": {
+        "title": "Model",
+        "description": "Vyberte model k použití",
+        "placeholder": "Vyhledejte nebo vyberte model",
+        "placeholderNoModels": "Žádné modely nejsou dostupné",
+        "refresh": "Obnovit modely"
+      }
+    }
+  },
+  "home": {
+    "title": "Připraveno k přepisu",
+    "modelStatus": "Stav modelu",
+    "shortcutHint": "Stiskněte {{shortcut}} pro zahájení nahrávání",
+    "quickStart": {
+      "title": "Rychlý start",
+      "step1": "Stiskněte klávesovou zkratku pro zahájení nahrávání",
+      "step2": "Mluvte zřetelně do mikrofonu",
+      "step3": "Uvolněte klávesu pro dokončení přepisu"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Experimentální funkce, které se mohou změnit nebo být odstraněny.",
+    "configuredWith": "Používá",
+    "notConfigured": "Nenakonfigurováno - vyžaduje Ollama",
+    "activeListening": {
+      "title": "Aktivní naslouchání",
+      "description": "Kontinuální přepis s AI generovanými postřehy"
+    },
+    "askAi": {
+      "title": "Zeptat se AI",
+      "description": "Vícefázové hlasové konverzace s lokálním LLM"
+    },
+    "knowledgeBase": {
+      "title": "Znalostní báze",
+      "description": "RAG-podporované vyhledávání dokumentů pro AI odpovědi"
+    },
+    "postProcessing": {
+      "title": "Následné zpracování",
+      "description": "LLM-podporované čištění a formátování textu"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Výstup",
+      "description": "Konfigurace chování vkládání a schránky"
+    },
+    "audio": {
+      "title": "Zvuk",
+      "description": "Nastavení mikrofonu a zvukové odezvy"
+    },
+    "vocabulary": {
+      "title": "Slovník",
+      "description": "Vlastní slova pro lepší rozpoznání",
+      "manage": "Spravovat slovník"
+    },
+    "replacements": {
+      "title": "Nahrazení",
+      "description": "Automatické nahrazování textu",
+      "manage": "Spravovat nahrazení"
+    },
+    "advanced": {
+      "title": "Pokročilé",
+      "description": "Možnosti pro vývojáře a pokročilá konfigurace"
+    }
+  },
+  "historyEmpty": {
+    "title": "Zatím žádné přepisy",
+    "description": "Historie vašich přepisů se zobrazí zde po prvním nahrávání.",
+    "action": "Začít přepisovat"
   },
   "overlay": {
     "transcribing": "Přepisuji...",

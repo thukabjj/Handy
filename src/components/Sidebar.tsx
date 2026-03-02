@@ -1,33 +1,23 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  BookA,
-  BookOpen,
-  Cog,
   FlaskConical,
-  FolderInput,
-  Headphones,
   History,
   Info,
-  MessageSquare,
-  Sparkles,
+  Mic,
+  Settings,
+  Bug,
 } from "lucide-react";
 import type { AppSettings } from "@/bindings";
 import HandyTextLogo from "./icons/HandyTextLogo";
-import HandyHand from "./icons/HandyHand";
 import { useSettings } from "../hooks/useSettings";
 import {
-  GeneralSettings,
-  AdvancedSettings,
   HistorySettings,
   DebugSettings,
   AboutSettings,
-  PostProcessingSettings,
-  ActiveListeningSettings,
-  AskAiSettings,
-  KnowledgeBaseSettings,
-  BatchProcessingPanel,
-  VocabularyPanel,
+  HomeSettings,
+  LabsSettings,
+  UnifiedSettings,
 } from "./settings";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
@@ -46,55 +36,14 @@ interface SectionConfig {
   icon: React.ComponentType<IconProps>;
   component: React.ComponentType;
   enabled: (settings: AppSettings | null) => boolean;
+  badge?: "beta" | "new";
 }
 
 export const SECTIONS_CONFIG = {
-  general: {
-    labelKey: "sidebar.general",
-    icon: HandyHand,
-    component: GeneralSettings,
-    enabled: () => true,
-  },
-  advanced: {
-    labelKey: "sidebar.advanced",
-    icon: Cog,
-    component: AdvancedSettings,
-    enabled: () => true,
-  },
-  postprocessing: {
-    labelKey: "sidebar.postProcessing",
-    icon: Sparkles,
-    component: PostProcessingSettings,
-    enabled: (settings) => settings?.post_process_enabled ?? false,
-  },
-  activelistening: {
-    labelKey: "sidebar.activeListening",
-    icon: Headphones,
-    component: ActiveListeningSettings,
-    enabled: (settings) => settings?.active_listening?.enabled ?? false,
-  },
-  askai: {
-    labelKey: "sidebar.askAi",
-    icon: MessageSquare,
-    component: AskAiSettings,
-    enabled: (settings) => settings?.ask_ai?.enabled ?? false,
-  },
-  knowledgebase: {
-    labelKey: "sidebar.knowledgeBase",
-    icon: BookOpen,
-    component: KnowledgeBaseSettings,
-    enabled: (settings) => settings?.knowledge_base?.enabled ?? false,
-  },
-  batchimport: {
-    labelKey: "sidebar.batchImport",
-    icon: FolderInput,
-    component: BatchProcessingPanel,
-    enabled: () => true,
-  },
-  vocabulary: {
-    labelKey: "sidebar.vocabulary",
-    icon: BookA,
-    component: VocabularyPanel,
+  home: {
+    labelKey: "sidebar.home",
+    icon: Mic,
+    component: HomeSettings,
     enabled: () => true,
   },
   history: {
@@ -103,17 +52,30 @@ export const SECTIONS_CONFIG = {
     component: HistorySettings,
     enabled: () => true,
   },
-  debug: {
-    labelKey: "sidebar.debug",
+  settings: {
+    labelKey: "sidebar.settings",
+    icon: Settings,
+    component: UnifiedSettings,
+    enabled: () => true,
+  },
+  labs: {
+    labelKey: "sidebar.labs",
     icon: FlaskConical,
-    component: DebugSettings,
-    enabled: (settings) => settings?.debug_mode ?? false,
+    component: LabsSettings,
+    enabled: () => true,
+    badge: "beta" as const,
   },
   about: {
     labelKey: "sidebar.about",
     icon: Info,
     component: AboutSettings,
     enabled: () => true,
+  },
+  debug: {
+    labelKey: "sidebar.debug",
+    icon: Bug,
+    component: DebugSettings,
+    enabled: (settings) => settings?.debug_mode ?? false,
   },
 } as const satisfies Record<string, SectionConfig>;
 
@@ -140,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
+          const badge = "badge" in section ? section.badge : undefined;
 
           return (
             <div
@@ -152,12 +115,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onSectionChange(section.id)}
             >
               <Icon width={24} height={24} className="shrink-0" />
-              <p
-                className="text-sm font-medium truncate"
-                title={t(section.labelKey)}
-              >
-                {t(section.labelKey)}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <p
+                  className="text-sm font-medium truncate"
+                  title={t(section.labelKey)}
+                >
+                  {t(section.labelKey)}
+                </p>
+                {badge && (
+                  <span className="px-1 py-0.5 text-[9px] font-medium bg-purple-500/20 text-purple-400 rounded shrink-0">
+                    {badge}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}

@@ -14,7 +14,15 @@
     "postProcessing": "後處理",
     "history": "歷史紀錄",
     "debug": "偵錯",
-    "about": "關於"
+    "about": "關於",
+    "home": "轉錄",
+    "labs": "實驗室",
+    "settings": "設定",
+    "activeListening": "主動聆聽",
+    "askAi": "詢問 AI",
+    "knowledgeBase": "知識庫",
+    "batchImport": "批次匯入",
+    "vocabulary": "詞彙"
   },
   "onboarding": {
     "subtitle": "首先，請選擇一種模型",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "應用程式語言",
     "description": "變更 Handy 介面的語言"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "正在檢查連線...",
+        "connected": "已連線",
+        "disconnected": "未連線"
+      },
+      "refreshConnection": "重新整理連線",
+      "baseUrl": {
+        "title": "Ollama 網址",
+        "description": "您的 Ollama 伺服器的基礎網址"
+      },
+      "model": {
+        "title": "模型",
+        "description": "選擇要使用的模型",
+        "placeholder": "搜尋或選擇模型",
+        "placeholderNoModels": "沒有可用的模型",
+        "refresh": "重新整理模型"
+      }
+    }
+  },
+  "home": {
+    "title": "準備轉錄",
+    "modelStatus": "模型狀態",
+    "shortcutHint": "按下 {{shortcut}} 開始錄製",
+    "quickStart": {
+      "title": "快速開始",
+      "step1": "按下快捷鍵開始錄製",
+      "step2": "對麥克風清楚地說話",
+      "step3": "放開按鍵完成轉錄"
+    }
+  },
+  "labs": {
+    "title": "實驗室",
+    "description": "實驗性功能，可能會變更或移除。",
+    "configuredWith": "使用",
+    "notConfigured": "未設定 - 需要 Ollama",
+    "activeListening": {
+      "title": "主動聆聽",
+      "description": "持續轉錄並搭配 AI 生成的洞察"
+    },
+    "askAi": {
+      "title": "詢問 AI",
+      "description": "與本機 LLM 進行多輪語音對話"
+    },
+    "knowledgeBase": {
+      "title": "知識庫",
+      "description": "RAG 支援的文件搜尋用於 AI 回應"
+    },
+    "postProcessing": {
+      "title": "後處理",
+      "description": "LLM 支援的文字清理和格式化"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "輸出",
+      "description": "設定貼上和剪貼簿行為"
+    },
+    "audio": {
+      "title": "音訊",
+      "description": "麥克風和聲音回饋設定"
+    },
+    "vocabulary": {
+      "title": "詞彙",
+      "description": "自訂詞彙以提高辨識度",
+      "manage": "管理詞彙"
+    },
+    "replacements": {
+      "title": "取代",
+      "description": "自動文字取代",
+      "manage": "管理取代"
+    },
+    "advanced": {
+      "title": "進階",
+      "description": "開發者選項和進階設定"
+    }
+  },
+  "historyEmpty": {
+    "title": "還沒有轉錄紀錄",
+    "description": "您的轉錄歷史將在第一次錄製後顯示在這裡。",
+    "action": "開始轉錄"
   },
   "overlay": {
     "transcribing": "正在轉錄...",

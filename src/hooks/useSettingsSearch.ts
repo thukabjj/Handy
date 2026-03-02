@@ -24,151 +24,128 @@ interface UseSettingsSearchReturn {
 /**
  * Map of section keys to their searchable settings entries.
  * Each entry has a translation key prefix and optional extra keywords.
+ *
+ * Sections:
+ * - home: Quick start, shortcut, language
+ * - settings: Audio, output, app settings
+ * - labs: Active Listening, Ask AI, Knowledge Base, Post-Processing
+ * - history: Transcription history
+ * - about: Version, source code
+ * - debug: Log level, updates (only visible in debug mode)
  */
 const SEARCHABLE_ENTRIES: Record<
   string,
   { section: SidebarSection; keyPrefix: string; keywords?: string[] }[]
 > = {
-  general: [
+  home: [
     {
-      section: "general",
+      section: "home",
       keyPrefix: "settings.general.shortcut",
       keywords: ["hotkey", "keybind", "keyboard"],
     },
     {
-      section: "general",
+      section: "home",
       keyPrefix: "settings.general.language",
       keywords: ["locale", "speech recognition"],
     },
     {
-      section: "general",
+      section: "home",
       keyPrefix: "settings.general.pushToTalk",
       keywords: ["hold", "record"],
     },
+  ],
+  settings: [
     {
-      section: "general",
+      section: "settings",
       keyPrefix: "settings.sound.microphone",
       keywords: ["mic", "input device", "audio input"],
     },
     {
-      section: "general",
+      section: "settings",
       keyPrefix: "settings.sound.audioFeedback",
       keywords: ["sound", "beep", "notification"],
     },
     {
-      section: "general",
+      section: "settings",
       keyPrefix: "settings.sound.outputDevice",
       keywords: ["speaker", "audio output"],
     },
     {
-      section: "general",
+      section: "settings",
       keyPrefix: "settings.sound.volume",
       keywords: ["loudness", "level"],
     },
-  ],
-  advanced: [
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.startHidden",
       keywords: ["tray", "minimize", "launch"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.autostart",
       keywords: ["login", "boot", "startup"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.overlay",
       keywords: ["position", "visual", "feedback"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.pasteMethod",
       keywords: ["clipboard", "typing", "insert"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.clipboardHandling",
       keywords: ["copy", "paste"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.translateToEnglish",
       keywords: ["translation", "language"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.modelUnload",
       keywords: ["memory", "gpu", "unload"],
     },
     {
-      section: "advanced",
+      section: "settings",
       keyPrefix: "settings.advanced.customWords",
-      keywords: ["dictionary", "correction", "spelling"],
+      keywords: ["dictionary", "correction", "spelling", "vocabulary"],
     },
   ],
-  postprocessing: [
+  labs: [
     {
-      section: "postprocessing",
+      section: "labs",
+      keyPrefix: "labs.activeListening",
+      keywords: ["active listening", "ollama", "continuous", "llm"],
+    },
+    {
+      section: "labs",
+      keyPrefix: "labs.askAi",
+      keywords: ["ask ai", "conversation", "voice chat", "llm"],
+    },
+    {
+      section: "labs",
+      keyPrefix: "labs.knowledgeBase",
+      keywords: ["rag", "documents", "embeddings", "search"],
+    },
+    {
+      section: "labs",
+      keyPrefix: "labs.postProcessing",
+      keywords: ["post-processing", "cleanup", "formatting", "api"],
+    },
+    {
+      section: "labs",
       keyPrefix: "settings.postProcessing.api",
       keywords: ["openai", "provider", "api key", "model"],
     },
     {
-      section: "postprocessing",
+      section: "labs",
       keyPrefix: "settings.postProcessing.prompts",
       keywords: ["template", "instructions", "refine"],
-    },
-  ],
-  activelistening: [
-    {
-      section: "activelistening",
-      keyPrefix: "settings.activeListening.ollama",
-      keywords: ["llm", "model", "server"],
-    },
-    {
-      section: "activelistening",
-      keyPrefix: "settings.activeListening.segments",
-      keywords: ["duration", "interval"],
-    },
-    {
-      section: "activelistening",
-      keyPrefix: "settings.activeListening.audioSource",
-      keywords: ["microphone", "system audio", "loopback"],
-    },
-    {
-      section: "activelistening",
-      keyPrefix: "settings.activeListening.prompts",
-      keywords: ["insight", "template"],
-    },
-  ],
-  askai: [
-    {
-      section: "askai",
-      keyPrefix: "settings.askAi.ollama",
-      keywords: ["llm", "model", "server"],
-    },
-    {
-      section: "askai",
-      keyPrefix: "settings.askAi.systemPrompt",
-      keywords: ["instructions", "behavior"],
-    },
-  ],
-  knowledgebase: [
-    {
-      section: "knowledgebase",
-      keyPrefix: "settings.knowledgeBase.embeddingModel",
-      keywords: ["embeddings", "nomic"],
-    },
-    {
-      section: "knowledgebase",
-      keyPrefix: "settings.knowledgeBase.topK",
-      keywords: ["results", "retrieve"],
-    },
-    {
-      section: "knowledgebase",
-      keyPrefix: "settings.knowledgeBase.similarityThreshold",
-      keywords: ["relevance", "score"],
     },
   ],
   history: [

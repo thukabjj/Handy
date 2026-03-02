@@ -14,7 +14,15 @@
     "postProcessing": "Post-Elaborazione",
     "history": "Cronologia",
     "debug": "Debug",
-    "about": "Informazioni"
+    "about": "Informazioni",
+    "home": "Trascrivi",
+    "labs": "Labs",
+    "settings": "Impostazioni",
+    "activeListening": "Ascolto Attivo",
+    "askAi": "Chiedi all'IA",
+    "knowledgeBase": "Knowledge Base",
+    "batchImport": "Importazione in Blocco",
+    "vocabulary": "Vocabolario"
   },
   "onboarding": {
     "subtitle": "Per cominciare, scegli un modello di riconoscimento vocale",
@@ -549,5 +557,90 @@
   "overlay": {
     "transcribing": "Trascrizione...",
     "processing": "Elaborazione..."
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Verifica connessione...",
+        "connected": "Connesso",
+        "disconnected": "Non connesso"
+      },
+      "refreshConnection": "Aggiorna connessione",
+      "baseUrl": {
+        "title": "URL Ollama",
+        "description": "L'URL base del tuo server Ollama"
+      },
+      "model": {
+        "title": "Modello",
+        "description": "Seleziona il modello per l'elaborazione IA",
+        "placeholder": "Seleziona un modello",
+        "placeholderNoModels": "Nessun modello disponibile",
+        "refresh": "Aggiorna modelli"
+      }
+    }
+  },
+  "home": {
+    "title": "Pronto per Trascrivere",
+    "modelStatus": "Stato del Modello",
+    "shortcutHint": "Premi {{shortcut}} per iniziare a registrare",
+    "noModelSelected": "Nessun modello selezionato",
+    "downloadModel": "Scarica un Modello",
+    "quickStart": {
+      "title": "Avvio Rapido",
+      "step1": "Premi la tua scorciatoia per iniziare a registrare",
+      "step2": "Parla chiaramente nel tuo microfono",
+      "step3": "Rilascia per trascrivere e incollare il testo"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Funzionalità sperimentali che potrebbero cambiare o essere rimosse.",
+    "configuredWith": "Usa",
+    "notConfigured": "Non configurato - richiede Ollama",
+    "activeListening": {
+      "title": "Ascolto Attivo",
+      "description": "Trascrizione continua con insights generati dall'IA tramite Ollama"
+    },
+    "askAi": {
+      "title": "Chiedi all'IA",
+      "description": "Conversazioni vocali multi-turno con il tuo LLM locale"
+    },
+    "knowledgeBase": {
+      "title": "Knowledge Base",
+      "description": "Ricerca di documenti con RAG per le risposte IA"
+    },
+    "postProcessing": {
+      "title": "Post-Elaborazione",
+      "description": "Pulizia e formattazione del testo con LLM dopo la trascrizione"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Output",
+      "description": "Configura come viene gestito il testo trascritto"
+    },
+    "audio": {
+      "title": "Audio",
+      "description": "Impostazioni di input audio e feedback"
+    },
+    "vocabulary": {
+      "title": "Vocabolario",
+      "description": "Parole personalizzate per una migliore accuratezza della trascrizione",
+      "manage": "Gestisci Vocabolario"
+    },
+    "replacements": {
+      "title": "Sostituzioni",
+      "description": "Sostituzioni automatiche di testo dopo la trascrizione",
+      "manage": "Gestisci Sostituzioni"
+    },
+    "advanced": {
+      "title": "Avanzate",
+      "description": "Opzioni sviluppatore e impostazioni sperimentali"
+    }
+  },
+  "historyEmpty": {
+    "title": "Nessuna trascrizione ancora",
+    "description": "La tua cronologia delle trascrizioni apparirà qui una volta che inizierai a registrare.",
+    "action": "Inizia a Trascrivere"
   }
 }

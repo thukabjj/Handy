@@ -14,7 +14,15 @@
     "history": "السجل",
     "debug": "تصحيح الأخطاء",
     "about": "حول",
-    "models": "النماذج"
+    "models": "النماذج",
+    "home": "التفريغ الصوتي",
+    "labs": "المختبرات",
+    "settings": "الإعدادات",
+    "activeListening": "الاستماع النشط",
+    "askAi": "اسأل الذكاء الاصطناعي",
+    "knowledgeBase": "قاعدة المعرفة",
+    "batchImport": "استيراد دفعة",
+    "vocabulary": "المفردات"
   },
   "onboarding": {
     "subtitle": "للبدء، اختر نموذج التفريغ الصوتي",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "لغة التطبيق",
     "description": "تغيير لغة واجهة Handy"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "جاري التحقق من الاتصال...",
+        "connected": "متصل",
+        "disconnected": "غير متصل"
+      },
+      "refreshConnection": "تحديث الاتصال",
+      "baseUrl": {
+        "title": "عنوان Ollama",
+        "description": "العنوان الأساسي لخادم Ollama الخاص بك"
+      },
+      "model": {
+        "title": "النموذج",
+        "description": "اختر نموذجاً للاستخدام",
+        "placeholder": "ابحث أو اختر نموذجاً",
+        "placeholderNoModels": "لا توجد نماذج متاحة",
+        "refresh": "تحديث النماذج"
+      }
+    }
+  },
+  "home": {
+    "title": "جاهز للتفريغ الصوتي",
+    "modelStatus": "حالة النموذج",
+    "shortcutHint": "اضغط على {{shortcut}} لبدء التسجيل",
+    "quickStart": {
+      "title": "بدء سريع",
+      "step1": "اضغط على مفتاح الاختصار لبدء التسجيل",
+      "step2": "تحدث بوضوح في الميكروفون",
+      "step3": "حرر المفتاح لإنهاء التفريغ"
+    }
+  },
+  "labs": {
+    "title": "المختبرات",
+    "description": "ميزات تجريبية قد تتغير أو تُزال.",
+    "configuredWith": "يستخدم",
+    "notConfigured": "غير مُعدّ - يتطلب Ollama",
+    "activeListening": {
+      "title": "الاستماع النشط",
+      "description": "تفريغ صوتي مستمر مع رؤى مولدة بالذكاء الاصطناعي"
+    },
+    "askAi": {
+      "title": "اسأل الذكاء الاصطناعي",
+      "description": "محادثات صوتية متعددة الأدوار مع نموذج لغوي محلي"
+    },
+    "knowledgeBase": {
+      "title": "قاعدة المعرفة",
+      "description": "بحث مستندات مدعوم بـ RAG لاستجابات الذكاء الاصطناعي"
+    },
+    "postProcessing": {
+      "title": "معالجة لاحقة",
+      "description": "تنظيف وتنسيق النص باستخدام نموذج لغوي"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "الإخراج",
+      "description": "تكوين سلوك اللصق والحافظة"
+    },
+    "audio": {
+      "title": "الصوت",
+      "description": "إعدادات الميكروفون وتنبيهات الصوت"
+    },
+    "vocabulary": {
+      "title": "المفردات",
+      "description": "كلمات مخصصة لتحسين التعرف",
+      "manage": "إدارة المفردات"
+    },
+    "replacements": {
+      "title": "الاستبدالات",
+      "description": "استبدال النص تلقائياً",
+      "manage": "إدارة الاستبدالات"
+    },
+    "advanced": {
+      "title": "متقدم",
+      "description": "خيارات المطور والتكوين المتقدم"
+    }
+  },
+  "historyEmpty": {
+    "title": "لا توجد تفريغات بعد",
+    "description": "سيظهر سجل التفريغ الصوتي هنا بعد أول تسجيل لك.",
+    "action": "ابدأ التفريغ الصوتي"
   },
   "overlay": {
     "transcribing": "...جاري التفريغ",

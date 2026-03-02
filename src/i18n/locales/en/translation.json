@@ -14,7 +14,15 @@
     "postProcessing": "Post Process",
     "history": "History",
     "debug": "Debug",
-    "about": "About"
+    "about": "About",
+    "home": "Transcribe",
+    "labs": "Labs",
+    "settings": "Settings",
+    "activeListening": "Active Listening",
+    "askAi": "Ask AI",
+    "knowledgeBase": "Knowledge Base",
+    "batchImport": "Batch Import",
+    "vocabulary": "Vocabulary"
   },
   "onboarding": {
     "subtitle": "To get started, choose a transcription model",
@@ -549,5 +557,91 @@
   "overlay": {
     "transcribing": "Transcribing...",
     "processing": "Processing..."
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Checking connection...",
+        "connected": "Connected",
+        "disconnected": "Not connected"
+      },
+      "refreshConnection": "Refresh connection",
+      "baseUrl": {
+        "title": "Ollama URL",
+        "description": "The base URL of your Ollama server"
+      },
+      "model": {
+        "title": "Model",
+        "description": "Select the model to use for AI processing",
+        "placeholder": "Select a model",
+        "placeholderNoModels": "No models available",
+        "refresh": "Refresh models"
+      }
+    }
+  },
+  "home": {
+    "title": "Ready to Transcribe",
+    "modelStatus": "Model Status",
+    "shortcutHint": "Press {{shortcut}} to start recording",
+    "noModelSelected": "No model selected",
+    "downloadModel": "Download a Model",
+    "quickStart": {
+      "title": "Quick Start",
+      "step1": "Press your keyboard shortcut to start recording",
+      "step2": "Speak clearly into your microphone",
+      "step3": "Release to transcribe and paste the text"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Experimental features that may change or be removed.",
+    "comingSoon": "Coming Soon",
+    "configuredWith": "Using",
+    "notConfigured": "Not configured - requires Ollama",
+    "activeListening": {
+      "title": "Active Listening",
+      "description": "Continuous transcription with AI-generated insights using Ollama"
+    },
+    "askAi": {
+      "title": "Ask AI",
+      "description": "Multi-turn voice conversations with your local LLM"
+    },
+    "knowledgeBase": {
+      "title": "Knowledge Base",
+      "description": "RAG-powered document search for AI responses"
+    },
+    "postProcessing": {
+      "title": "Post-Processing",
+      "description": "LLM-powered text cleanup and formatting after transcription"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Output",
+      "description": "Configure how transcribed text is handled"
+    },
+    "audio": {
+      "title": "Audio",
+      "description": "Audio input and feedback settings"
+    },
+    "vocabulary": {
+      "title": "Vocabulary",
+      "description": "Custom words for better transcription accuracy",
+      "manage": "Manage Vocabulary"
+    },
+    "replacements": {
+      "title": "Replacements",
+      "description": "Automatic text replacements after transcription",
+      "manage": "Manage Replacements"
+    },
+    "advanced": {
+      "title": "Advanced",
+      "description": "Developer options and experimental settings"
+    }
+  },
+  "historyEmpty": {
+    "title": "No transcriptions yet",
+    "description": "Your transcription history will appear here once you start recording.",
+    "action": "Start Transcribing"
   }
 }

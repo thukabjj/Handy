@@ -1,6 +1,4 @@
 // Settings section components
-export { GeneralSettings } from "./general/GeneralSettings";
-export { AdvancedSettings } from "./advanced/AdvancedSettings";
 export { DebugSettings } from "./debug/DebugSettings";
 export { HistorySettings } from "./history/HistorySettings";
 export { AboutSettings } from "./about/AboutSettings";
@@ -10,6 +8,14 @@ export { AskAiSettings } from "./ask-ai";
 export { KnowledgeBaseSettings } from "./knowledge-base";
 export { BatchProcessingPanel } from "./batch-processing";
 export { VocabularyPanel } from "./vocabulary";
+
+// New simplified navigation components
+export { HomeSettings } from "./home";
+export { LabsSettings } from "./labs";
+export { UnifiedSettings } from "./unified";
+
+// Shared components
+export * from "./shared";
 
 // Individual setting components
 export { MicrophoneSelector } from "./MicrophoneSelector";

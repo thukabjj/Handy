@@ -14,7 +14,15 @@
     "postProcessing": "Son İşlem",
     "history": "Geçmiş",
     "debug": "Hata Ayıklama",
-    "about": "Hakkında"
+    "about": "Hakkında",
+    "home": "Transkripsiyon",
+    "labs": "Labs",
+    "settings": "Ayarlar",
+    "activeListening": "Aktif Dinleme",
+    "askAi": "Yapay Zekaya Sor",
+    "knowledgeBase": "Bilgi Tabanı",
+    "batchImport": "Toplu İçe Aktarma",
+    "vocabulary": "Kelime Hazinesi"
   },
   "onboarding": {
     "subtitle": "Başlamak için bir transkripsiyon modeli seçin",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "Uygulama Dili",
     "description": "Handy arayüzünün dilini değiştirin"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Bağlantı kontrol ediliyor...",
+        "connected": "Bağlı",
+        "disconnected": "Bağlı değil"
+      },
+      "refreshConnection": "Bağlantıyı yenile",
+      "baseUrl": {
+        "title": "Ollama URL",
+        "description": "Ollama sunucunuzun temel URL'si"
+      },
+      "model": {
+        "title": "Model",
+        "description": "Kullanılacak modeli seçin",
+        "placeholder": "Model ara veya seç",
+        "placeholderNoModels": "Model mevcut değil",
+        "refresh": "Modelleri yenile"
+      }
+    }
+  },
+  "home": {
+    "title": "Transkripsiyona Hazır",
+    "modelStatus": "Model Durumu",
+    "shortcutHint": "Kayda başlamak için {{shortcut}} tuşuna basın",
+    "quickStart": {
+      "title": "Hızlı Başlangıç",
+      "step1": "Kayda başlamak için kısayol tuşuna basın",
+      "step2": "Mikrofona net konuşun",
+      "step3": "Transkripsiyonu bitirmek için tuşu bırakın"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Değişebilecek veya kaldırılabilecek deneysel özellikler.",
+    "configuredWith": "Kullanıyor",
+    "notConfigured": "Yapılandırılmadı - Ollama gerekli",
+    "activeListening": {
+      "title": "Aktif Dinleme",
+      "description": "AI tarafından üretilen içgörülerle sürekli transkripsiyon"
+    },
+    "askAi": {
+      "title": "Yapay Zekaya Sor",
+      "description": "Yerel LLM ile çok turlu sesli konuşmalar"
+    },
+    "knowledgeBase": {
+      "title": "Bilgi Tabanı",
+      "description": "AI yanıtları için RAG destekli belge arama"
+    },
+    "postProcessing": {
+      "title": "Son İşlem",
+      "description": "LLM destekli metin temizleme ve biçimlendirme"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Çıktı",
+      "description": "Yapıştırma ve pano davranışını yapılandırın"
+    },
+    "audio": {
+      "title": "Ses",
+      "description": "Mikrofon ve ses geri bildirimi ayarları"
+    },
+    "vocabulary": {
+      "title": "Kelime Hazinesi",
+      "description": "Daha iyi tanıma için özel kelimeler",
+      "manage": "Kelime Hazinesini Yönet"
+    },
+    "replacements": {
+      "title": "Değiştirmeler",
+      "description": "Otomatik metin değiştirme",
+      "manage": "Değiştirmeleri Yönet"
+    },
+    "advanced": {
+      "title": "Gelişmiş",
+      "description": "Geliştirici seçenekleri ve gelişmiş yapılandırma"
+    }
+  },
+  "historyEmpty": {
+    "title": "Henüz transkripsiyon yok",
+    "description": "İlk kaydınızdan sonra transkripsiyon geçmişiniz burada görünecek.",
+    "action": "Transkripsiyona Başla"
   },
   "overlay": {
     "transcribing": "Transkribe ediliyor...",

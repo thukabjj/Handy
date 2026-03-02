@@ -14,7 +14,15 @@
     "postProcessing": "Postproces",
     "history": "Historia",
     "debug": "Debugowanie",
-    "about": "O programie"
+    "about": "O programie",
+    "home": "Transkrypcja",
+    "labs": "Labs",
+    "settings": "Ustawienia",
+    "activeListening": "Aktywne słuchanie",
+    "askAi": "Zapytaj AI",
+    "knowledgeBase": "Baza wiedzy",
+    "batchImport": "Import zbiorczy",
+    "vocabulary": "Słownictwo"
   },
   "onboarding": {
     "subtitle": "Aby rozpocząć, wybierz model transkrypcji",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "Język aplikacji",
     "description": "Zmień język interfejsu Handy"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Sprawdzanie połączenia...",
+        "connected": "Połączono",
+        "disconnected": "Rozłączono"
+      },
+      "refreshConnection": "Odśwież połączenie",
+      "baseUrl": {
+        "title": "URL Ollama",
+        "description": "Bazowy URL serwera Ollama"
+      },
+      "model": {
+        "title": "Model",
+        "description": "Wybierz model do użycia",
+        "placeholder": "Wyszukaj lub wybierz model",
+        "placeholderNoModels": "Brak dostępnych modeli",
+        "refresh": "Odśwież modele"
+      }
+    }
+  },
+  "home": {
+    "title": "Gotowy do transkrypcji",
+    "modelStatus": "Stan modelu",
+    "shortcutHint": "Naciśnij {{shortcut}} aby rozpocząć nagrywanie",
+    "quickStart": {
+      "title": "Szybki start",
+      "step1": "Naciśnij skrót klawiszowy, aby rozpocząć nagrywanie",
+      "step2": "Mów wyraźnie do mikrofonu",
+      "step3": "Zwolnij klawisz, aby zakończyć transkrypcję"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Funkcje eksperymentalne, które mogą się zmienić lub zostać usunięte.",
+    "configuredWith": "Używa",
+    "notConfigured": "Nie skonfigurowano - wymaga Ollama",
+    "activeListening": {
+      "title": "Aktywne słuchanie",
+      "description": "Ciągła transkrypcja z wglądem generowanym przez AI"
+    },
+    "askAi": {
+      "title": "Zapytaj AI",
+      "description": "Wieloetapowe rozmowy głosowe z lokalnym LLM"
+    },
+    "knowledgeBase": {
+      "title": "Baza wiedzy",
+      "description": "Wyszukiwanie dokumentów wspomagane RAG dla odpowiedzi AI"
+    },
+    "postProcessing": {
+      "title": "Postproces",
+      "description": "Czyszczenie i formatowanie tekstu wspomagane przez LLM"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Wyjście",
+      "description": "Konfiguracja zachowania wklejania i schowka"
+    },
+    "audio": {
+      "title": "Dźwięk",
+      "description": "Ustawienia mikrofonu i informacji dźwiękowych"
+    },
+    "vocabulary": {
+      "title": "Słownictwo",
+      "description": "Własne słowa dla lepszego rozpoznawania",
+      "manage": "Zarządzaj słownictwem"
+    },
+    "replacements": {
+      "title": "Zastąpienia",
+      "description": "Automatyczne zastępowanie tekstu",
+      "manage": "Zarządzaj zastąpieniami"
+    },
+    "advanced": {
+      "title": "Zaawansowane",
+      "description": "Opcje deweloperskie i zaawansowana konfiguracja"
+    }
+  },
+  "historyEmpty": {
+    "title": "Brak transkrypcji",
+    "description": "Historia transkrypcji pojawi się tutaj po pierwszym nagraniu.",
+    "action": "Rozpocznij transkrypcję"
   },
   "overlay": {
     "transcribing": "Transkrypcja...",

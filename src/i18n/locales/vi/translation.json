@@ -14,7 +14,15 @@
     "postProcessing": "Xử lý sau",
     "history": "Lịch sử",
     "debug": "Gỡ lỗi",
-    "about": "Giới thiệu"
+    "about": "Giới thiệu",
+    "home": "Chuyển đổi",
+    "labs": "Labs",
+    "settings": "Cài đặt",
+    "activeListening": "Lắng nghe chủ động",
+    "askAi": "Hỏi AI",
+    "knowledgeBase": "Cơ sở kiến thức",
+    "batchImport": "Nhập hàng loạt",
+    "vocabulary": "Từ vựng"
   },
   "onboarding": {
     "subtitle": "Để bắt đầu, hãy chọn một mô hình chuyển đổi giọng nói",
@@ -545,6 +553,89 @@
   "appLanguage": {
     "title": "Ngôn ngữ ứng dụng",
     "description": "Thay đổi ngôn ngữ giao diện của Handy"
+  },
+  "shared": {
+    "ollama": {
+      "connectionStatus": {
+        "checking": "Đang kiểm tra kết nối...",
+        "connected": "Đã kết nối",
+        "disconnected": "Chưa kết nối"
+      },
+      "refreshConnection": "Làm mới kết nối",
+      "baseUrl": {
+        "title": "URL Ollama",
+        "description": "URL cơ sở của máy chủ Ollama của bạn"
+      },
+      "model": {
+        "title": "Mô hình",
+        "description": "Chọn mô hình để sử dụng",
+        "placeholder": "Tìm kiếm hoặc chọn mô hình",
+        "placeholderNoModels": "Không có mô hình nào",
+        "refresh": "Làm mới mô hình"
+      }
+    }
+  },
+  "home": {
+    "title": "Sẵn sàng chuyển đổi",
+    "modelStatus": "Trạng thái mô hình",
+    "shortcutHint": "Nhấn {{shortcut}} để bắt đầu ghi âm",
+    "quickStart": {
+      "title": "Bắt đầu nhanh",
+      "step1": "Nhấn phím tắt để bắt đầu ghi âm",
+      "step2": "Nói rõ ràng vào micrô",
+      "step3": "Thả phím để hoàn tất chuyển đổi"
+    }
+  },
+  "labs": {
+    "title": "Labs",
+    "description": "Các tính năng thử nghiệm có thể thay đổi hoặc bị loại bỏ.",
+    "configuredWith": "Sử dụng",
+    "notConfigured": "Chưa cấu hình - cần Ollama",
+    "activeListening": {
+      "title": "Lắng nghe chủ động",
+      "description": "Chuyển đổi liên tục với thông tin chi tiết do AI tạo ra"
+    },
+    "askAi": {
+      "title": "Hỏi AI",
+      "description": "Cuộc trò chuyện bằng giọng nói nhiều lượt với LLM cục bộ"
+    },
+    "knowledgeBase": {
+      "title": "Cơ sở kiến thức",
+      "description": "Tìm kiếm tài liệu hỗ trợ RAG cho các phản hồi AI"
+    },
+    "postProcessing": {
+      "title": "Xử lý sau",
+      "description": "Làm sạch và định dạng văn bản được hỗ trợ bởi LLM"
+    }
+  },
+  "unifiedSettings": {
+    "output": {
+      "title": "Đầu ra",
+      "description": "Cấu hình hành vi dán và clipboard"
+    },
+    "audio": {
+      "title": "Âm thanh",
+      "description": "Cài đặt micrô và phản hồi âm thanh"
+    },
+    "vocabulary": {
+      "title": "Từ vựng",
+      "description": "Từ tùy chỉnh để nhận dạng tốt hơn",
+      "manage": "Quản lý từ vựng"
+    },
+    "replacements": {
+      "title": "Thay thế",
+      "description": "Thay thế văn bản tự động",
+      "manage": "Quản lý thay thế"
+    },
+    "advanced": {
+      "title": "Nâng cao",
+      "description": "Tùy chọn nhà phát triển và cấu hình nâng cao"
+    }
+  },
+  "historyEmpty": {
+    "title": "Chưa có bản ghi nào",
+    "description": "Lịch sử chuyển đổi của bạn sẽ xuất hiện ở đây sau lần ghi âm đầu tiên.",
+    "action": "Bắt đầu chuyển đổi"
   },
   "overlay": {
     "transcribing": "Đang chuyển đổi...",
