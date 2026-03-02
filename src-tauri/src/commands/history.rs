@@ -1,4 +1,6 @@
+use crate::actions::post_process_transcription;
 use crate::managers::history::{HistoryEntry, HistoryManager};
+use crate::settings::get_settings;
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 
@@ -98,4 +100,68 @@ pub async fn update_recording_retention_period(
         .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+/// Post-process a history entry using the current LLM settings.
+/// Returns the processed text if successful.
+#[tauri::command]
+#[specta::specta]
+pub async fn post_process_history_entry(
+    app: AppHandle,
+    history_manager: State<'_, Arc<HistoryManager>>,
+    id: i64,
+) -> Result<String, String> {
+    // Get the entry
+    let entry = history_manager
+        .get_entry_by_id(id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("History entry with id {} not found", id))?;
+
+    // Get current settings for post-processing config
+    let settings = get_settings(&app);
+
+    // Use the original transcription text for post-processing
+    let text_to_process = &entry.transcription_text;
+
+    // Post-process using the configured LLM
+    let processed_text = post_process_transcription(&settings, text_to_process)
+        .await
+        .ok_or_else(|| {
+            "Post-processing failed. Please check your LLM provider settings.".to_string()
+        })?;
+
+    // Get the prompt that was used
+    let post_process_prompt = settings
+        .post_process_selected_prompt_id
+        .as_ref()
+        .and_then(|prompt_id| {
+            settings
+                .post_process_prompts
+                .iter()
+                .find(|p| &p.id == prompt_id)
+                .map(|p| p.prompt.clone())
+        });
+
+    // Update the entry with the processed text
+    history_manager
+        .update_post_processed_text(id, processed_text.clone(), post_process_prompt)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(processed_text)
+}
+
+/// Get a specific history entry by ID.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_history_entry_by_id(
+    _app: AppHandle,
+    history_manager: State<'_, Arc<HistoryManager>>,
+    id: i64,
+) -> Result<Option<HistoryEntry>, String> {
+    history_manager
+        .get_entry_by_id(id)
+        .await
+        .map_err(|e| e.to_string())
 }

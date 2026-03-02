@@ -8,6 +8,7 @@ mod clipboard;
 mod commands;
 mod helpers;
 mod input;
+mod keyring;
 mod llm_client;
 mod managers;
 mod overlay;
@@ -375,6 +376,8 @@ pub fn run(cli_args: CliArgs) {
         commands::history::delete_history_entry,
         commands::history::update_history_limit,
         commands::history::update_recording_retention_period,
+        commands::history::post_process_history_entry,
+        commands::history::get_history_entry_by_id,
         helpers::clamshell::is_laptop,
         // Active Listening commands
         commands::active_listening::start_active_listening_session,
@@ -455,6 +458,31 @@ pub fn run(cli_args: CliArgs) {
         commands::suggestions::change_min_confidence,
         commands::suggestions::change_auto_dismiss_on_copy,
         commands::suggestions::change_display_duration,
+        // Keyring commands (secure API key storage)
+        commands::keyring::set_api_key,
+        commands::keyring::get_api_key,
+        commands::keyring::delete_api_key,
+        commands::keyring::has_api_key,
+        commands::keyring::get_masked_api_key,
+        // Text replacements commands
+        commands::replacements::get_text_replacements,
+        commands::replacements::add_text_replacement,
+        commands::replacements::update_text_replacement,
+        commands::replacements::delete_text_replacement,
+        commands::replacements::toggle_text_replacement,
+        commands::replacements::change_text_replacements_enabled_setting,
+        commands::replacements::test_text_replacement,
+        commands::replacements::reorder_text_replacement,
+        commands::replacements::import_text_replacements,
+        commands::replacements::export_text_replacements,
+        // Wake-word detection commands
+        commands::wake_word::get_wake_word_settings,
+        commands::wake_word::update_wake_word_settings,
+        commands::wake_word::change_wake_word_enabled_setting,
+        commands::wake_word::change_wake_phrase_setting,
+        commands::wake_word::change_wake_word_action_setting,
+        commands::wake_word::change_wake_word_threshold_setting,
+        commands::wake_word::change_wake_word_cooldown_setting,
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

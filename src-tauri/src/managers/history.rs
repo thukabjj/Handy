@@ -548,6 +548,34 @@ impl HistoryManager {
         Ok(text)
     }
 
+    /// Update the post-processed text for a history entry
+    pub async fn update_post_processed_text(
+        &self,
+        id: i64,
+        post_processed_text: String,
+        post_process_prompt: Option<String>,
+    ) -> Result<()> {
+        let conn = self.get_connection()?;
+
+        conn.execute(
+            "UPDATE transcription_history SET post_processed_text = ?1, post_process_prompt = ?2 WHERE id = ?3",
+            params![post_processed_text, post_process_prompt, id],
+        )?;
+
+        debug!(
+            "Updated post-processed text for history entry {}: {} chars",
+            id,
+            post_processed_text.len()
+        );
+
+        // Emit history updated event
+        if let Err(e) = self.app_handle.emit("history-updated", ()) {
+            error!("Failed to emit history-updated event: {}", e);
+        }
+
+        Ok(())
+    }
+
     /// Insert action items extracted from a transcript
     pub fn insert_action_items(
         &self,

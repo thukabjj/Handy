@@ -3,13 +3,16 @@ pub mod ask_ai;
 pub mod audio;
 pub mod batch_processing;
 pub mod history;
+pub mod keyring;
 pub mod models;
 pub mod rag;
+pub mod replacements;
 pub mod suggestions;
 pub mod tasks;
 pub mod transcription;
 pub mod sound_detection;
 pub mod vocabulary;
+pub mod wake_word;
 
 use crate::settings::{get_settings, write_settings, AppSettings, LogLevel};
 use crate::utils::cancel_current_operation;

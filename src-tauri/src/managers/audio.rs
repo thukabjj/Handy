@@ -1,4 +1,5 @@
 use crate::audio_toolkit::{list_input_devices, vad::SmoothedVad, AudioRecorder, SileroVad};
+use crate::error::HandyError;
 use crate::helpers::clamshell;
 use crate::settings::{get_settings, AppSettings};
 use crate::utils;
@@ -338,8 +339,12 @@ impl AudioRecordingManager {
         let selected_device = self.get_effective_microphone_device(&settings);
 
         if let Some(rec) = recorder_opt.as_mut() {
-            rec.open(selected_device)
-                .map_err(|e| anyhow::anyhow!("Failed to open recorder: {}", e))?;
+            rec.open(selected_device).map_err(|e| {
+                HandyError::audio("No microphone available")
+                    .with_details(e.to_string())
+                    .recoverable()
+                    .with_suggestion("Please connect a microphone and try again")
+            })?;
         }
 
         *open_flag = true;

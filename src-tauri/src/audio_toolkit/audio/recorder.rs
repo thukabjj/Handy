@@ -65,19 +65,34 @@ impl AudioRecorder {
         let host = crate::audio_toolkit::get_cpal_host();
         let device = match device {
             Some(dev) => dev,
-            None => host
-                .default_input_device()
-                .ok_or_else(|| Error::new(std::io::ErrorKind::NotFound, "No input device found"))?,
+            None => host.default_input_device().ok_or_else(|| {
+                Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "No microphone found. Please connect a microphone and try again.",
+                )
+            })?,
         };
 
+        // Validate device configuration BEFORE spawning worker thread
+        // This prevents silent failures and provides better error messages
+        let config = AudioRecorder::get_preferred_config(&device).map_err(|e| {
+            Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "Microphone configuration error: {}. Try selecting a different microphone.",
+                    e
+                ),
+            )
+        })?;
+
         let thread_device = device.clone();
+        let thread_config = config.clone();
         let vad = self.vad.clone();
         // Move the optional level callback into the worker thread
         let level_cb = self.level_cb.clone();
 
         let worker = std::thread::spawn(move || {
-            let config = AudioRecorder::get_preferred_config(&thread_device)
-                .expect("failed to fetch preferred config");
+            let config = thread_config;
 
             let sample_rate = config.sample_rate().0;
             let channels = config.channels() as usize;

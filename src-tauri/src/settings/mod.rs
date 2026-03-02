@@ -1,3 +1,5 @@
+use crate::managers::replacements::TextReplacement;
+use crate::managers::wake_word::WakeWordSettings;
 use log::{debug, warn};
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -360,6 +362,21 @@ pub struct AppSettings {
     #[serde(default = "default_typing_tool")]
     pub typing_tool: TypingTool,
     pub external_script_path: Option<String>,
+    /// Enable transcription hook (external script that processes transcription output)
+    #[serde(default)]
+    pub transcription_hook_enabled: bool,
+    /// Path to transcription hook script (if not set, uses default location in app data dir)
+    #[serde(default)]
+    pub transcription_hook_path: Option<String>,
+    /// Enable text replacements (applied after transcription, before LLM post-processing)
+    #[serde(default)]
+    pub text_replacements_enabled: bool,
+    /// List of text replacement rules
+    #[serde(default)]
+    pub text_replacements: Vec<TextReplacement>,
+    /// Wake-word detection settings
+    #[serde(default)]
+    pub wake_word: WakeWordSettings,
 }
 
 fn default_model() -> String {
@@ -724,6 +741,11 @@ pub fn get_default_settings() -> AppSettings {
         paste_delay_ms: default_paste_delay_ms(),
         typing_tool: default_typing_tool(),
         external_script_path: None,
+        transcription_hook_enabled: false,
+        transcription_hook_path: None,
+        text_replacements_enabled: false,
+        text_replacements: Vec::new(),
+        wake_word: WakeWordSettings::default(),
     }
 }
 

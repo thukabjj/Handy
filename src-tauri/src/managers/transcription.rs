@@ -1,15 +1,19 @@
 use crate::audio_toolkit::{apply_custom_words, filter_transcription_output};
 use crate::managers::model::{EngineType, ModelManager};
+use crate::managers::replacements::apply_replacements;
 use crate::settings::{get_settings, ModelUnloadTimeout};
 use anyhow::Result;
 use log::{debug, error, info, warn};
 use serde::Serialize;
+use std::io::Write;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use transcribe_rs::{
     engines::{
         gigaam::GigaAMEngine,
@@ -28,6 +32,54 @@ use transcribe_rs::{
     },
     TranscriptionEngine,
 };
+
+/// Run transcription through an external hook script.
+/// The script receives transcription text on stdin and should output processed text on stdout.
+fn run_transcription_hook(text: &str, hook_path: &PathBuf) -> Result<String> {
+    if !hook_path.exists() {
+        debug!(
+            "Transcription hook script not found at {:?}, skipping",
+            hook_path
+        );
+        return Ok(text.to_string());
+    }
+
+    debug!("Running transcription hook: {:?}", hook_path);
+
+    let mut child = Command::new(hook_path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| anyhow::anyhow!("Failed to spawn transcription hook: {}", e))?;
+
+    // Write transcription to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(text.as_bytes())
+            .map_err(|e| anyhow::anyhow!("Failed to write to hook stdin: {}", e))?;
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| anyhow::anyhow!("Failed to get hook output: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!(
+            "Transcription hook exited with status {}: {}",
+            output.status, stderr
+        );
+        // Return original text if hook fails
+        return Ok(text.to_string());
+    }
+
+    let processed = String::from_utf8(output.stdout)
+        .map_err(|e| anyhow::anyhow!("Hook output is not valid UTF-8: {}", e))?;
+
+    debug!("Transcription hook processed text successfully");
+    Ok(processed.trim().to_string())
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ModelStateEvent {
@@ -616,6 +668,15 @@ impl TranscriptionManager {
         // Filter out filler words and hallucinations
         let filtered_result = filter_transcription_output(&corrected_result);
 
+        // Apply text replacements if enabled
+        let replaced_result = if settings.text_replacements_enabled
+            && !settings.text_replacements.is_empty()
+        {
+            apply_replacements(&filtered_result, &settings.text_replacements)
+        } else {
+            filtered_result
+        };
+
         let et = std::time::Instant::now();
         let translation_note = if settings.translate_to_english {
             " (translated)"
@@ -628,7 +689,40 @@ impl TranscriptionManager {
             translation_note
         );
 
-        let final_result = filtered_result;
+        // Apply transcription hook if enabled
+        let hooked_result = if settings.transcription_hook_enabled {
+            let hook_path = if let Some(custom_path) = &settings.transcription_hook_path {
+                if !custom_path.is_empty() {
+                    PathBuf::from(custom_path)
+                } else {
+                    // Default location in app data directory
+                    self.app_handle
+                        .path()
+                        .app_data_dir()
+                        .unwrap_or_default()
+                        .join("transcription_hook")
+                }
+            } else {
+                // Default location in app data directory
+                self.app_handle
+                    .path()
+                    .app_data_dir()
+                    .unwrap_or_default()
+                    .join("transcription_hook")
+            };
+
+            match run_transcription_hook(&replaced_result, &hook_path) {
+                Ok(processed) => processed,
+                Err(e) => {
+                    warn!("Transcription hook failed: {}, using original text", e);
+                    replaced_result
+                }
+            }
+        } else {
+            replaced_result
+        };
+
+        let final_result = hooked_result;
 
         if final_result.is_empty() {
             info!("Transcription result is empty");

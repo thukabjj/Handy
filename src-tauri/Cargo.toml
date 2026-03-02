@@ -79,6 +79,7 @@ specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-dialog = "~2.4"
 symphonia = { version = "0.5", features = ["mp3", "aac", "flac", "vorbis", "isomp4"] }
+keyring = "3"
 
 [target.'cfg(unix)'.dependencies]
 signal-hook = "0.3"
