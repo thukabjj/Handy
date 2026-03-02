@@ -1,6 +1,8 @@
-# Upstream PR Tracking
+# Upstream Tracking
 
-This document tracks the synchronization status between this fork and the upstream [cjpais/Handy](https://github.com/cjpais/Handy) repository.
+This document tracks synchronization between this fork and [cjpais/Handy](https://github.com/cjpais/Handy).
+
+---
 
 ## Sync Status
 
@@ -14,135 +16,126 @@ This document tracks the synchronization status between this fork and the upstre
 
 ---
 
-## PRs Ready to Merge
+## Open PRs by Category
 
-These PRs have all CI checks passing and are ready for integration:
+### Ready to Merge
 
-| PR# | Title | CI Status | Notes |
-|-----|-------|-----------|-------|
-| [#807](https://github.com/cjpais/Handy/pull/807) | Add portable mode to NSIS installer | ✅ All pass | Windows installer enhancement |
-| [#851](https://github.com/cjpais/Handy/pull/851) | Per-entry post-process button and version history viewer | ✅ All pass | UI enhancement for post-processing |
-| [#814](https://github.com/cjpais/Handy/pull/814) | Store post-processing API keys in OS keychain | ✅ All pass | Security improvement |
-| [#768](https://github.com/cjpais/Handy/pull/768) | Configurable custom audio feedback sounds | ✅ All pass | Audio customization |
-| [#747](https://github.com/cjpais/Handy/pull/747) | Lazy stream close for bluetooth mic latency | ✅ All pass | Bluetooth audio fix |
-| [#548](https://github.com/cjpais/Handy/pull/548) | Add Flatpak packaging support | ✅ All pass | Linux distribution |
-| [#477](https://github.com/cjpais/Handy/pull/477) | Don't crash if there's no mic | ✅ All pass | Error handling |
+- [#807](https://github.com/cjpais/Handy/pull/807) Portable mode NSIS installer
+- [#851](https://github.com/cjpais/Handy/pull/851) Per-entry post-process button
+- [#814](https://github.com/cjpais/Handy/pull/814) Store API keys in OS keychain
+- [#768](https://github.com/cjpais/Handy/pull/768) Custom audio feedback sounds
+- [#747](https://github.com/cjpais/Handy/pull/747) Lazy stream close for Bluetooth
+- [#548](https://github.com/cjpais/Handy/pull/548) Flatpak packaging
+- [#477](https://github.com/cjpais/Handy/pull/477) Don't crash if no mic
 
----
+### Features
 
-## PRs In Progress
+- [#930](https://github.com/cjpais/Handy/pull/930) Transcription hook
+- [#928](https://github.com/cjpais/Handy/pull/928) HuggingFace custom models
+- [#927](https://github.com/cjpais/Handy/pull/927) Apple Intelligence detection
+- [#874](https://github.com/cjpais/Handy/pull/874) Custom recordings directory
+- [#832](https://github.com/cjpais/Handy/pull/832) Live transcription **(may conflict with Active Listening)**
+- [#784](https://github.com/cjpais/Handy/pull/784) Custom Storybook
+- [#770](https://github.com/cjpais/Handy/pull/770) Hidden OCR template
+- [#734](https://github.com/cjpais/Handy/pull/734) Whisper GPU fallback
+- [#704](https://github.com/cjpais/Handy/pull/704) More LLM variables
+- [#633](https://github.com/cjpais/Handy/pull/633) LLM base URL env support
+- [#618](https://github.com/cjpais/Handy/pull/618) Wake-word detection (draft) **(may complement Active Listening)**
+- [#559](https://github.com/cjpais/Handy/pull/559) Follow OS input language
+- [#552](https://github.com/cjpais/Handy/pull/552) Symmetric visualization bars
+- [#509](https://github.com/cjpais/Handy/pull/509) Local API server **(may share infrastructure with Ask AI)**
+- [#455](https://github.com/cjpais/Handy/pull/455) Text replacements
+- [#381](https://github.com/cjpais/Handy/pull/381) Local file transcription
+- [#369](https://github.com/cjpais/Handy/pull/369) Double-click tray icon
 
-These PRs are actively being developed or have failing CI:
+### Platform Support
 
-| PR# | Title | CI Status | Notes |
-|-----|-------|-----------|-------|
-| [#930](https://github.com/cjpais/Handy/pull/930) | Add transcription hook | Pending | Extensibility feature |
-| [#928](https://github.com/cjpais/Handy/pull/928) | HuggingFace custom model downloads | Pending | Model management |
-| [#927](https://github.com/cjpais/Handy/pull/927) | Improve Apple Intelligence detection | Pending | macOS feature |
-| [#874](https://github.com/cjpais/Handy/pull/874) | Custom recordings directory management | Pending | Storage management |
-| [#872](https://github.com/cjpais/Handy/pull/872) | Bump macOS minimum to 10.15 | Pending | Platform requirement |
-| [#832](https://github.com/cjpais/Handy/pull/832) | Live transcription | ❌ Rust tests fail | **May conflict with Active Listening** |
-| [#784](https://github.com/cjpais/Handy/pull/784) | Custom Storybook for design system | Pending | Development tooling |
-| [#770](https://github.com/cjpais/Handy/pull/770) | Hidden OCR template context | Pending | Post-processing |
-| [#734](https://github.com/cjpais/Handy/pull/734) | Whisper GPU fallback and compute mode | Pending | Performance |
-| [#704](https://github.com/cjpais/Handy/pull/704) | More LLM post-processing variables | Pending | Post-processing |
-| [#633](https://github.com/cjpais/Handy/pull/633) | LLM base URL env support | Pending | Configuration |
-| [#559](https://github.com/cjpais/Handy/pull/559) | Follow OS Input Language | ❌ Rust tests fail | Localization |
-| [#552](https://github.com/cjpais/Handy/pull/552) | Symmetric recording visualization bars | Pending | UI improvement |
-| [#509](https://github.com/cjpais/Handy/pull/509) | OpenAI-style local API server | Pending | API feature |
-| [#455](https://github.com/cjpais/Handy/pull/455) | Text replacements feature | Pending | Text processing |
-| [#381](https://github.com/cjpais/Handy/pull/381) | Local file transcription (WAV, MP3, M4A) | Pending | File import |
-| [#369](https://github.com/cjpais/Handy/pull/369) | Double-click tray icon support | ⚠️ Prettier fail | UX enhancement |
+- [#872](https://github.com/cjpais/Handy/pull/872) macOS minimum 10.15
+- [#572](https://github.com/cjpais/Handy/pull/572) Wayland GNOME shortcuts
+- [#689](https://github.com/cjpais/Handy/pull/689) Wayland remote desktop
 
 ---
 
-## PRs That May Conflict with Local Features
+## Open Issues by Severity
 
-These upstream PRs may have feature overlap with our local implementations:
+### Critical (Crashes)
 
-| PR# | Title | Local Overlap | Action Required |
-|-----|-------|---------------|-----------------|
-| [#832](https://github.com/cjpais/Handy/pull/832) | Live transcription | **Active Listening** | Compare implementations, may need to deprecate local version |
-| [#618](https://github.com/cjpais/Handy/pull/618) | Wake-Word (draft) | **Active Listening** | Wake-word trigger could complement our Ollama-based listening |
-| [#509](https://github.com/cjpais/Handy/pull/509) | Local API server | **Ask AI / RAG** | Could potentially share LLM infrastructure |
+- [#924](https://github.com/cjpais/Handy/issues/924) Kubuntu crash
+- [#880](https://github.com/cjpais/Handy/issues/880) Ubuntu 24.04 crash
+- [#831](https://github.com/cjpais/Handy/issues/831) Segfault on Mint
+- [#806](https://github.com/cjpais/Handy/issues/806) Pop!_OS mic issue
+- [#867](https://github.com/cjpais/Handy/issues/867) CUDA out of memory
+
+### Input/Keyboard
+
+- [#917](https://github.com/cjpais/Handy/issues/917) Super key Windows
+- [#912](https://github.com/cjpais/Handy/issues/912) Numpad hotkeys
+- [#906](https://github.com/cjpais/Handy/issues/906) Korean shortcuts
+- [#865](https://github.com/cjpais/Handy/issues/865) Key4 binding issue
+- [#714](https://github.com/cjpais/Handy/issues/714) Hyper key support
+- [#705](https://github.com/cjpais/Handy/issues/705) Command key macOS
+
+### Audio Issues
+
+- [#907](https://github.com/cjpais/Handy/issues/907) Audio routing macOS
+- [#903](https://github.com/cjpais/Handy/issues/903) Mic not detected
+- [#897](https://github.com/cjpais/Handy/issues/897) External mic switch
+- [#793](https://github.com/cjpais/Handy/issues/793) Bluetooth device issues
+- [#745](https://github.com/cjpais/Handy/issues/745) Stereo input issues
+
+### UI/UX
+
+- [#920](https://github.com/cjpais/Handy/issues/920) Linux tray overlap
+- [#911](https://github.com/cjpais/Handy/issues/911) Window focus loss
+- [#905](https://github.com/cjpais/Handy/issues/905) Overlay position reset
+- [#901](https://github.com/cjpais/Handy/issues/901) Settings search broken
+- [#879](https://github.com/cjpais/Handy/issues/879) Dark mode inconsistent
+- [#864](https://github.com/cjpais/Handy/issues/864) Tray icon visibility
+
+### Feature Requests
+
+- [#926](https://github.com/cjpais/Handy/issues/926) Real-time transcription
+- [#923](https://github.com/cjpais/Handy/issues/923) Custom model paths
+- [#919](https://github.com/cjpais/Handy/issues/919) Export history formats
+- [#909](https://github.com/cjpais/Handy/issues/909) Multi-language support
+- [#866](https://github.com/cjpais/Handy/issues/866) Speaker diarization
+- [#846](https://github.com/cjpais/Handy/issues/846) Timestamp output
 
 ---
 
-## Platform-Specific PRs
+## Fork-Exclusive Features
 
-### Linux
+These features exist only in this fork:
 
-| PR# | Title | Status | Notes |
-|-----|-------|--------|-------|
-| [#572](https://github.com/cjpais/Handy/pull/572) | Wayland GNOME system shortcuts | Pending | Input handling |
-| [#548](https://github.com/cjpais/Handy/pull/548) | Flatpak packaging | ✅ Ready | Distribution |
-| [#689](https://github.com/cjpais/Handy/pull/689) | Wayland remote desktop direct mode | Pending | Remote access |
-
-### macOS
-
-| PR# | Title | Status | Notes |
-|-----|-------|--------|-------|
-| [#927](https://github.com/cjpais/Handy/pull/927) | Apple Intelligence detection | Pending | AI integration |
-| [#872](https://github.com/cjpais/Handy/pull/872) | Minimum version 10.15 | Pending | Compatibility |
-
-### Windows
-
-| PR# | Title | Status | Notes |
-|-----|-------|--------|-------|
-| [#807](https://github.com/cjpais/Handy/pull/807) | Portable mode installer | ✅ Ready | NSIS enhancement |
+| Feature | Backend | Frontend | Lines |
+|---------|---------|----------|-------|
+| **Active Listening** | `managers/active_listening.rs` | `settings/active-listening/` | ~1,367 |
+| **Ask AI** | `managers/ask_ai.rs`, `ask_ai_history.rs` | `settings/ask-ai/` | ~1,128 |
+| **RAG Knowledge Base** | `managers/rag.rs` | `settings/knowledge-base/` | ~590 |
+| **Suggestion Engine** | `managers/suggestion_engine.rs` | `settings/suggestions/` | ~539 |
+| **Ollama Client** | `ollama_client.rs` | - | ~533 |
+| **Audio Loopback** | `audio_toolkit/audio/loopback.rs` | - | ~200 |
+| **Audio Mixer** | `audio_toolkit/audio/mixer.rs` | - | ~150 |
+| **Speaker Diarization** | `audio_toolkit/diarization/` | - | ~300 |
 
 ---
 
-## Local Unique Features (Fork-Only)
+## Potential Conflicts
 
-These features are unique to this fork and not present in upstream:
+These upstream PRs may conflict with fork features:
 
-### Active Listening (`src-tauri/src/managers/active_listening.rs`)
-- **Description**: Continuous transcription with AI-generated insights via Ollama
-- **Status**: ✅ Maintained
-- **Lines**: ~1,367
-- **Dependencies**: Ollama LLM, audio loopback/mixer
-- **Frontend**: `src/components/settings/active-listening/`
-
-### Ask AI (`src-tauri/src/managers/ask_ai.rs`)
-- **Description**: Multi-turn voice conversations with local LLM
-- **Status**: ✅ Maintained
-- **Lines**: ~583
-- **Dependencies**: Ollama LLM
-- **Frontend**: `src/components/settings/ask-ai/`
-- **History**: `src-tauri/src/managers/ask_ai_history.rs` (~545 lines)
-
-### RAG Knowledge Base (`src-tauri/src/managers/rag.rs`)
-- **Description**: Retrieval-Augmented Generation for contextual responses
-- **Status**: ✅ Maintained
-- **Lines**: ~590
-- **Dependencies**: fuse.js (frontend fuzzy search)
-- **Frontend**: `src/components/settings/knowledge-base/`
-
-### Suggestion Engine (`src-tauri/src/managers/suggestion_engine.rs`)
-- **Description**: Context-aware quick responses and suggestions
-- **Status**: ✅ Maintained
-- **Lines**: ~539
-- **Dependencies**: RAG, Ollama LLM
-
-### Audio Toolkit Extensions
-- **Loopback Recording**: `src-tauri/src/audio_toolkit/audio/loopback.rs`
-- **Audio Mixer**: `src-tauri/src/audio_toolkit/audio/mixer.rs`
-- **Speaker Diarization**: `src-tauri/src/audio_toolkit/diarization/`
-
-### Ollama Client (`src-tauri/src/ollama_client.rs`)
-- **Description**: Streaming Ollama LLM client for all AI features
-- **Status**: ✅ Maintained
-- **Lines**: ~533
+| PR | Feature | Conflict | Resolution |
+|----|---------|----------|------------|
+| [#832](https://github.com/cjpais/Handy/pull/832) | Live transcription | Active Listening | Compare implementations, may deprecate local |
+| [#618](https://github.com/cjpais/Handy/pull/618) | Wake-word | Active Listening | Could complement Ollama-based listening |
+| [#509](https://github.com/cjpais/Handy/pull/509) | Local API server | Ask AI / RAG | Could share LLM infrastructure |
 
 ---
 
 ## Sync Procedure
 
-### Regular Sync (Monthly)
-
 ```bash
-# 1. Fetch upstream changes
+# 1. Fetch upstream
 git fetch upstream
 
 # 2. Create sync branch
@@ -151,45 +144,39 @@ git checkout -b feature/upstream-sync-$(date +%Y%m%d)
 # 3. Merge upstream
 git merge upstream/main
 
-# 4. Resolve conflicts (prioritize upstream for core, keep local for unique features)
+# 4. Resolve conflicts
+# Priority: upstream for core, keep local for fork features
 
-# 5. Test build
+# 5. Test
 make check && make test
 
 # 6. Merge to main
 git checkout main
 git merge feature/upstream-sync-$(date +%Y%m%d)
+git push origin main
 ```
 
-### Conflict Resolution Guidelines
+### Conflict Resolution
 
-1. **Core Transcription**: Accept upstream changes
-2. **Settings Structure**: Merge carefully, preserve local settings modules
-3. **UI Components**: Accept upstream, re-add local feature UIs
-4. **lib.rs**: Re-add local manager initializations after merge
-5. **Dependencies**: Prefer upstream versions, keep local-only deps
-
----
-
-## Contributing Back to Upstream
-
-Features that could be contributed back:
-
-| Feature | Effort | Value | Blocker |
-|---------|--------|-------|---------|
-| Ask AI conversation UI | Medium | High | Requires Ollama dependency discussion |
-| RAG knowledge base | High | High | Large PR, needs community input |
-| Suggestion Engine | Medium | Medium | UX design alignment needed |
+| Area | Priority |
+|------|----------|
+| Core transcription (`audio_toolkit/`, `managers/transcription.rs`) | Upstream |
+| Settings structure (`settings/mod.rs`) | Merge carefully |
+| UI components (`src/components/`) | Upstream, re-add local features |
+| `lib.rs` manager init | Re-add local managers |
+| Dependencies (`Cargo.toml`, `package.json`) | Upstream, keep local-only |
 
 ---
 
 ## Changelog
 
 ### 2026-03-01
+
 - Initial sync with upstream v0.7.9
 - Reverted Dictum branding to Handy
-- Preserved all local features (Active Listening, Ask AI, RAG, Suggestions)
-- Added 27 upstream PRs to tracking
+- Preserved fork features (Active Listening, Ask AI, RAG, Suggestions)
+- Added upstream PR/issue tracking (25 PRs, 30 issues)
+- Comprehensive documentation rewrite
 
 ---
 

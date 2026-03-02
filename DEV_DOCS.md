@@ -826,4 +826,302 @@ cd src-tauri && cargo test test_name
 4. **Mock external dependencies**: Tauri commands, network requests, and timers should be mocked.
 5. **Test edge cases**: Empty states, loading states, error states, and boundary conditions.
 
+## Event Catalog
+
+Backend to frontend communication uses Tauri's event system. Here are all events emitted by the backend:
+
+### Audio Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `audio-level` | `{ level: f32 }` | Real-time audio level (0.0 - 1.0) |
+| `audio-device-changed` | `{ deviceId: string }` | Input device was changed |
+| `audio-devices-updated` | `AudioDevice[]` | Device list refreshed |
+
+### Transcription Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `transcription-started` | `{}` | Recording started |
+| `transcription-progress` | `{ progress: f32 }` | Processing progress (0.0 - 1.0) |
+| `transcription-complete` | `{ text: string, duration_ms: u64 }` | Transcription finished |
+| `transcription-error` | `{ error: string }` | Transcription failed |
+| `transcription-cancelled` | `{}` | User cancelled |
+
+### Model Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `model-state-changed` | `{ modelId: string, state: string }` | Model loading state changed |
+| `model-download-progress` | `{ modelId: string, progress: f32 }` | Download progress |
+| `model-download-complete` | `{ modelId: string }` | Download finished |
+| `model-download-error` | `{ modelId: string, error: string }` | Download failed |
+
+### Active Listening Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `active-listening-started` | `{ sessionId: string }` | Session started |
+| `active-listening-stopped` | `{ sessionId: string }` | Session ended |
+| `active-listening-segment` | `{ text: string, speaker?: string }` | New transcription segment |
+| `active-listening-insight` | `{ insight: string, type: string }` | AI insight generated |
+| `active-listening-error` | `{ error: string }` | Session error |
+
+### Ask AI Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `ask-ai-response-start` | `{}` | LLM started responding |
+| `ask-ai-response-chunk` | `{ text: string }` | Streaming response chunk |
+| `ask-ai-response-complete` | `{ fullText: string }` | Response finished |
+| `ask-ai-error` | `{ error: string }` | LLM error |
+
+### Suggestion Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `suggestions-updated` | `Suggestion[]` | New suggestions available |
+| `suggestion-accepted` | `{ id: string }` | User accepted suggestion |
+
+### System Events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `error` | `HandyError` | Global error occurred |
+| `settings-changed` | `{ key: string, value: any }` | Setting was updated |
+
+---
+
+## Database Schema
+
+### history.db (SQLite)
+
+**transcriptions table:**
+
+```sql
+CREATE TABLE transcriptions (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    duration_ms INTEGER,
+    model_id TEXT,
+    language TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    metadata TEXT  -- JSON: { wordCount: number, ... }
+);
+
+CREATE INDEX idx_transcriptions_created_at ON transcriptions(created_at DESC);
+CREATE INDEX idx_transcriptions_model ON transcriptions(model_id);
+```
+
+### ask_ai_history.db (SQLite)
+
+**conversations table:**
+
+```sql
+CREATE TABLE conversations (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    model_id TEXT,
+    system_prompt TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
+```
+
+**messages table:**
+
+```sql
+CREATE TABLE messages (
+    id TEXT PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+    content TEXT NOT NULL,
+    turn_order INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX idx_messages_order ON messages(conversation_id, turn_order);
+```
+
+---
+
+## API Reference
+
+### Settings Commands
+
+```typescript
+// Get all settings
+commands.getAppSettings(): Promise<Result<Settings, string>>
+
+// Update a single setting
+commands.updateAppSetting(key: string, value: unknown): Promise<Result<void, string>>
+
+// Reset settings to defaults
+commands.resetSettings(): Promise<Result<void, string>>
+```
+
+### Audio Commands
+
+```typescript
+// List available audio devices
+commands.listAudioDevices(): Promise<Result<AudioDevice[], string>>
+
+// Set input device
+commands.setInputDevice(deviceId: string): Promise<Result<void, string>>
+
+// Get current audio level
+commands.getAudioLevel(): Promise<Result<number, string>>
+```
+
+### Model Commands
+
+```typescript
+// List available models
+commands.listModels(): Promise<Result<Model[], string>>
+
+// Download a model
+commands.downloadModel(modelId: string): Promise<Result<void, string>>
+
+// Delete a model
+commands.deleteModel(modelId: string): Promise<Result<void, string>>
+
+// Set active model
+commands.setActiveModel(modelId: string): Promise<Result<void, string>>
+```
+
+### Transcription Commands
+
+```typescript
+// Start recording
+commands.startRecording(): Promise<Result<void, string>>
+
+// Stop recording and transcribe
+commands.stopRecording(): Promise<Result<string, string>>
+
+// Cancel recording
+commands.cancelRecording(): Promise<Result<void, string>>
+```
+
+### Active Listening Commands
+
+```typescript
+// Start session
+commands.startActiveListening(options: ActiveListeningOptions): Promise<Result<string, string>>
+
+// Stop session
+commands.stopActiveListening(): Promise<Result<void, string>>
+
+// Request insight
+commands.requestActiveListeningInsight(): Promise<Result<string, string>>
+
+// Get session history
+commands.getActiveListeningSessions(): Promise<Result<Session[], string>>
+```
+
+### Ask AI Commands
+
+```typescript
+// Start conversation
+commands.startAskAiConversation(): Promise<Result<string, string>>
+
+// Send message
+commands.sendAskAiMessage(message: string): Promise<Result<void, string>>
+
+// Get conversation history
+commands.getAskAiConversations(): Promise<Result<Conversation[], string>>
+
+// Delete conversation
+commands.deleteAskAiConversation(id: string): Promise<Result<void, string>>
+```
+
+### RAG Commands
+
+```typescript
+// Index a document
+commands.indexDocument(path: string): Promise<Result<void, string>>
+
+// Search knowledge base
+commands.searchKnowledgeBase(query: string): Promise<Result<SearchResult[], string>>
+
+// Get indexed documents
+commands.getIndexedDocuments(): Promise<Result<Document[], string>>
+
+// Remove document from index
+commands.removeDocument(id: string): Promise<Result<void, string>>
+```
+
+---
+
+## Development Tips
+
+### Hot Reloading
+
+**Frontend:** Vite HMR automatically reloads React components on save.
+
+**Backend:** Rust changes require a rebuild. Use `make dev` which watches for changes.
+
+### Debugging Ollama
+
+```bash
+# Check Ollama status
+curl http://localhost:11434/api/tags
+
+# Test a prompt
+curl http://localhost:11434/api/generate -d '{
+  "model": "llama3.2",
+  "prompt": "Hello!",
+  "stream": false
+}'
+
+# Check embeddings
+curl http://localhost:11434/api/embeddings -d '{
+  "model": "nomic-embed-text",
+  "prompt": "test text"
+}'
+```
+
+### Inspecting SQLite
+
+```bash
+# Open history database
+sqlite3 ~/.config/handy/history.db
+
+# List tables
+.tables
+
+# View transcriptions
+SELECT * FROM transcriptions ORDER BY created_at DESC LIMIT 10;
+
+# Exit
+.quit
+```
+
+### Profiling
+
+```bash
+# Rust build with profiling
+cargo build --release --features profiling
+
+# Frontend bundle analysis
+bun run build --analyze
+```
+
+---
+
+## Related Documentation
+
+- [CLAUDE.md](CLAUDE.md) - Developer reference and code patterns
+- [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System design
+- [FEATURES.md](FEATURES.md) - Feature documentation
+- [BUILD.md](BUILD.md) - Build instructions
+
+---
+
+*Last updated: 2026-03-01*
+
 This document should provide a good starting point for exploring the Handy codebase. For more detailed information, refer to the source code, [CLAUDE.md](CLAUDE.md) for architecture details, and the documentation of the libraries used.

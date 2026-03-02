@@ -6,409 +6,282 @@
 
 Handy is a cross-platform desktop application that provides simple, privacy-focused speech transcription. Press a shortcut, speak, and have your words appear in any text field. This happens on your own computer without sending any information to the cloud.
 
-## Why Handy?
+> This fork adds AI-powered features: **Active Listening**, **Ask AI**, **RAG Knowledge Base**, and **Suggestion Engine** — all running locally via [Ollama](https://ollama.ai).
 
-Handy was created to fill the gap for a truly open source, extensible speech-to-text tool. As stated on [handy.computer](https://handy.computer):
+---
 
-- **Free**: Accessibility tooling belongs in everyone's hands, not behind a paywall
-- **Open Source**: Together we can build further. Extend Handy for yourself and contribute to something bigger
-- **Private**: Your voice stays on your computer. Get transcriptions without sending audio to the cloud
-- **Simple**: One tool, one job. Transcribe what you say and put it into a text box
+## Features
 
-Handy isn't trying to be the best speech-to-text app—it's trying to be the most forkable one.
+### Core Features
 
-## How It Works
+- **Speech-to-Text** — Local transcription using Whisper, Parakeet, Moonshine, or SenseVoice
+- **Push-to-Talk & Auto Mode** — Hold shortcut or auto-detect speech end
+- **Voice Activity Detection** — Silero VAD filters silence automatically
+- **Post-Processing** — Optional LLM cleanup via OpenAI, Anthropic, or Ollama
+- **History** — Searchable transcription history
+- **Multi-Platform** — macOS, Windows, Linux
 
-1. **Press** a configurable keyboard shortcut to start/stop recording (or use push-to-talk mode)
-2. **Speak** your words while the shortcut is active
-3. **Release** and Handy processes your speech using Whisper
-4. **Get** your transcribed text pasted directly into whatever app you're using
+### Fork-Exclusive Features
 
-The process is entirely local:
+| Feature | Description | Requires |
+|---------|-------------|----------|
+| **Active Listening** | Continuous transcription with AI-generated insights | Ollama |
+| **Ask AI** | Multi-turn voice conversations with local LLM | Ollama |
+| **RAG Knowledge Base** | Vector search for context-aware responses | Ollama |
+| **Suggestion Engine** | Context-aware quick responses | Ollama |
+| **System Audio Loopback** | Capture both sides of calls/meetings | - |
+| **Audio Mixer** | Mix microphone + system audio | - |
 
-- Silence is filtered using VAD (Voice Activity Detection) with Silero
-- Transcription uses your choice of models:
-  - **Whisper models** (Small/Medium/Turbo/Large) with GPU acceleration when available
-  - **Parakeet V3** - CPU-optimized model with excellent performance and automatic language detection
-- Works on Windows, macOS, and Linux
+See [FEATURES.md](FEATURES.md) for detailed documentation.
+
+---
 
 ## Quick Start
 
 ### Installation
 
-1. Download the latest release from the [releases page](https://github.com/cjpais/Handy/releases) or the [website](https://handy.computer)
-   - **macOS**: Also available via [Homebrew cask](https://formulae.brew.sh/cask/handy): `brew install --cask handy`
-2. Install the application
-3. Launch Handy and grant necessary system permissions (microphone, accessibility)
-4. Configure your preferred keyboard shortcuts in Settings
+**Option 1: Download Release**
+
+Download from [releases page](https://github.com/cjpais/Handy/releases) or [handy.computer](https://handy.computer)
+
+**Option 2: Homebrew (macOS)**
+
+```bash
+brew install --cask handy
+```
+
+**Option 3: Build from Source**
+
+```bash
+git clone git@github.com:thukabjj/Handy.git
+cd Handy
+make install
+make dev
+```
+
+See [BUILD.md](BUILD.md) for platform-specific requirements.
+
+### First Run
+
+1. Launch Handy
+2. Grant microphone and accessibility permissions
+3. Download a transcription model (Whisper Base recommended)
+4. Configure your keyboard shortcut
 5. Start transcribing!
 
-### Development Setup
-
-For detailed build instructions including platform-specific requirements, see [BUILD.md](BUILD.md).
-
-## Architecture
-
-Handy is built as a Tauri application combining:
-
-- **Frontend**: React + TypeScript with Tailwind CSS for the settings UI
-- **Backend**: Rust for system integration, audio processing, and ML inference
-- **Core Libraries**:
-  - `whisper-rs`: Local speech recognition with Whisper models
-  - `transcription-rs`: CPU-optimized speech recognition with Parakeet models
-  - `cpal`: Cross-platform audio I/O
-  - `vad-rs`: Voice Activity Detection
-  - `rdev`: Global keyboard shortcuts and system events
-  - `rubato`: Audio resampling
-
-### Debug Mode
-
-Handy includes an advanced debug mode for development and troubleshooting. Access it by pressing:
-
-- **macOS**: `Cmd+Shift+D`
-- **Windows/Linux**: `Ctrl+Shift+D`
-
-### CLI Parameters
-
-Handy supports command-line flags for controlling a running instance and customizing startup behavior. These work on all platforms (macOS, Windows, Linux).
-
-**Remote control flags** (sent to an already-running instance via the single-instance plugin):
+### Ollama Setup (For AI Features)
 
 ```bash
-handy --toggle-transcription    # Toggle recording on/off
-handy --toggle-post-process     # Toggle recording with post-processing on/off
-handy --cancel                  # Cancel the current operation
+# Install Ollama
+brew install ollama          # macOS
+# or curl -fsSL https://ollama.com/install.sh | sh  # Linux
+
+# Start Ollama server
+ollama serve
+
+# Pull a model
+ollama pull llama3.2
 ```
 
-**Startup flags:**
+Then enable features in Settings > Active Listening / Ask AI / Knowledge Base.
 
-```bash
-handy --start-hidden            # Start without showing the main window
-handy --no-tray                 # Start without the system tray icon
-handy --debug                   # Enable debug mode with verbose logging
-handy --help                    # Show all available flags
+---
+
+## How It Works
+
+```
+Press Shortcut → Speak → VAD Filters Silence → Local Transcription → Paste to App
 ```
 
-Flags can be combined for autostart scenarios:
+**Supported Models:**
 
-```bash
-handy --start-hidden --no-tray
-```
+| Model | Size | Speed | Accuracy |
+|-------|------|-------|----------|
+| Whisper Tiny | 75MB | Fastest | Good |
+| Whisper Base | 142MB | Fast | Better |
+| Whisper Small | 466MB | Medium | Good |
+| Whisper Medium | 1.5GB | Slow | Great |
+| Whisper Large | 2.9GB | Slowest | Best |
+| Parakeet V3 | 478MB | Fast | Good (English) |
 
-> **macOS tip:** When Handy is installed as an app bundle, invoke the binary directly:
->
-> ```bash
-> /Applications/Handy.app/Contents/MacOS/Handy --toggle-transcription
-> ```
+---
 
-## Known Issues & Current Limitations
+## Documentation
 
-This project is actively being developed and has some [known issues](https://github.com/cjpais/Handy/issues). We believe in transparency about the current state:
+| Document | Description |
+|----------|-------------|
+| [FEATURES.md](FEATURES.md) | Feature documentation and usage |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and data flow |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [CLAUDE.md](CLAUDE.md) | Developer reference and patterns |
+| [DEV_DOCS.md](DEV_DOCS.md) | Technical reference |
+| [BUILD.md](BUILD.md) | Build instructions |
+| [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) | Fork sync status |
 
-### Major Issues (Help Wanted)
+---
 
-**Whisper Model Crashes:**
+## Platform Support
 
-- Whisper models crash on certain system configurations (Windows and Linux)
-- Does not affect all systems - issue is configuration-dependent
-  - If you experience crashes and are a developer, please help to fix and provide debug logs!
-
-**Wayland Support (Linux):**
-
-- Limited support for Wayland display server
-- Requires [`wtype`](https://github.com/atx/wtype) or [`dotool`](https://sr.ht/~geb/dotool/) for text input to work correctly (see [Linux Notes](#linux-notes) below for installation)
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **macOS** (Intel & Apple Silicon) | Full | Metal GPU acceleration |
+| **Windows** (x64) | Full | Vulkan/DirectML acceleration |
+| **Linux** (x64) | Full | Wayland requires wtype/dotool |
 
 ### Linux Notes
 
 **Text Input Tools:**
 
-For reliable text input on Linux, install the appropriate tool for your display server:
+| Display Server | Tool | Install |
+|----------------|------|---------|
+| X11 | xdotool | `sudo apt install xdotool` |
+| Wayland | wtype | `sudo apt install wtype` |
+| Both | dotool | `sudo apt install dotool` |
 
-| Display Server | Recommended Tool | Install Command                                    |
-| -------------- | ---------------- | -------------------------------------------------- |
-| X11            | `xdotool`        | `sudo apt install xdotool`                         |
-| Wayland        | `wtype`          | `sudo apt install wtype`                           |
-| Both           | `dotool`         | `sudo apt install dotool` (requires `input` group) |
+**Wayland Shortcuts:**
 
-- **X11**: Install `xdotool` for both direct typing and clipboard paste shortcuts
-- **Wayland**: Install `wtype` (preferred) or `dotool` for text input to work correctly
-- **dotool setup**: Requires adding your user to the `input` group: `sudo usermod -aG input $USER` (then log out and back in)
+Use CLI flags with your window manager:
 
-Without these tools, Handy falls back to enigo which may have limited compatibility, especially on Wayland.
+```bash
+# GNOME: Settings > Keyboard > Custom Shortcuts
+handy --toggle-transcription
 
-**Other Notes:**
+# Sway/i3
+bindsym $mod+o exec handy --toggle-transcription
 
-- **Runtime library dependency (`libgtk-layer-shell.so.0`)**:
-  - Handy links `gtk-layer-shell` on Linux. If startup fails with `error while loading shared libraries: libgtk-layer-shell.so.0`, install the runtime package for your distro:
+# Or via Unix signals
+bindsym $mod+o exec pkill -USR2 -n handy
+```
 
-    | Distro        | Package to install    | Example command                        |
-    | ------------- | --------------------- | -------------------------------------- |
-    | Ubuntu/Debian | `libgtk-layer-shell0` | `sudo apt install libgtk-layer-shell0` |
-    | Fedora/RHEL   | `gtk-layer-shell`     | `sudo dnf install gtk-layer-shell`     |
-    | Arch Linux    | `gtk-layer-shell`     | `sudo pacman -S gtk-layer-shell`       |
+---
 
-  - For building from source on Ubuntu/Debian, you may also need `libgtk-layer-shell-dev`.
+## CLI Parameters
 
-- The recording overlay is disabled by default on Linux (`Overlay Position: None`) because certain compositors treat it as the active window. When the overlay is visible it can steal focus, which prevents Handy from pasting back into the application that triggered transcription. If you enable the overlay anyway, be aware that clipboard-based pasting might fail or end up in the wrong window.
-- If you are having trouble with the app, running with the environment variable `WEBKIT_DISABLE_DMABUF_RENDERER=1` may help
-- **Global keyboard shortcuts (Wayland):** On Wayland, system-level shortcuts must be configured through your desktop environment or window manager. Use the [CLI flags](#cli-parameters) as the command for your custom shortcut.
+```bash
+# Remote control (sent to running instance)
+handy --toggle-transcription    # Toggle recording
+handy --toggle-post-process     # Toggle with post-processing
+handy --cancel                  # Cancel current operation
 
-  **GNOME:**
-  1. Open **Settings > Keyboard > Keyboard Shortcuts > Custom Shortcuts**
-  2. Click the **+** button to add a new shortcut
-  3. Set the **Name** to `Toggle Handy Transcription`
-  4. Set the **Command** to `handy --toggle-transcription`
-  5. Click **Set Shortcut** and press your desired key combination (e.g., `Super+O`)
+# Startup flags
+handy --start-hidden            # Start without window
+handy --no-tray                 # No system tray icon
+handy --debug                   # Enable debug logging
+```
 
-  **KDE Plasma:**
-  1. Open **System Settings > Shortcuts > Custom Shortcuts**
-  2. Click **Edit > New > Global Shortcut > Command/URL**
-  3. Name it `Toggle Handy Transcription`
-  4. In the **Trigger** tab, set your desired key combination
-  5. In the **Action** tab, set the command to `handy --toggle-transcription`
+---
 
-  **Sway / i3:**
+## Debug Mode
 
-  Add to your config file (`~/.config/sway/config` or `~/.config/i3/config`):
+Access advanced diagnostics: `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux)
 
-  ```ini
-  bindsym $mod+o exec handy --toggle-transcription
-  ```
-
-  **Hyprland:**
-
-  Add to your config file (`~/.config/hypr/hyprland.conf`):
-
-  ```ini
-  bind = $mainMod, O, exec, handy --toggle-transcription
-  ```
-
-- You can also manage global shortcuts outside of Handy via Unix signals, which lets Wayland window managers or other hotkey daemons keep ownership of keybindings:
-
-  | Signal    | Action                                    | Example                |
-  | --------- | ----------------------------------------- | ---------------------- |
-  | `SIGUSR2` | Toggle transcription                      | `pkill -USR2 -n handy` |
-  | `SIGUSR1` | Toggle transcription with post-processing | `pkill -USR1 -n handy` |
-
-  Example Sway config:
-
-  ```ini
-  bindsym $mod+o exec pkill -USR2 -n handy
-  bindsym $mod+p exec pkill -USR1 -n handy
-  ```
-
-  `pkill` here simply delivers the signal—it does not terminate the process.
-
-### Platform Support
-
-- **macOS (both Intel and Apple Silicon)**
-- **x64 Windows**
-- **x64 Linux**
-
-### System Requirements/Recommendations
-
-The following are recommendations for running Handy on your own machine. If you don't meet the system requirements, the performance of the application may be degraded. We are working on improving the performance across all kinds of computers and hardware.
-
-**For Whisper Models:**
-
-- **macOS**: M series Mac, Intel Mac
-- **Windows**: Intel, AMD, or NVIDIA GPU
-- **Linux**: Intel, AMD, or NVIDIA GPU
-  - Ubuntu 22.04, 24.04
-
-**For Parakeet V3 Model:**
-
-- **CPU-only operation** - runs on a wide variety of hardware
-- **Minimum**: Intel Skylake (6th gen) or equivalent AMD processors
-- **Performance**: ~5x real-time speed on mid-range hardware (tested on i5)
-- **Automatic language detection** - no manual language selection required
-
-## Roadmap & Active Development
-
-We're actively working on several features and improvements. Contributions and feedback are welcome!
-
-### In Progress
-
-**Debug Logging:**
-
-- Adding debug logging to a file to help diagnose issues
-
-**macOS Keyboard Improvements:**
-
-- Support for Globe key as transcription trigger
-- A rewrite of global shortcut handling for MacOS, and potentially other OS's too.
-
-**Opt-in Analytics:**
-
-- Collect anonymous usage data to help improve Handy
-- Privacy-first approach with clear opt-in
-
-**Settings Refactoring:**
-
-- Cleanup and refactor settings system which is becoming bloated and messy
-- Implement better abstractions for settings management
-
-**Tauri Commands Cleanup:**
-
-- Abstract and organize Tauri command patterns
-- Investigate tauri-specta for improved type safety and organization
+---
 
 ## Troubleshooting
 
-### Manual Model Installation (For Proxy Users or Network Restrictions)
+### Manual Model Installation
 
-If you're behind a proxy, firewall, or in a restricted network environment where Handy cannot download models automatically, you can manually download and install them. The URLs are publicly accessible from any browser.
+If behind a proxy, download models manually:
 
-#### Step 1: Find Your App Data Directory
+**Whisper Models:**
+- Small: `https://blob.handy.computer/ggml-small.bin`
+- Medium: `https://blob.handy.computer/whisper-medium-q4_1.bin`
+- Turbo: `https://blob.handy.computer/ggml-large-v3-turbo.bin`
+- Large: `https://blob.handy.computer/ggml-large-v3-q5_0.bin`
 
-1. Open Handy settings
-2. Navigate to the **About** section
-3. Copy the "App Data Directory" path shown there, or use the shortcuts:
-   - **macOS**: `Cmd+Shift+D` to open debug menu
-   - **Windows/Linux**: `Ctrl+Shift+D` to open debug menu
+**Parakeet Models:**
+- V2: `https://blob.handy.computer/parakeet-v2-int8.tar.gz`
+- V3: `https://blob.handy.computer/parakeet-v3-int8.tar.gz`
 
-The typical paths are:
+Place in `~/.config/handy/models/` (Linux), `~/Library/Application Support/com.pais.handy/models/` (macOS), or `%APPDATA%\com.pais.handy\models\` (Windows).
 
-- **macOS**: `~/Library/Application Support/com.pais.handy/`
-- **Windows**: `C:\Users\{username}\AppData\Roaming\com.pais.handy\`
-- **Linux**: `~/.config/com.pais.handy/`
+### Common Issues
 
-#### Step 2: Create Models Directory
-
-Inside your app data directory, create a `models` folder if it doesn't already exist:
-
+**"Ollama not connected":**
 ```bash
-# macOS/Linux
-mkdir -p ~/Library/Application\ Support/com.pais.handy/models
-
-# Windows (PowerShell)
-New-Item -ItemType Directory -Force -Path "$env:APPDATA\com.pais.handy\models"
+ollama serve  # Start Ollama server
+curl http://localhost:11434/api/tags  # Verify
 ```
 
-#### Step 3: Download Model Files
-
-Download the models you want from below
-
-**Whisper Models (single .bin files):**
-
-- Small (487 MB): `https://blob.handy.computer/ggml-small.bin`
-- Medium (492 MB): `https://blob.handy.computer/whisper-medium-q4_1.bin`
-- Turbo (1600 MB): `https://blob.handy.computer/ggml-large-v3-turbo.bin`
-- Large (1100 MB): `https://blob.handy.computer/ggml-large-v3-q5_0.bin`
-
-**Parakeet Models (compressed archives):**
-
-- V2 (473 MB): `https://blob.handy.computer/parakeet-v2-int8.tar.gz`
-- V3 (478 MB): `https://blob.handy.computer/parakeet-v3-int8.tar.gz`
-
-#### Step 4: Install Models
-
-**For Whisper Models (.bin files):**
-
-Simply place the `.bin` file directly into the `models` directory:
-
-```
-{app_data_dir}/models/
-├── ggml-small.bin
-├── whisper-medium-q4_1.bin
-├── ggml-large-v3-turbo.bin
-└── ggml-large-v3-q5_0.bin
+**Linux crashes:**
+```bash
+WEBKIT_DISABLE_DMABUF_RENDERER=1 handy
 ```
 
-**For Parakeet Models (.tar.gz archives):**
-
-1. Extract the `.tar.gz` file
-2. Place the **extracted directory** into the `models` folder
-3. The directory must be named exactly as follows:
-   - **Parakeet V2**: `parakeet-tdt-0.6b-v2-int8`
-   - **Parakeet V3**: `parakeet-tdt-0.6b-v3-int8`
-
-Final structure should look like:
-
-```
-{app_data_dir}/models/
-├── parakeet-tdt-0.6b-v2-int8/     (directory with model files inside)
-│   ├── (model files)
-│   └── (config files)
-└── parakeet-tdt-0.6b-v3-int8/     (directory with model files inside)
-    ├── (model files)
-    └── (config files)
+**Missing library (libgtk-layer-shell.so.0):**
+```bash
+sudo apt install libgtk-layer-shell0  # Ubuntu/Debian
+sudo dnf install gtk-layer-shell      # Fedora
 ```
 
-**Important Notes:**
+---
 
-- For Parakeet models, the extracted directory name **must** match exactly as shown above
-- Do not rename the `.bin` files for Whisper models—use the exact filenames from the download URLs
-- After placing the files, restart Handy to detect the new models
+## Contributing
 
-#### Step 5: Verify Installation
+See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup
+- Code patterns (Manager, Command, Settings, Components)
+- Testing guidelines
+- PR process
 
-1. Restart Handy
-2. Open Settings → Models
-3. Your manually installed models should now appear as "Downloaded"
-4. Select the model you want to use and test transcription
+**Quick Start:**
+```bash
+git clone git@github.com:YOUR_USERNAME/Handy.git
+cd Handy
+make install
+make dev
+```
 
-### Custom Whisper Models
+---
 
-Handy can auto-discover custom Whisper GGML models placed in the `models` directory. This is useful for users who want to use fine-tuned or community models not included in the default model list.
+## Upstream Sync
 
-**How to use:**
+This fork tracks [cjpais/Handy](https://github.com/cjpais/Handy). See [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) for:
+- Open PRs and issues
+- Sync status
+- Conflict resolution guidelines
 
-1. Obtain a Whisper model in GGML `.bin` format (e.g., from [Hugging Face](https://huggingface.co/models?search=whisper%20ggml))
-2. Place the `.bin` file in your `models` directory (see paths above)
-3. Restart Handy to discover the new model
-4. The model will appear in the "Custom Models" section of the Models settings page
-
-**Important:**
-
-- Community models are user-provided and may not receive troubleshooting assistance
-- The model must be a valid Whisper GGML format (`.bin` file)
-- Model name is derived from the filename (e.g., `my-custom-model.bin` → "My Custom Model")
-
-### How to Contribute
-
-1. **Check existing issues** at [github.com/cjpais/Handy/issues](https://github.com/cjpais/Handy/issues)
-2. **Fork the repository** and create a feature branch
-3. **Test thoroughly** on your target platform
-4. **Submit a pull request** with clear description of changes
-5. **Join the discussion** - reach out at [contact@handy.computer](mailto:contact@handy.computer)
-
-The goal is to create both a useful tool and a foundation for others to build upon—a well-patterned, simple codebase that serves the community.
+---
 
 ## Sponsors
 
 <div align="center">
-  We're grateful for the support of our sponsors who help make Handy possible:
-  <br><br>
   <a href="https://wordcab.com">
     <img src="sponsor-images/wordcab.png" alt="Wordcab" width="120" height="120">
   </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://github.com/epicenter-so/epicenter">
     <img src="sponsor-images/epicenter.png" alt="Epicenter" width="120" height="120">
   </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://boltai.com?utm_source=handy">
     <img src="sponsor-images/boltai.jpg" alt="Bolt AI" width="120" height="120">
   </a>
 </div>
 
+---
+
 ## Related Projects
 
-- **[Handy CLI](https://github.com/cjpais/handy-cli)** - The original Python command-line version
-- **[handy.computer](https://handy.computer)** - Project website with demos and documentation
+- [Handy CLI](https://github.com/cjpais/handy-cli) — Original Python CLI version
+- [handy.computer](https://handy.computer) — Project website
+
+---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE)
+
+---
 
 ## Acknowledgments
 
-- **Whisper** by OpenAI for the speech recognition model
-- **whisper.cpp and ggml** for amazing cross-platform whisper inference/acceleration
-- **Silero** for great lightweight VAD
-- **Tauri** team for the excellent Rust-based app framework
-- **Community contributors** helping make Handy better
+- **Whisper** by OpenAI
+- **whisper.cpp and ggml** for cross-platform inference
+- **Silero** for VAD
+- **Tauri** for the app framework
+- **Ollama** for local LLM inference
+- **Community contributors**
 
 ---
 
