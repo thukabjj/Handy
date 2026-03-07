@@ -666,7 +666,11 @@ impl TranscriptionManager {
         };
 
         // Filter out filler words and hallucinations
-        let filtered_result = filter_transcription_output(&corrected_result);
+        let filtered_result = filter_transcription_output(
+            &corrected_result,
+            &settings.app_language,
+            &settings.custom_filler_words,
+        );
 
         // Apply text replacements if enabled
         let replaced_result = if settings.text_replacements_enabled

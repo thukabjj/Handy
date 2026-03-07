@@ -377,6 +377,8 @@ pub struct AppSettings {
     /// Wake-word detection settings
     #[serde(default)]
     pub wake_word: WakeWordSettings,
+    #[serde(default)]
+    pub custom_filler_words: Option<Vec<String>>,
 }
 
 fn default_model() -> String {
@@ -746,6 +748,7 @@ pub fn get_default_settings() -> AppSettings {
         text_replacements_enabled: false,
         text_replacements: Vec::new(),
         wake_word: WakeWordSettings::default(),
+        custom_filler_words: None,
     }
 }
 
@@ -775,7 +778,7 @@ impl AppSettings {
 pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     // Initialize store
     let store = app
-        .store(SETTINGS_STORE_PATH)
+        .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
     let mut settings = if let Some(settings_value) = store.get("settings") {
@@ -825,7 +828,7 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
 
 pub fn get_settings(app: &AppHandle) -> AppSettings {
     let store = app
-        .store(SETTINGS_STORE_PATH)
+        .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
     let mut settings = if let Some(settings_value) = store.get("settings") {
@@ -849,7 +852,7 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
 
 pub fn write_settings(app: &AppHandle, settings: AppSettings) {
     let store = app
-        .store(SETTINGS_STORE_PATH)
+        .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
