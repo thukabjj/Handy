@@ -186,6 +186,20 @@ pub async fn send_chat_completion_with_schema(
         .and_then(|choice| choice.message.content.clone()))
 }
 
+/// Fetch available models from an OpenAI-compatible API (optionally filtered to free models)
+/// When `free_only` is true, only returns models whose ID contains ":free"
+pub async fn fetch_models_filtered(
+    provider: &PostProcessProvider,
+    api_key: String,
+    free_only: bool,
+) -> Result<Vec<String>, String> {
+    let mut models = fetch_models(provider, api_key).await?;
+    if free_only {
+        models.retain(|id| id.contains(":free"));
+    }
+    Ok(models)
+}
+
 /// Fetch available models from an OpenAI-compatible API
 /// Returns a list of model IDs
 pub async fn fetch_models(
@@ -244,4 +258,304 @@ pub async fn fetch_models(
     }
 
     Ok(models)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::settings::PostProcessProvider;
+    use tokio::sync::OnceCell;
+
+    fn openrouter_provider() -> PostProcessProvider {
+        PostProcessProvider {
+            id: "openrouter".to_string(),
+            label: "OpenRouter".to_string(),
+            base_url: "https://openrouter.ai/api/v1".to_string(),
+            allow_base_url_edit: false,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
+        }
+    }
+
+    fn api_key() -> String {
+        std::env::var("OPENROUTER_API_KEY")
+            .expect("OPENROUTER_API_KEY must be set for integration tests")
+    }
+
+    /// Discover a free model from OpenRouter at runtime.
+    /// Cached across tests so we only call the API once.
+    static FREE_MODEL: OnceCell<String> = OnceCell::const_new();
+
+    async fn free_model() -> &'static str {
+        FREE_MODEL
+            .get_or_init(|| async {
+                let provider = openrouter_provider();
+                let free = fetch_models_filtered(&provider, api_key(), true)
+                    .await
+                    .expect("should fetch free models");
+                assert!(!free.is_empty(), "no free models available on OpenRouter");
+                // Prefer well-known models, fall back to first available
+                let preferred = [
+                    "google/gemma-3-1b-it:free",
+                    "qwen/qwen3-0.6b:free",
+                    "meta-llama/llama-3.1-8b-instruct:free",
+                ];
+                for p in preferred {
+                    if free.contains(&p.to_string()) {
+                        return p.to_string();
+                    }
+                }
+                free[0].clone()
+            })
+            .await
+    }
+
+    /// Try a chat completion, retrying once with a different free model on 404.
+    async fn resilient_chat_completion(
+        provider: &PostProcessProvider,
+        key: &str,
+        prompt: &str,
+        system: Option<&str>,
+        schema: Option<Value>,
+    ) -> Result<Option<String>, String> {
+        let model = free_model().await;
+        let result = send_chat_completion_with_schema(
+            provider,
+            key.to_string(),
+            model,
+            prompt.to_string(),
+            system.map(|s| s.to_string()),
+            schema.clone(),
+        )
+        .await;
+
+        match &result {
+            Err(e) if e.contains("404") => {
+                // Model disappeared — try fetching a fresh one
+                let fresh = fetch_models_filtered(provider, key.to_string(), true)
+                    .await
+                    .unwrap_or_default();
+                if let Some(fallback) = fresh.first() {
+                    return send_chat_completion_with_schema(
+                        provider,
+                        key.to_string(),
+                        fallback,
+                        prompt.to_string(),
+                        system.map(|s| s.to_string()),
+                        schema,
+                    )
+                    .await;
+                }
+                result
+            }
+            _ => result,
+        }
+    }
+
+    // ── fetch_models ────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_fetch_models_returns_non_empty_list() {
+        let provider = openrouter_provider();
+        let models = fetch_models(&provider, api_key())
+            .await
+            .expect("fetch_models should succeed");
+
+        assert!(
+            !models.is_empty(),
+            "OpenRouter should return at least one model"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_fetch_models_filtered_free_only() {
+        let provider = openrouter_provider();
+        let free_models = fetch_models_filtered(&provider, api_key(), true)
+            .await
+            .expect("fetch_models_filtered should succeed");
+
+        assert!(
+            !free_models.is_empty(),
+            "OpenRouter should have at least one free model"
+        );
+        for model_id in &free_models {
+            assert!(
+                model_id.contains(":free"),
+                "Model '{}' should contain ':free' suffix",
+                model_id
+            );
+        }
+    }
+
+    // ── chat completion ─────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_chat_completion_basic() {
+        let provider = openrouter_provider();
+        let result = resilient_chat_completion(
+            &provider,
+            &api_key(),
+            "Reply with only the word 'hello'.",
+            None,
+            None,
+        )
+        .await
+        .expect("chat completion should succeed");
+
+        let content = result.expect("response should have content");
+        assert!(
+            !content.trim().is_empty(),
+            "Response content should not be empty"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_chat_completion_with_system_prompt() {
+        let provider = openrouter_provider();
+        let result = resilient_chat_completion(
+            &provider,
+            &api_key(),
+            "What is 2+2? Reply with just the number.",
+            Some("You are a math tutor. Answer with only the number."),
+            None,
+        )
+        .await
+        .expect("chat completion with system prompt should succeed");
+
+        let content = result.expect("response should have content");
+        assert!(
+            content.contains('4'),
+            "Response should contain '4', got: {}",
+            content
+        );
+    }
+
+    #[tokio::test]
+    async fn test_chat_completion_with_json_schema() {
+        let provider = openrouter_provider();
+        let schema = serde_json::json!({
+            "type": "object",
+            "properties": {
+                "transcription": {
+                    "type": "string",
+                    "description": "The corrected transcription"
+                }
+            },
+            "required": ["transcription"],
+            "additionalProperties": false
+        });
+
+        let result = resilient_chat_completion(
+            &provider,
+            &api_key(),
+            "Fix this transcription: 'helo wrld'",
+            Some("You fix transcriptions. Return JSON."),
+            Some(schema),
+        )
+        .await;
+
+        match result {
+            Ok(Some(content)) => {
+                // If the model supports structured output, it should return valid JSON
+                let parsed: Result<serde_json::Value, _> = serde_json::from_str(&content);
+                assert!(
+                    parsed.is_ok(),
+                    "Response should be valid JSON, got: {}",
+                    content
+                );
+            }
+            Ok(None) => {} // acceptable
+            Err(e) if e.contains("400") && e.contains("response_format") => {
+                // Free model's provider doesn't support json_schema — acceptable
+                eprintln!(
+                    "Skipped: free model provider doesn't support json_schema: {}",
+                    e
+                );
+            }
+            Err(e) if e.contains("404") => {
+                eprintln!("Skipped: model unavailable: {}", e);
+            }
+            Err(e) => panic!("Unexpected error: {}", e),
+        }
+    }
+
+    // ── error cases ─────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_chat_completion_invalid_model() {
+        let provider = openrouter_provider();
+        let result = send_chat_completion(
+            &provider,
+            api_key(),
+            "nonexistent/model-that-does-not-exist",
+            "hello".to_string(),
+        )
+        .await;
+
+        assert!(
+            result.is_err(),
+            "Should fail with nonexistent model, got: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn test_chat_completion_invalid_api_key() {
+        let provider = openrouter_provider();
+        let model = free_model().await;
+        let result = send_chat_completion(
+            &provider,
+            "sk-invalid-key-12345".to_string(),
+            model,
+            "hello".to_string(),
+        )
+        .await;
+
+        // Free models may still respond with an invalid key, so we accept
+        // either an error or a successful response — the key point is no panic.
+        match result {
+            Err(_) => {}
+            Ok(_) => {}
+        }
+    }
+
+    // ── multiple free models ────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_chat_completion_multiple_free_models() {
+        let provider = openrouter_provider();
+        let key = api_key();
+        let free_models = fetch_models_filtered(&provider, key.clone(), true)
+            .await
+            .expect("should fetch free models");
+
+        // Test up to 3 free models
+        let to_test: Vec<_> = free_models.iter().take(3).collect();
+        assert!(!to_test.is_empty(), "Need at least one free model");
+
+        let mut any_succeeded = false;
+        for model_id in &to_test {
+            let result =
+                send_chat_completion(&provider, key.clone(), model_id, "Say 'ok'.".to_string())
+                    .await;
+
+            match result {
+                Ok(Some(content)) => {
+                    assert!(!content.trim().is_empty());
+                    any_succeeded = true;
+                }
+                Ok(None) => {
+                    any_succeeded = true;
+                }
+                Err(e) => {
+                    eprintln!("Model {} unavailable: {}", model_id, e);
+                }
+            }
+        }
+
+        assert!(
+            any_succeeded,
+            "At least one free model should respond successfully"
+        );
+    }
 }

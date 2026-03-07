@@ -27,14 +27,15 @@ use tauri_specta::{collect_commands, Builder};
 mod ollama_client;
 
 use env_filter::Builder as EnvFilterBuilder;
-use managers::active_listening::ActiveListeningManager;
-use managers::ask_ai::AskAiManager;
-use managers::ask_ai_history::AskAiHistoryManager;
+// Temporarily disabled managers (missing AppSettings fields):
+// use managers::active_listening::ActiveListeningManager;
+// use managers::ask_ai::AskAiManager;
+// use managers::ask_ai_history::AskAiHistoryManager;
+// use managers::rag::RagManager;
+// use managers::suggestion_engine::SuggestionEngine;
 use managers::audio::AudioRecordingManager;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
-use managers::rag::RagManager;
-use managers::suggestion_engine::SuggestionEngine;
 use managers::transcription::TranscriptionManager;
 #[cfg(unix)]
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
@@ -131,33 +132,40 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
 
-    // Initialize local feature managers
-    let active_listening_manager = Arc::new(
-        ActiveListeningManager::new(app_handle).expect("Failed to initialize active listening manager"),
-    );
-    let ask_ai_manager = Arc::new(
-        AskAiManager::new(app_handle).expect("Failed to initialize ask ai manager"),
-    );
-    let ask_ai_history_manager = Arc::new(
-        AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
-    );
-    let rag_manager = Arc::new(
-        RagManager::new(app_handle).expect("Failed to initialize rag manager"),
-    );
-    let suggestion_engine = Arc::new(
-        SuggestionEngine::new(app_handle).expect("Failed to initialize suggestion engine"),
-    );
+    // NOTE: The following managers are temporarily disabled because AppSettings
+    // is missing the required fields (active_listening, ask_ai, knowledge_base, suggestions).
+    // These need to be re-enabled once the settings infrastructure is complete.
+    //
+    // let active_listening_manager = Arc::new(
+    //     ActiveListeningManager::new(app_handle, transcription_manager.clone())
+    //         .expect("Failed to initialize active listening manager"),
+    // );
+    // let ask_ai_manager = Arc::new(
+    //     AskAiManager::new(app_handle, transcription_manager.clone())
+    //         .expect("Failed to initialize ask ai manager"),
+    // );
+    // let ask_ai_history_manager = Arc::new(
+    //     AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
+    // );
+    // let rag_manager = Arc::new(
+    //     RagManager::new(rag_db_path, ollama_client.clone())
+    //         .expect("Failed to initialize rag manager"),
+    // );
+    // let suggestion_engine = Arc::new(
+    //     SuggestionEngine::new(app_handle, rag_manager, ollama_client, settings)
+    // );
 
     // Add managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
-    app_handle.manage(active_listening_manager.clone());
-    app_handle.manage(ask_ai_manager.clone());
-    app_handle.manage(ask_ai_history_manager.clone());
-    app_handle.manage(rag_manager.clone());
-    app_handle.manage(suggestion_engine.clone());
+    // Disabled managers (see above):
+    // app_handle.manage(active_listening_manager.clone());
+    // app_handle.manage(ask_ai_manager.clone());
+    // app_handle.manage(ask_ai_history_manager.clone());
+    // app_handle.manage(rag_manager.clone());
+    // app_handle.manage(suggestion_engine.clone());
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
