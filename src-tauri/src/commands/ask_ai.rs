@@ -116,7 +116,10 @@ pub fn change_ask_ai_enabled_setting(app: AppHandle, enabled: bool) -> Result<()
 /// Change Ask AI Ollama base URL
 #[tauri::command]
 #[specta::specta]
-pub fn change_ask_ai_ollama_base_url_setting(app: AppHandle, base_url: String) -> Result<(), String> {
+pub fn change_ask_ai_ollama_base_url_setting(
+    app: AppHandle,
+    base_url: String,
+) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.ask_ai.ollama_base_url = base_url.clone();
     write_settings(&app, settings);
@@ -166,10 +169,7 @@ pub struct AskAiWindowBounds {
 /// Save Ask AI window position and size
 #[tauri::command]
 #[specta::specta]
-pub fn save_ask_ai_window_bounds(
-    app: AppHandle,
-    bounds: AskAiWindowBounds,
-) -> Result<(), String> {
+pub fn save_ask_ai_window_bounds(app: AppHandle, bounds: AskAiWindowBounds) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.ask_ai.window_width = bounds.width;
     settings.ask_ai.window_height = bounds.height;
@@ -213,7 +213,10 @@ pub fn save_ask_ai_conversation_to_history(
 /// List recent Ask AI conversations from history
 #[tauri::command]
 #[specta::specta]
-pub fn list_ask_ai_conversations(app: AppHandle, limit: usize) -> Result<Vec<AskAiConversation>, String> {
+pub fn list_ask_ai_conversations(
+    app: AppHandle,
+    limit: usize,
+) -> Result<Vec<AskAiConversation>, String> {
     let manager = app.state::<Arc<AskAiHistoryManager>>();
     manager
         .list_conversations(limit)

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fs;
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
 use crate::audio_toolkit::save_wav_file;
 
@@ -549,6 +549,7 @@ impl HistoryManager {
     }
 
     /// Update the post-processed text for a history entry
+    #[allow(dead_code)]
     pub async fn update_post_processed_text(
         &self,
         id: i64,
@@ -619,7 +620,8 @@ impl HistoryManager {
         };
 
         let mut stmt = conn.prepare(sql)?;
-        let params_slice: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|b| b.as_ref()).collect();
+        let params_slice: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|b| b.as_ref()).collect();
         let rows = stmt.query_map(params_slice.as_slice(), |row| {
             Ok(crate::managers::task_extractor::ActionItem {
                 id: row.get(0)?,

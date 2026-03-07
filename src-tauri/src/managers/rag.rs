@@ -138,8 +138,7 @@ impl RagManager {
 
     /// Get a database connection
     fn get_connection(&self) -> Result<Connection, String> {
-        Connection::open(&self.db_path)
-            .map_err(|e| format!("Failed to open RAG database: {}", e))
+        Connection::open(&self.db_path).map_err(|e| format!("Failed to open RAG database: {}", e))
     }
 
     /// Initialize the database with migrations
@@ -168,11 +167,7 @@ impl RagManager {
     ///
     /// # Returns
     /// The document ID
-    pub async fn add_document(
-        &self,
-        content: &str,
-        metadata: DocMetadata,
-    ) -> Result<i64, String> {
+    pub async fn add_document(&self, content: &str, metadata: DocMetadata) -> Result<i64, String> {
         let conn = self.get_connection()?;
 
         // Insert document
@@ -371,7 +366,11 @@ impl RagManager {
             .collect();
 
         // Sort by similarity (highest first) and take top_k
-        results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.similarity
+                .partial_cmp(&a.similarity)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         results.truncate(top_k);
 
         debug!(
@@ -384,6 +383,7 @@ impl RagManager {
     }
 
     /// Generate embeddings for text (utility method)
+    #[allow(dead_code)]
     pub async fn embed_text(&self, text: &str) -> Result<Vec<f32>, String> {
         let model = self.embedding_model.lock().await.clone();
         self.ollama_client.generate_embeddings(&model, text).await
@@ -476,9 +476,7 @@ impl RagManager {
 
     /// Convert f32 vector to bytes for storage
     fn vec_to_blob(vec: &[f32]) -> Vec<u8> {
-        vec.iter()
-            .flat_map(|f| f.to_le_bytes())
-            .collect()
+        vec.iter().flat_map(|f| f.to_le_bytes()).collect()
     }
 
     /// Convert bytes back to f32 vector

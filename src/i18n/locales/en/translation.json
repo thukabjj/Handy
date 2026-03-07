@@ -102,7 +102,9 @@
       },
       "accessibility": {
         "title": "Accessibility Access",
-        "description": "Required to type transcribed text into your applications."
+        "description": "Required to type transcribed text into your applications.",
+        "hint": "Look for \"Handy\" or \"handy\" in the list and toggle it on. If you don't see it, click the button below to open Settings manually and add it with the + button.",
+        "openSettings": "Open Accessibility Settings"
       },
       "grant": "Grant Permission",
       "granted": "Granted",
@@ -545,7 +547,9 @@
     "permissionsRequired": "Accessibility Permissions Required",
     "permissionsDescription": "Handy needs accessibility permissions to type transcribed text.",
     "openSettings": "Open System Settings",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "hint": "Look for \"Handy\" or \"handy\" in System Settings > Accessibility and toggle it on.",
+    "openSettingsManually": "Open Settings"
   },
   "errors": {
     "loadDirectory": "Error loading directory: {{error}}"

@@ -367,3 +367,22 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &Vec<f32>) {
         let _ = overlay_window.emit("mic-level", levels);
     }
 }
+
+/// Reset the overlay window to its default size
+#[allow(dead_code)]
+pub fn reset_overlay_size(app_handle: &AppHandle) {
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        // Reset to default size - adjust as needed
+        let _ = overlay_window.set_size(tauri::LogicalSize::new(300.0, 80.0));
+    }
+}
+
+/// Show the Ask AI response overlay with the given response text
+#[allow(dead_code)]
+pub fn show_ask_ai_response_overlay(app_handle: &AppHandle, response: &str) {
+    // Emit the response to the overlay window
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.emit("ask-ai-response", response);
+        let _ = overlay_window.show();
+    }
+}

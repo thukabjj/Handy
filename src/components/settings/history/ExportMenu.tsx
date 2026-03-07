@@ -88,7 +88,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ entryId }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={exporting}
-        className="text-text/50 hover:text-primary-light transition-colors cursor-pointer disabled:opacity-50"
+        className="text-text/50 hover:text-logo-primary transition-colors cursor-pointer disabled:opacity-50"
         title={t("settings.history.exportAs")}
       >
         <Download width={16} height={16} />
@@ -99,7 +99,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ entryId }) => {
             <button
               key={format.value}
               onClick={() => handleExport(format.value)}
-              className="w-full px-3 py-1.5 text-sm text-left hover:bg-primary-light/10 transition-colors cursor-pointer"
+              className="w-full px-3 py-1.5 text-sm text-left hover:bg-logo-primary/10 transition-colors cursor-pointer"
             >
               {t(format.labelKey)}
             </button>
@@ -180,7 +180,7 @@ export const ExportAllButton: React.FC<ExportAllButtonProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={exporting}
-        className="flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-button border bg-mid-gray/10 border-mid-gray/20 hover:bg-primary-light/20 hover:border-primary-light/50 transition-colors cursor-pointer disabled:opacity-50"
+        className="flex items-center gap-2 px-2 py-1 text-xs font-medium rounded-button border bg-mid-gray/10 border-mid-gray/20 hover:bg-logo-primary/20 hover:border-logo-primary/50 transition-colors cursor-pointer disabled:opacity-50"
       >
         <Download className="w-4 h-4" />
         <span>{t("settings.history.exportAll")}</span>
@@ -191,7 +191,7 @@ export const ExportAllButton: React.FC<ExportAllButtonProps> = ({
             <button
               key={format.value}
               onClick={() => handleExportAll(format.value)}
-              className="w-full px-3 py-1.5 text-sm text-left hover:bg-primary-light/10 transition-colors cursor-pointer"
+              className="w-full px-3 py-1.5 text-sm text-left hover:bg-logo-primary/10 transition-colors cursor-pointer"
             >
               {t(format.labelKey)}
             </button>

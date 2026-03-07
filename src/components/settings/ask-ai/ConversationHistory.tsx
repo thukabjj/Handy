@@ -89,9 +89,17 @@ const ConversationCard: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-4 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left cursor-pointer"
       >
         <div className="flex-shrink-0 mt-0.5">
           <MessageSquare className="h-5 w-5 text-purple-500" />
@@ -139,7 +147,7 @@ const ConversationCard: React.FC<{
             <ChevronDown className="h-5 w-5 text-mid-gray ml-1" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-mid-gray/10">

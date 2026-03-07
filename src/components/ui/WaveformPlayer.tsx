@@ -51,9 +51,9 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
 
     const ws = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: "#64748B",
-      progressColor: "#3B82F6",
-      cursorColor: "#F97316",
+      waveColor: "#808080",
+      progressColor: "#da5893",
+      cursorColor: "#faa2ca",
       height: 80,
       barWidth: 2,
       barGap: 1,
@@ -195,7 +195,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
         {!isReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/60">
             <Loader2
-              className="w-6 h-6 text-primary-light animate-spin"
+              className="w-6 h-6 text-logo-primary animate-spin"
               aria-hidden="true"
             />
             <span className="sr-only">{t("common.loading")}</span>
@@ -210,7 +210,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           type="button"
           onClick={() => skip(-SKIP_SHORT)}
           disabled={!isReady}
-          className="p-1 text-text-secondary hover:text-primary-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-light rounded"
+          className="p-1 text-mid-gray hover:text-logo-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary rounded"
           aria-label="Skip back 5 seconds"
         >
           <SkipBack className="w-4 h-4" />
@@ -221,7 +221,7 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           type="button"
           onClick={togglePlayPause}
           disabled={!isReady}
-          className="p-1.5 rounded-full bg-primary-light/10 text-primary-light hover:bg-primary-light/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+          className="p-1.5 rounded-full bg-logo-primary/10 text-logo-primary hover:bg-logo-primary/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
@@ -236,14 +236,14 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
           type="button"
           onClick={() => skip(SKIP_SHORT)}
           disabled={!isReady}
-          className="p-1 text-text-secondary hover:text-primary-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-light rounded"
+          className="p-1 text-mid-gray hover:text-logo-primary transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary rounded"
           aria-label="Skip forward 5 seconds"
         >
           <SkipForward className="w-4 h-4" />
         </button>
 
         {/* Time display */}
-        <span className="text-xs text-text-secondary tabular-nums min-w-[80px] text-center select-none">
+        <span className="text-xs text-mid-gray tabular-nums min-w-[80px] text-center select-none">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 

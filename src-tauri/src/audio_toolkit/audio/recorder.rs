@@ -28,6 +28,7 @@ pub struct AudioRecorder {
     worker_handle: Option<std::thread::JoinHandle<()>>,
     vad: Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
+    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
 }
 
 impl AudioRecorder {
@@ -38,6 +39,7 @@ impl AudioRecorder {
             worker_handle: None,
             vad: None,
             level_cb: None,
+            sample_cb: None,
         })
     }
 
@@ -51,6 +53,14 @@ impl AudioRecorder {
         F: Fn(Vec<f32>) + Send + Sync + 'static,
     {
         self.level_cb = Some(Arc::new(cb));
+        self
+    }
+
+    pub fn with_sample_callback<F>(mut self, cb: F) -> Self
+    where
+        F: Fn(&[f32]) + Send + Sync + 'static,
+    {
+        self.sample_cb = Some(Arc::new(cb));
         self
     }
 
@@ -251,6 +261,12 @@ impl AudioRecorder {
 
         // If no config supports 16kHz, fall back to default
         Ok(device.default_input_config()?)
+    }
+}
+
+impl Drop for AudioRecorder {
+    fn drop(&mut self) {
+        let _ = self.close();
     }
 }
 

@@ -7,7 +7,7 @@
 use crate::audio_toolkit::diarization::{create_shared_diarizer, SharedDiarizer};
 use crate::managers::history::HistoryManager;
 use crate::managers::rag::{DocMetadata, RagManager};
-use crate::managers::suggestion_engine::{Suggestion, SuggestionContext, SuggestionEngine};
+use crate::managers::suggestion_engine::{SuggestionContext, SuggestionEngine};
 use crate::managers::transcription::TranscriptionManager;
 use crate::ollama_client::{apply_prompt_template, OllamaClient};
 use crate::settings::get_settings;
@@ -75,7 +75,7 @@ pub struct SessionInsight {
 
 /// An action item extracted from a meeting
 #[derive(Clone, Debug, Serialize, Deserialize, Type)]
-pub struct ActionItem {
+pub struct MeetingActionItem {
     /// Description of the action
     pub description: String,
     /// Person responsible (if mentioned)
@@ -94,7 +94,7 @@ pub struct MeetingSummary {
     /// Key decisions made during the meeting
     pub decisions: Vec<String>,
     /// Action items with optional assignees and deadlines
-    pub action_items: Vec<ActionItem>,
+    pub action_items: Vec<MeetingActionItem>,
     /// Main topics discussed
     pub topics: Vec<String>,
     /// Suggested follow-up questions
@@ -197,6 +197,7 @@ impl ActiveListeningManager {
     }
 
     /// Check if a session is currently active (not idle)
+    #[allow(dead_code)]
     pub fn is_session_active(&self) -> bool {
         *self.state.lock().unwrap() != ActiveListeningState::Idle
     }
@@ -494,10 +495,7 @@ impl ActiveListeningManager {
     /// Force process any remaining audio in the buffer
     pub fn flush_segment(&self) {
         let state = self.get_state();
-        info!(
-            "flush_segment called - current state: {:?}",
-            state
-        );
+        info!("flush_segment called - current state: {:?}", state);
         if state != ActiveListeningState::Listening {
             info!("flush_segment: skipping - not in Listening state");
             return;
@@ -561,7 +559,10 @@ impl ActiveListeningManager {
             ((now - session.started_at) / 60000) as u32
         };
 
-        let topic = session.topic.clone().unwrap_or_else(|| "Meeting".to_string());
+        let topic = session
+            .topic
+            .clone()
+            .unwrap_or_else(|| "Meeting".to_string());
 
         let prompt = format!(
             r#"Analyze this meeting transcript and provide a structured summary.
@@ -630,8 +631,12 @@ Important:
         };
 
         // Parse the JSON
-        let parsed: serde_json::Value = serde_json::from_str(json_str)
-            .map_err(|e| format!("Failed to parse summary JSON: {}. Response: {}", e, response))?;
+        let parsed: serde_json::Value = serde_json::from_str(json_str).map_err(|e| {
+            format!(
+                "Failed to parse summary JSON: {}. Response: {}",
+                e, response
+            )
+        })?;
 
         let executive_summary = parsed
             .get("executive_summary")
@@ -656,7 +661,7 @@ Important:
                 arr.iter()
                     .filter_map(|item| {
                         let desc = item.get("description")?.as_str()?.to_string();
-                        Some(ActionItem {
+                        Some(MeetingActionItem {
                             description: desc,
                             assignee: item
                                 .get("assignee")
@@ -786,12 +791,8 @@ impl ActiveListeningManagerHandle {
         // Step 2: Generate real-time suggestions (runs in parallel with insights)
         let settings = get_settings(&self.app_handle);
         if settings.suggestions.enabled {
-            self.generate_suggestions(
-                session_id.clone(),
-                transcription.clone(),
-                topic.clone(),
-            )
-            .await;
+            self.generate_suggestions(session_id.clone(), transcription.clone(), topic.clone())
+                .await;
         }
 
         // Step 3: Generate insight with Ollama
@@ -1064,7 +1065,11 @@ impl ActiveListeningManagerHandle {
 
             // Emit suggestions to frontend if any were generated
             if !suggestions.is_empty() {
-                info!("Generated {} suggestions for session {}", suggestions.len(), session_id);
+                info!(
+                    "Generated {} suggestions for session {}",
+                    suggestions.len(),
+                    session_id
+                );
                 engine.emit_suggestions(&session_id, suggestions).await;
             }
         } else {
@@ -1104,8 +1109,12 @@ impl ActiveListeningManagerHandle {
         // Index transcription in knowledge base if enabled
         // Do this asynchronously to not block the main flow
         tokio::spawn(async move {
-            Self::maybe_index_transcription(&app_handle, &transcription_for_rag, &session_id_for_rag)
-                .await;
+            Self::maybe_index_transcription(
+                &app_handle,
+                &transcription_for_rag,
+                &session_id_for_rag,
+            )
+            .await;
         });
     }
 
@@ -1295,12 +1304,21 @@ mod tests {
     #[test]
     fn test_state_equality() {
         assert_eq!(ActiveListeningState::Idle, ActiveListeningState::Idle);
-        assert_eq!(ActiveListeningState::Listening, ActiveListeningState::Listening);
-        assert_eq!(ActiveListeningState::Processing, ActiveListeningState::Processing);
+        assert_eq!(
+            ActiveListeningState::Listening,
+            ActiveListeningState::Listening
+        );
+        assert_eq!(
+            ActiveListeningState::Processing,
+            ActiveListeningState::Processing
+        );
         assert_eq!(ActiveListeningState::Error, ActiveListeningState::Error);
 
         assert_ne!(ActiveListeningState::Idle, ActiveListeningState::Listening);
-        assert_ne!(ActiveListeningState::Processing, ActiveListeningState::Error);
+        assert_ne!(
+            ActiveListeningState::Processing,
+            ActiveListeningState::Error
+        );
     }
 
     #[test]

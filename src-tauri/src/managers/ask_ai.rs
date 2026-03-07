@@ -22,6 +22,7 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 /// Maximum number of conversation turns to include in context
+#[allow(dead_code)]
 const MAX_CONTEXT_TURNS: usize = 10;
 
 /// State of the Ask AI session
@@ -80,6 +81,7 @@ pub struct AskAiConversation {
     pub title: Option<String>,
 }
 
+#[allow(dead_code)]
 impl AskAiConversation {
     /// Create a new conversation
     pub fn new() -> Self {
@@ -94,7 +96,12 @@ impl AskAiConversation {
     }
 
     /// Add a turn to the conversation
-    pub fn add_turn(&mut self, question: String, response: String, audio_file_name: Option<String>) {
+    pub fn add_turn(
+        &mut self,
+        question: String,
+        response: String,
+        audio_file_name: Option<String>,
+    ) {
         let turn = ConversationTurn {
             id: Uuid::new_v4().to_string(),
             question: question.clone(),
@@ -159,6 +166,7 @@ pub struct AskAiStateEvent {
 }
 
 /// Event payload for Ask AI response streaming
+#[allow(dead_code)]
 #[derive(Clone, Debug, Serialize, Type)]
 pub struct AskAiResponseEvent {
     pub chunk: String,
@@ -173,6 +181,7 @@ pub struct AskAiResponseEvent {
 /// - Sending question to Ollama
 /// - Streaming response back to the overlay window
 /// - Multi-turn conversation support
+#[allow(dead_code)]
 pub struct AskAiManager {
     app_handle: AppHandle,
     transcription_manager: Arc<TranscriptionManager>,
@@ -196,6 +205,7 @@ pub struct AskAiManager {
     cancel_signal: Arc<AtomicBool>,
 }
 
+#[allow(dead_code)]
 impl AskAiManager {
     /// Create a new AskAiManager
     pub fn new(
@@ -298,10 +308,7 @@ impl AskAiManager {
         let conversation = self.active_conversation.lock().unwrap().clone();
         self.emit_state_change_with_conversation(AskAiState::Recording, None, None, conversation);
 
-        info!(
-            "Ask AI: Started recording (follow_up: {})",
-            is_follow_up
-        );
+        info!("Ask AI: Started recording (follow_up: {})", is_follow_up);
         Ok(())
     }
 
@@ -360,7 +367,12 @@ impl AskAiManager {
             *state = AskAiState::Transcribing;
         }
         let conversation = self.active_conversation.lock().unwrap().clone();
-        self.emit_state_change_with_conversation(AskAiState::Transcribing, None, None, conversation);
+        self.emit_state_change_with_conversation(
+            AskAiState::Transcribing,
+            None,
+            None,
+            conversation,
+        );
 
         // Process in background
         let handle = AskAiManagerHandle {
@@ -427,7 +439,12 @@ impl AskAiManager {
     }
 
     #[allow(dead_code)]
-    fn emit_state_change(&self, state: AskAiState, question: Option<String>, error: Option<String>) {
+    fn emit_state_change(
+        &self,
+        state: AskAiState,
+        question: Option<String>,
+        error: Option<String>,
+    ) {
         let conversation = self.active_conversation.lock().unwrap().clone();
         self.emit_state_change_with_conversation(state, question, error, conversation);
     }
@@ -452,18 +469,19 @@ impl AskAiManager {
 }
 
 /// Handle for async operations
+#[allow(dead_code)]
 struct AskAiManagerHandle {
     app_handle: AppHandle,
     transcription_manager: Arc<TranscriptionManager>,
     state: Arc<Mutex<AskAiState>>,
     current_question: Arc<Mutex<Option<String>>>,
     current_response: Arc<Mutex<String>>,
-    #[allow(dead_code)]
     current_audio_samples: Arc<Mutex<Vec<f32>>>,
     active_conversation: Arc<Mutex<Option<AskAiConversation>>>,
     cancel_signal: Arc<AtomicBool>,
 }
 
+#[allow(dead_code)]
 impl AskAiManagerHandle {
     async fn process(&self, samples: Vec<f32>) {
         // Check for cancellation
@@ -517,7 +535,7 @@ impl AskAiManagerHandle {
         );
 
         // Show the Ask AI response overlay (replaces the recording overlay with expanded view)
-        show_ask_ai_response_overlay(&self.app_handle);
+        show_ask_ai_response_overlay(&self.app_handle, "");
         change_tray_icon(&self.app_handle, TrayIconState::Idle);
 
         // Step 2: Get AI response from Ollama
@@ -569,13 +587,8 @@ impl AskAiManagerHandle {
                 }
 
                 // Emit chunk to frontend
-                let _ = app_handle_clone.emit(
-                    "ask-ai-response",
-                    AskAiResponseEvent {
-                        chunk,
-                        done: false,
-                    },
-                );
+                let _ = app_handle_clone
+                    .emit("ask-ai-response", AskAiResponseEvent { chunk, done: false });
             }
             full_response
         });
@@ -665,7 +678,12 @@ impl AskAiManagerHandle {
     }
 
     #[allow(dead_code)]
-    fn emit_state_change(&self, state: AskAiState, question: Option<String>, error: Option<String>) {
+    fn emit_state_change(
+        &self,
+        state: AskAiState,
+        question: Option<String>,
+        error: Option<String>,
+    ) {
         let conversation = self.active_conversation.lock().unwrap().clone();
         self.emit_state_change_with_conversation(state, question, error, conversation);
     }
@@ -694,10 +712,15 @@ impl AskAiManagerHandle {
             *state = AskAiState::Error;
         }
         // Show error in the expanded overlay
-        show_ask_ai_response_overlay(&self.app_handle);
+        show_ask_ai_response_overlay(&self.app_handle, &error);
         change_tray_icon(&self.app_handle, TrayIconState::Idle);
         let conversation = self.active_conversation.lock().unwrap().clone();
-        self.emit_state_change_with_conversation(AskAiState::Error, None, Some(error), conversation);
+        self.emit_state_change_with_conversation(
+            AskAiState::Error,
+            None,
+            Some(error),
+            conversation,
+        );
     }
 }
 
@@ -744,7 +767,11 @@ mod tests {
     fn test_add_turn_sets_title_from_first_question() {
         let mut conv = AskAiConversation::new();
 
-        conv.add_turn("What is Rust?".to_string(), "A programming language.".to_string(), None);
+        conv.add_turn(
+            "What is Rust?".to_string(),
+            "A programming language.".to_string(),
+            None,
+        );
 
         assert_eq!(conv.title, Some("What is Rust?".to_string()));
         assert_eq!(conv.turns.len(), 1);
@@ -766,8 +793,16 @@ mod tests {
     fn test_add_turn_does_not_overwrite_title() {
         let mut conv = AskAiConversation::new();
 
-        conv.add_turn("First question".to_string(), "First response".to_string(), None);
-        conv.add_turn("Second question".to_string(), "Second response".to_string(), None);
+        conv.add_turn(
+            "First question".to_string(),
+            "First response".to_string(),
+            None,
+        );
+        conv.add_turn(
+            "Second question".to_string(),
+            "Second response".to_string(),
+            None,
+        );
 
         assert_eq!(conv.title, Some("First question".to_string()));
         assert_eq!(conv.turns.len(), 2);

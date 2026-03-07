@@ -74,6 +74,7 @@ pub fn has_api_key(provider_id: &str) -> bool {
 
 /// Migrate API keys from plaintext settings to keyring.
 /// Returns the provider IDs that were successfully migrated.
+#[allow(dead_code)]
 pub fn migrate_api_keys(keys: &std::collections::HashMap<String, String>) -> Vec<String> {
     let mut migrated = Vec::new();
 

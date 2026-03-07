@@ -224,13 +224,19 @@ impl OllamaClient {
 
         let mut complete_response = String::new();
         let mut stream = response.bytes_stream();
+        let mut line_buffer = String::new();
 
         while let Some(chunk_result) = stream.next().await {
             match chunk_result {
                 Ok(bytes) => {
-                    // Ollama sends newline-delimited JSON
+                    // Ollama sends newline-delimited JSON; chunks may split across lines
                     let chunk_str = String::from_utf8_lossy(&bytes);
-                    for line in chunk_str.lines() {
+                    line_buffer.push_str(&chunk_str);
+
+                    // Process all complete lines from the buffer
+                    while let Some(newline_pos) = line_buffer.find('\n') {
+                        let line: String = line_buffer.drain(..=newline_pos).collect();
+                        let line = line.trim();
                         if line.is_empty() {
                             continue;
                         }
@@ -261,6 +267,17 @@ impl OllamaClient {
                 Err(e) => {
                     error!("Error reading stream chunk: {}", e);
                     return Err(format!("Stream read error: {}", e));
+                }
+            }
+        }
+
+        // Process any remaining data in the buffer
+        let remaining = line_buffer.trim();
+        if !remaining.is_empty() {
+            if let Ok(stream_response) = serde_json::from_str::<OllamaStreamResponse>(remaining) {
+                if !stream_response.response.is_empty() {
+                    complete_response.push_str(&stream_response.response);
+                    let _ = tx.send(stream_response.response).await;
                 }
             }
         }
@@ -317,11 +334,7 @@ impl OllamaClient {
     ///
     /// Uses the /api/embeddings endpoint to generate vector embeddings.
     /// Recommended models: nomic-embed-text, all-minilm
-    pub async fn generate_embeddings(
-        &self,
-        model: &str,
-        text: &str,
-    ) -> Result<Vec<f32>, String> {
+    pub async fn generate_embeddings(&self, model: &str, text: &str) -> Result<Vec<f32>, String> {
         let url = format!("{}/api/embeddings", self.base_url);
         debug!(
             "Generating embeddings with model {} for text of length {}",
@@ -381,7 +394,13 @@ pub fn apply_prompt_template(
     previous_context: &str,
     session_topic: Option<&str>,
 ) -> String {
-    apply_prompt_template_with_rag(template, transcription, previous_context, session_topic, None)
+    apply_prompt_template_with_rag(
+        template,
+        transcription,
+        previous_context,
+        session_topic,
+        None,
+    )
 }
 
 /// Apply template variables including RAG context
@@ -521,13 +540,8 @@ mod tests {
     #[test]
     fn test_apply_prompt_template_with_rag_all_variables() {
         let template = "T:{{transcription}}|C:{{previous_context}}|S:{{session_topic}}|R:{{retrieved_context}}";
-        let result = apply_prompt_template_with_rag(
-            template,
-            "trans",
-            "ctx",
-            Some("topic"),
-            Some("rag"),
-        );
+        let result =
+            apply_prompt_template_with_rag(template, "trans", "ctx", Some("topic"), Some("rag"));
         assert_eq!(result, "T:trans|C:ctx|S:topic|R:rag");
     }
 }

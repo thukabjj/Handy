@@ -68,12 +68,14 @@ impl Default for WakeWordSettings {
 /// Wake-word detector using transcript matching.
 /// This is a simple implementation that looks for the wake phrase
 /// in transcribed audio segments.
+#[allow(dead_code)]
 pub struct WakeWordDetector {
     settings: WakeWordSettings,
     is_enabled: Arc<AtomicBool>,
     last_detection_time: std::sync::Mutex<std::time::Instant>,
 }
 
+#[allow(dead_code)]
 impl WakeWordDetector {
     /// Create a new wake-word detector.
     pub fn new(settings: WakeWordSettings) -> Self {
@@ -102,7 +104,10 @@ impl WakeWordDetector {
     /// Enable or disable wake-word detection.
     pub fn set_enabled(&self, enabled: bool) {
         self.is_enabled.store(enabled, Ordering::Relaxed);
-        info!("Wake-word detection {}", if enabled { "enabled" } else { "disabled" });
+        info!(
+            "Wake-word detection {}",
+            if enabled { "enabled" } else { "disabled" }
+        );
     }
 
     /// Check if the given transcript contains the wake phrase.

@@ -22,7 +22,7 @@ export const Button: React.FC<ButtonProps> = ({
     "rounded-button border",
     // Interactive states
     "transition-colors duration-150",
-    "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-light",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-logo-primary",
     // Disabled state
     "disabled:opacity-50 disabled:cursor-not-allowed",
     // Cursor
@@ -40,8 +40,8 @@ export const Button: React.FC<ButtonProps> = ({
     secondary: [
       "text-text",
       "bg-mid-gray/10 border-mid-gray/20",
-      "hover:bg-primary-light/20 hover:border-primary-light/50",
-      "active:bg-primary-light/30",
+      "hover:bg-logo-primary/20 hover:border-logo-primary/50",
+      "active:bg-logo-primary/30",
     ].join(" "),
     danger: [
       "text-white",

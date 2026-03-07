@@ -14,6 +14,7 @@ pub use crate::overlay::*;
 pub use crate::tray::*;
 
 // Re-export lock utilities for convenient access
+#[allow(unused_imports)]
 pub use lock::{SafeLock, SafeRwLock};
 
 /// Centralized cancellation function that can be called from anywhere in the app.

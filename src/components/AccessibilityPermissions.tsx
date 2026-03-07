@@ -5,6 +5,7 @@ import {
   checkAccessibilityPermission,
   requestAccessibilityPermission,
 } from "tauri-plugin-macos-permissions-api";
+import { commands } from "@/bindings";
 
 // Define permission state type
 type PermissionState = "request" | "verify" | "granted";
@@ -49,6 +50,14 @@ const AccessibilityPermissions: React.FC = () => {
     }
   };
 
+  const handleOpenSettings = async (): Promise<void> => {
+    try {
+      await commands.openAccessibilitySettings();
+    } catch (error) {
+      console.error("Error opening accessibility settings:", error);
+    }
+  };
+
   // On app boot - check permissions (only on macOS)
   useEffect(() => {
     if (!isMacOS) return;
@@ -72,7 +81,7 @@ const AccessibilityPermissions: React.FC = () => {
     request: {
       text: t("accessibility.openSettings"),
       className:
-        "px-2 py-1 text-sm font-semibold bg-mid-gray/10 border  border-mid-gray/80 hover:bg-primary-light/10 rounded cursor-pointer hover:border-primary-light",
+        "px-2 py-1 text-sm font-semibold bg-mid-gray/10 border  border-mid-gray/80 hover:bg-logo-primary/10 rounded cursor-pointer hover:border-logo-primary",
     },
     verify: {
       text: t("accessibility.openSettings"),
@@ -87,17 +96,32 @@ const AccessibilityPermissions: React.FC = () => {
   return (
     <div className="p-4 w-full rounded-lg border border-mid-gray">
       <div className="flex justify-between items-center gap-2">
-        <div className="">
+        <div>
           <p className="text-sm font-medium">
             {t("accessibility.permissionsDescription")}
           </p>
+          {permissionState === "verify" && (
+            <p className="text-xs text-mid-gray mt-1">
+              {t("accessibility.hint")}
+            </p>
+          )}
         </div>
-        <button
-          onClick={handleButtonClick}
-          className={`min-h-10 ${config.className}`}
-        >
-          {config.text}
-        </button>
+        <div className="flex items-center gap-2">
+          {permissionState === "verify" && (
+            <button
+              onClick={handleOpenSettings}
+              className="px-2 py-1 text-xs bg-mid-gray/10 border border-mid-gray/40 hover:bg-mid-gray/20 rounded cursor-pointer"
+            >
+              {t("accessibility.openSettingsManually")}
+            </button>
+          )}
+          <button
+            onClick={handleButtonClick}
+            className={`min-h-10 ${config.className}`}
+          >
+            {config.text}
+          </button>
+        </div>
       </div>
     </div>
   );

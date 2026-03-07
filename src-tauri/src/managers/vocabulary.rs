@@ -43,8 +43,7 @@ impl VocabularyManager {
     }
 
     fn get_connection(&self) -> Result<Connection, String> {
-        Connection::open(&self.db_path)
-            .map_err(|e| format!("Failed to open vocabulary DB: {}", e))
+        Connection::open(&self.db_path).map_err(|e| format!("Failed to open vocabulary DB: {}", e))
     }
 
     pub fn get_vocabulary(&self) -> Result<Vec<VocabularyEntry>, String> {
@@ -74,11 +73,7 @@ impl VocabularyManager {
         Ok(entries)
     }
 
-    pub fn add_term(
-        &self,
-        term: &str,
-        category: Option<&str>,
-    ) -> Result<VocabularyEntry, String> {
+    pub fn add_term(&self, term: &str, category: Option<&str>) -> Result<VocabularyEntry, String> {
         let conn = self.get_connection()?;
         conn.execute(
             "INSERT INTO vocabulary (term, source, category) VALUES (?1, 'manual', ?2)

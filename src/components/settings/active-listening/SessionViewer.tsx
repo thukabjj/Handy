@@ -58,9 +58,17 @@ const InsightEntry: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden bg-white/50 dark:bg-black/20">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-3 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left cursor-pointer"
       >
         <div className="flex-shrink-0 mt-0.5">
           <MessageSquare className="h-4 w-4 text-green-500" />
@@ -82,7 +90,7 @@ const InsightEntry: React.FC<{
             <ChevronDown className="h-4 w-4 text-mid-gray" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="px-3 pb-3 border-t border-mid-gray/10">
@@ -137,9 +145,17 @@ const SessionGroup: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center gap-3 bg-mid-gray/5 hover:bg-mid-gray/10 transition-colors"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-4 flex items-center gap-3 bg-mid-gray/5 hover:bg-mid-gray/10 transition-colors cursor-pointer"
       >
         <div className="flex-1 text-left">
           <h3 className="font-semibold text-text">{group.date}</h3>
@@ -168,7 +184,7 @@ const SessionGroup: React.FC<{
             <ChevronDown className="h-5 w-5 text-mid-gray" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="p-3 space-y-2">

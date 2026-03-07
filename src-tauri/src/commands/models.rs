@@ -145,6 +145,7 @@ pub async fn cancel_download(
 
 /// Returns the recommended first model for new users.
 /// Picks the smallest available model that balances speed and accuracy.
+#[allow(dead_code)]
 #[tauri::command]
 #[specta::specta]
 pub async fn get_recommended_first_model(
@@ -152,8 +153,6 @@ pub async fn get_recommended_first_model(
 ) -> Result<Option<ModelInfo>, String> {
     let models = model_manager.get_available_models();
     // Prefer the smallest model by size as a reasonable first download
-    let recommended = models
-        .into_iter()
-        .min_by_key(|m| m.size_mb);
+    let recommended = models.into_iter().min_by_key(|m| m.size_mb);
     Ok(recommended)
 }

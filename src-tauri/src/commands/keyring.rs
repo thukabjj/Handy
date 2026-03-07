@@ -38,7 +38,7 @@ pub fn has_api_key(provider_id: String) -> bool {
 pub fn get_masked_api_key(provider_id: String) -> Result<Option<String>, String> {
     match keyring::get_api_key(&provider_id)? {
         Some(key) => {
-            if key.len() <= 8 {
+            if key.len() <= 4 {
                 Ok(Some("••••••••".to_string()))
             } else {
                 let last_four = &key[key.len() - 4..];

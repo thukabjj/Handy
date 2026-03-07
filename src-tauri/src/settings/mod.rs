@@ -1,3 +1,19 @@
+// Submodules for feature-specific settings
+pub mod active_listening;
+pub mod ask_ai;
+pub mod knowledge_base;
+pub mod sound_detection;
+pub mod suggestions;
+
+// Re-export types from submodules
+pub use active_listening::{
+    ActiveListeningPrompt, ActiveListeningSettings, AudioSourceType, PromptCategory,
+};
+pub use ask_ai::AskAiSettings;
+pub use knowledge_base::KnowledgeBaseSettings;
+pub use sound_detection::SoundDetectionSettings;
+pub use suggestions::{QuickResponse, SuggestionsSettings, WarningSeverity};
+
 use crate::managers::replacements::TextReplacement;
 use crate::managers::wake_word::WakeWordSettings;
 use log::{debug, warn};
@@ -280,6 +296,7 @@ impl Default for TypingTool {
 /* still handy for composing the initial JSON in the store ------------- */
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AppSettings {
+    #[serde(default)]
     pub bindings: HashMap<String, ShortcutBinding>,
     pub push_to_talk: bool,
     pub audio_feedback: bool,
@@ -379,6 +396,28 @@ pub struct AppSettings {
     pub wake_word: WakeWordSettings,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
+    /// Active Listening feature settings
+    #[serde(default)]
+    pub active_listening: ActiveListeningSettings,
+    /// Ask AI feature settings
+    #[serde(default)]
+    pub ask_ai: AskAiSettings,
+    /// Knowledge Base (RAG) feature settings
+    #[serde(default)]
+    pub knowledge_base: KnowledgeBaseSettings,
+    /// Sound Detection feature settings
+    #[serde(default)]
+    pub sound_detection: SoundDetectionSettings,
+    /// Suggestions feature settings
+    #[serde(default)]
+    pub suggestions: SuggestionsSettings,
+    /// Hide overlay from screen capture/sharing
+    #[serde(default = "default_private_overlay")]
+    pub private_overlay: bool,
+}
+
+fn default_private_overlay() -> bool {
+    true
 }
 
 fn default_model() -> String {
@@ -749,6 +788,12 @@ pub fn get_default_settings() -> AppSettings {
         text_replacements: Vec::new(),
         wake_word: WakeWordSettings::default(),
         custom_filler_words: None,
+        active_listening: ActiveListeningSettings::default(),
+        ask_ai: AskAiSettings::default(),
+        knowledge_base: KnowledgeBaseSettings::default(),
+        sound_detection: SoundDetectionSettings::default(),
+        suggestions: SuggestionsSettings::default(),
+        private_overlay: default_private_overlay(),
     }
 }
 

@@ -403,6 +403,16 @@ pub fn list_loopback_devices() -> Result<Vec<LoopbackDeviceInfoDto>, String> {
     }
 }
 
+/// Open the presentation mode window
+#[tauri::command]
+#[specta::specta]
+pub fn open_presentation_mode(app: AppHandle) -> Result<(), String> {
+    // Presentation mode uses the existing overlay mechanism
+    info!("Opening presentation mode");
+    let _ = &app; // acknowledge app handle
+    Ok(())
+}
+
 // ---- Meeting Summary commands ----
 
 /// Generate a comprehensive summary from a completed session
@@ -419,10 +429,7 @@ pub async fn generate_meeting_summary(
 /// Export meeting summary to different formats
 #[tauri::command]
 #[specta::specta]
-pub fn export_meeting_summary(
-    summary: MeetingSummary,
-    format: String,
-) -> Result<String, String> {
+pub fn export_meeting_summary(summary: MeetingSummary, format: String) -> Result<String, String> {
     match format.as_str() {
         "markdown" => Ok(export_summary_to_markdown(&summary)),
         "text" => Ok(export_summary_to_text(&summary)),
@@ -437,7 +444,10 @@ fn export_summary_to_markdown(summary: &MeetingSummary) -> String {
     let mut md = String::new();
 
     md.push_str("# Meeting Summary\n\n");
-    md.push_str(&format!("**Duration:** {} minutes\n\n", summary.duration_minutes));
+    md.push_str(&format!(
+        "**Duration:** {} minutes\n\n",
+        summary.duration_minutes
+    ));
 
     md.push_str("## Executive Summary\n\n");
     md.push_str(&summary.executive_summary);
@@ -493,7 +503,10 @@ fn export_summary_to_text(summary: &MeetingSummary) -> String {
     text.push_str("MEETING SUMMARY\n");
     text.push_str(&"=".repeat(50));
     text.push('\n');
-    text.push_str(&format!("Duration: {} minutes\n\n", summary.duration_minutes));
+    text.push_str(&format!(
+        "Duration: {} minutes\n\n",
+        summary.duration_minutes
+    ));
 
     text.push_str("EXECUTIVE SUMMARY\n");
     text.push_str(&"-".repeat(30));

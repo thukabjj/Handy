@@ -6,11 +6,13 @@ pub mod audio_toolkit;
 pub mod cli;
 mod clipboard;
 mod commands;
+pub mod error;
 mod helpers;
 mod input;
 mod keyring;
 mod llm_client;
 mod managers;
+pub mod ollama_client;
 mod overlay;
 pub mod portable;
 mod settings;
@@ -25,19 +27,18 @@ pub use cli::CliArgs;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, Builder};
 
-mod ollama_client;
-
 use env_filter::Builder as EnvFilterBuilder;
-// Temporarily disabled managers (missing AppSettings fields):
-// use managers::active_listening::ActiveListeningManager;
-// use managers::ask_ai::AskAiManager;
-// use managers::ask_ai_history::AskAiHistoryManager;
-// use managers::rag::RagManager;
-// use managers::suggestion_engine::SuggestionEngine;
+use managers::active_listening::ActiveListeningManager;
+use managers::ask_ai::AskAiManager;
+use managers::ask_ai_history::AskAiHistoryManager;
 use managers::audio::AudioRecordingManager;
+use managers::batch_processor::BatchProcessor;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
+use managers::rag::RagManager;
+use managers::task_extractor::TaskExtractor;
 use managers::transcription::TranscriptionManager;
+use managers::vocabulary::VocabularyManager;
 #[cfg(unix)]
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
 #[cfg(unix)]
@@ -120,7 +121,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     // after onboarding completes. This avoids triggering permission dialogs
     // on macOS before the user is ready.
 
-    // Initialize the managers
+    // Initialize core managers
     let recording_manager = Arc::new(
         AudioRecordingManager::new(app_handle).expect("Failed to initialize recording manager"),
     );
@@ -133,40 +134,62 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     let history_manager =
         Arc::new(HistoryManager::new(app_handle).expect("Failed to initialize history manager"));
 
-    // NOTE: The following managers are temporarily disabled because AppSettings
-    // is missing the required fields (active_listening, ask_ai, knowledge_base, suggestions).
-    // These need to be re-enabled once the settings infrastructure is complete.
-    //
-    // let active_listening_manager = Arc::new(
-    //     ActiveListeningManager::new(app_handle, transcription_manager.clone())
-    //         .expect("Failed to initialize active listening manager"),
-    // );
-    // let ask_ai_manager = Arc::new(
-    //     AskAiManager::new(app_handle, transcription_manager.clone())
-    //         .expect("Failed to initialize ask ai manager"),
-    // );
-    // let ask_ai_history_manager = Arc::new(
-    //     AskAiHistoryManager::new(app_handle).expect("Failed to initialize ask ai history manager"),
-    // );
-    // let rag_manager = Arc::new(
-    //     RagManager::new(rag_db_path, ollama_client.clone())
-    //         .expect("Failed to initialize rag manager"),
-    // );
-    // let suggestion_engine = Arc::new(
-    //     SuggestionEngine::new(app_handle, rag_manager, ollama_client, settings)
-    // );
+    // Initialize Ollama client (used by RAG, Active Listening, Ask AI)
+    let app_settings = settings::get_settings(app_handle);
+    let ollama_base_url = &app_settings.active_listening.ollama_base_url;
+    let ollama_client = Arc::new(
+        ollama_client::OllamaClient::new(ollama_base_url)
+            .expect("Failed to initialize Ollama client"),
+    );
 
-    // Add managers to Tauri's managed state
+    // Initialize fork-exclusive managers
+    let active_listening_manager = Arc::new(
+        ActiveListeningManager::new(app_handle, transcription_manager.clone())
+            .expect("Failed to initialize active listening manager"),
+    );
+    let ask_ai_manager = Arc::new(
+        AskAiManager::new(app_handle, transcription_manager.clone())
+            .expect("Failed to initialize Ask AI manager"),
+    );
+    let ask_ai_history_manager = Arc::new(
+        AskAiHistoryManager::new(app_handle).expect("Failed to initialize Ask AI history manager"),
+    );
+
+    // RAG manager
+    let app_data_dir = app_handle
+        .path()
+        .app_data_dir()
+        .expect("Failed to get app data directory");
+    let rag_db_path = app_data_dir.join("rag.db");
+    let rag_manager = Arc::new(
+        RagManager::new(rag_db_path, ollama_client.clone())
+            .expect("Failed to initialize RAG manager"),
+    );
+
+    // Simple managers (wrapped in appropriate Mutex types)
+    let sound_detector = std::sync::Mutex::new(audio_toolkit::SoundDetector::new());
+    let batch_processor = tokio::sync::Mutex::new(BatchProcessor::new());
+    let mut task_extractor = TaskExtractor::new();
+    task_extractor.set_app_handle(app_handle.clone());
+    let task_extractor = std::sync::Mutex::new(task_extractor);
+    let vocabulary_manager = std::sync::Mutex::new(
+        VocabularyManager::new(&app_data_dir).expect("Failed to initialize vocabulary manager"),
+    );
+
+    // Add all managers to Tauri's managed state
     app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
-    // Disabled managers (see above):
-    // app_handle.manage(active_listening_manager.clone());
-    // app_handle.manage(ask_ai_manager.clone());
-    // app_handle.manage(ask_ai_history_manager.clone());
-    // app_handle.manage(rag_manager.clone());
-    // app_handle.manage(suggestion_engine.clone());
+    app_handle.manage(ollama_client);
+    app_handle.manage(active_listening_manager);
+    app_handle.manage(ask_ai_manager);
+    app_handle.manage(ask_ai_history_manager);
+    app_handle.manage(rag_manager);
+    app_handle.manage(sound_detector);
+    app_handle.manage(batch_processor);
+    app_handle.manage(task_extractor);
+    app_handle.manage(vocabulary_manager);
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -299,6 +322,7 @@ pub fn run(cli_args: CliArgs) {
     let console_filter = build_console_filter();
 
     let specta_builder = Builder::<tauri::Wry>::new().commands(collect_commands![
+        // Shortcut settings
         shortcut::change_binding,
         shortcut::reset_binding,
         shortcut::change_ptt_setting,
@@ -343,6 +367,7 @@ pub fn run(cli_args: CliArgs) {
         shortcut::handy_keys::start_handy_keys_recording,
         shortcut::handy_keys::stop_handy_keys_recording,
         trigger_update_check,
+        // Core commands
         commands::cancel_operation,
         commands::get_app_dir_path,
         commands::get_app_settings,
@@ -352,9 +377,11 @@ pub fn run(cli_args: CliArgs) {
         commands::open_recordings_folder,
         commands::open_log_dir,
         commands::open_app_data_dir,
+        commands::open_accessibility_settings,
         commands::check_apple_intelligence_available,
         commands::initialize_enigo,
         commands::initialize_shortcuts,
+        // Model commands
         commands::models::get_available_models,
         commands::models::get_model_info,
         commands::models::download_model,
@@ -366,6 +393,7 @@ pub fn run(cli_args: CliArgs) {
         commands::models::is_model_loading,
         commands::models::has_any_models_available,
         commands::models::has_any_models_or_downloads,
+        // Audio commands
         commands::audio::update_microphone_mode,
         commands::audio::get_microphone_mode,
         commands::audio::get_available_microphones,
@@ -379,9 +407,11 @@ pub fn run(cli_args: CliArgs) {
         commands::audio::set_clamshell_microphone,
         commands::audio::get_clamshell_microphone,
         commands::audio::is_recording,
+        // Transcription commands
         commands::transcription::set_model_unload_timeout,
         commands::transcription::get_model_load_status,
         commands::transcription::unload_model_manually,
+        // History commands
         commands::history::get_history_entries,
         commands::history::toggle_history_entry_saved,
         commands::history::get_audio_file_path,
@@ -390,7 +420,10 @@ pub fn run(cli_args: CliArgs) {
         commands::history::update_recording_retention_period,
         commands::history::post_process_history_entry,
         commands::history::get_history_entry_by_id,
-        helpers::clamshell::is_laptop,
+        commands::history::get_export_filename,
+        commands::history::export_transcription,
+        commands::history::get_batch_export_filename,
+        commands::history::export_transcriptions,
         // Active Listening commands
         commands::active_listening::start_active_listening_session,
         commands::active_listening::stop_active_listening_session,
@@ -414,6 +447,7 @@ pub fn run(cli_args: CliArgs) {
         commands::active_listening::get_loopback_support_level,
         commands::active_listening::is_loopback_supported,
         commands::active_listening::list_loopback_devices,
+        commands::active_listening::open_presentation_mode,
         commands::active_listening::generate_meeting_summary,
         commands::active_listening::export_meeting_summary,
         // Ask AI commands
@@ -438,7 +472,7 @@ pub fn run(cli_args: CliArgs) {
         commands::ask_ai::list_ask_ai_conversations,
         commands::ask_ai::get_ask_ai_conversation_from_history,
         commands::ask_ai::delete_ask_ai_conversation_from_history,
-        // RAG commands
+        // RAG / Knowledge Base commands
         commands::rag::rag_add_document,
         commands::rag::rag_search,
         commands::rag::rag_delete_document,
@@ -447,6 +481,7 @@ pub fn run(cli_args: CliArgs) {
         commands::rag::rag_get_embedding_model,
         commands::rag::rag_set_embedding_model,
         commands::rag::rag_clear_all,
+        commands::rag::rag_chat,
         commands::rag::get_knowledge_base_settings,
         commands::rag::change_knowledge_base_enabled_setting,
         commands::rag::change_auto_index_transcriptions_setting,
@@ -470,13 +505,32 @@ pub fn run(cli_args: CliArgs) {
         commands::suggestions::change_min_confidence,
         commands::suggestions::change_auto_dismiss_on_copy,
         commands::suggestions::change_display_duration,
-        // Keyring commands (secure API key storage)
-        commands::keyring::set_api_key,
-        commands::keyring::get_api_key,
-        commands::keyring::delete_api_key,
-        commands::keyring::has_api_key,
-        commands::keyring::get_masked_api_key,
-        // Text replacements commands
+        // Sound Detection commands
+        commands::sound_detection::get_sound_detection_settings,
+        commands::sound_detection::change_sound_detection_enabled,
+        commands::sound_detection::change_sound_detection_threshold,
+        commands::sound_detection::change_sound_detection_categories,
+        commands::sound_detection::change_sound_detection_notification,
+        // Batch Processing commands
+        commands::batch_processing::add_to_batch_queue,
+        commands::batch_processing::start_batch_processing,
+        commands::batch_processing::cancel_batch_processing,
+        commands::batch_processing::get_batch_status,
+        commands::batch_processing::remove_batch_item,
+        commands::batch_processing::clear_completed_batch_items,
+        // Task commands
+        commands::tasks::extract_action_items,
+        commands::tasks::get_action_items,
+        commands::tasks::toggle_action_item,
+        commands::tasks::delete_action_item,
+        commands::tasks::export_action_items,
+        // Vocabulary commands
+        commands::vocabulary::get_vocabulary,
+        commands::vocabulary::add_vocabulary_term,
+        commands::vocabulary::remove_vocabulary_term,
+        commands::vocabulary::import_vocabulary,
+        commands::vocabulary::export_vocabulary,
+        // Text Replacements commands
         commands::replacements::get_text_replacements,
         commands::replacements::add_text_replacement,
         commands::replacements::update_text_replacement,
@@ -487,7 +541,7 @@ pub fn run(cli_args: CliArgs) {
         commands::replacements::reorder_text_replacement,
         commands::replacements::import_text_replacements,
         commands::replacements::export_text_replacements,
-        // Wake-word detection commands
+        // Wake Word commands
         commands::wake_word::get_wake_word_settings,
         commands::wake_word::update_wake_word_settings,
         commands::wake_word::change_wake_word_enabled_setting,
@@ -495,6 +549,14 @@ pub fn run(cli_args: CliArgs) {
         commands::wake_word::change_wake_word_action_setting,
         commands::wake_word::change_wake_word_threshold_setting,
         commands::wake_word::change_wake_word_cooldown_setting,
+        // Keyring commands
+        commands::keyring::set_api_key,
+        commands::keyring::get_api_key,
+        commands::keyring::delete_api_key,
+        commands::keyring::has_api_key,
+        commands::keyring::get_masked_api_key,
+        // Helpers
+        helpers::clamshell::is_laptop,
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

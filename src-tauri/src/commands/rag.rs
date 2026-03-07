@@ -1,6 +1,7 @@
 //! Tauri commands for RAG (Knowledge Base) functionality
 
 use crate::managers::rag::{DocMetadata, RagManager, SearchResult, StoredDocument};
+use crate::ollama_client::OllamaClient;
 use crate::settings::{get_settings, write_settings, KnowledgeBaseSettings};
 use std::sync::Arc;
 use tauri::{AppHandle, State};
@@ -59,9 +60,7 @@ pub fn rag_list_documents(
 /// Get knowledge base statistics
 #[tauri::command]
 #[specta::specta]
-pub fn rag_get_stats(
-    rag_manager: State<'_, Arc<RagManager>>,
-) -> Result<RagStats, String> {
+pub fn rag_get_stats(rag_manager: State<'_, Arc<RagManager>>) -> Result<RagStats, String> {
     let document_count = rag_manager.document_count()?;
     let embedding_count = rag_manager.embedding_count()?;
 
@@ -93,10 +92,49 @@ pub async fn rag_set_embedding_model(
 /// Clear all documents from the knowledge base
 #[tauri::command]
 #[specta::specta]
-pub fn rag_clear_all(
-    rag_manager: State<'_, Arc<RagManager>>,
-) -> Result<(), String> {
+pub fn rag_clear_all(rag_manager: State<'_, Arc<RagManager>>) -> Result<(), String> {
     rag_manager.clear_all()
+}
+
+/// Chat with the knowledge base using RAG context
+#[tauri::command]
+#[specta::specta]
+pub async fn rag_chat(
+    app: AppHandle,
+    rag_manager: State<'_, Arc<RagManager>>,
+    ollama_client: State<'_, Arc<OllamaClient>>,
+    question: String,
+    context: Option<String>,
+) -> Result<String, String> {
+    let settings = get_settings(&app);
+
+    // Search for relevant context
+    let search_results = rag_manager.search(&question, 3).await?;
+
+    // Build context from search results
+    let mut rag_context = String::new();
+    for result in &search_results {
+        rag_context.push_str(&result.chunk_text);
+        rag_context.push_str("\n\n");
+    }
+
+    // Append any additional context provided
+    if let Some(ctx) = context {
+        rag_context.push_str(&ctx);
+    }
+
+    if rag_context.is_empty() {
+        return Err("No relevant context found in knowledge base".to_string());
+    }
+
+    // Use the Ollama client to generate a response
+    let prompt = format!(
+        "Based on the following context, answer the question.\n\nContext:\n{}\n\nQuestion: {}",
+        rag_context, question
+    );
+
+    let model = &settings.active_listening.ollama_model;
+    ollama_client.generate(model, prompt).await
 }
 
 /// Knowledge base statistics

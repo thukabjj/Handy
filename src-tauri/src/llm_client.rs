@@ -188,6 +188,7 @@ pub async fn send_chat_completion_with_schema(
 
 /// Fetch available models from an OpenAI-compatible API (optionally filtered to free models)
 /// When `free_only` is true, only returns models whose ID contains ":free"
+#[cfg(test)]
 pub async fn fetch_models_filtered(
     provider: &PostProcessProvider,
     api_key: String,

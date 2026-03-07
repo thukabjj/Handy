@@ -55,12 +55,12 @@ const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({
   const { t } = useTranslation();
 
   const styles: Record<BatchItem["status"], string> = {
-    Queued: "bg-mid-gray/20 text-text-secondary",
+    Queued: "bg-mid-gray/20 text-mid-gray",
     Decoding: "bg-blue-500/20 text-blue-400",
-    Transcribing: "bg-primary-light/20 text-primary-light",
+    Transcribing: "bg-logo-primary/20 text-logo-primary",
     Completed: "bg-green-500/20 text-green-400",
     Failed: "bg-red-500/20 text-red-400",
-    Cancelled: "bg-mid-gray/20 text-text-secondary",
+    Cancelled: "bg-mid-gray/20 text-mid-gray",
   };
 
   return (
@@ -86,7 +86,7 @@ const ProgressBar: React.FC<{ progress: number; status: BatchItem["status"] }> =
         ? "bg-red-500"
         : status === "Completed"
           ? "bg-green-500"
-          : "bg-primary-light";
+          : "bg-logo-primary";
 
     return (
       <div className="h-1.5 w-full rounded-full bg-mid-gray/20">
@@ -274,7 +274,7 @@ export const BatchProcessingPanel: React.FC = () => {
         {totalCount > 0 && (
           <div className="px-4 pb-3 space-y-2">
             <ProgressBar progress={overallProgress} status="Transcribing" />
-            <p className="text-xs text-text-secondary">
+            <p className="text-xs text-mid-gray">
               {t("batchProcessing.stats", {
                 completed: completedCount,
                 total: totalCount,
@@ -288,7 +288,7 @@ export const BatchProcessingPanel: React.FC = () => {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <FileAudio className="h-10 w-10 text-mid-gray/40 mb-3" />
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-mid-gray">
               {t("batchProcessing.empty")}
             </p>
           </div>
@@ -299,7 +299,7 @@ export const BatchProcessingPanel: React.FC = () => {
                 key={item.id}
                 className="flex items-center gap-3 px-4 py-3 group"
               >
-                <FileAudio className="h-4 w-4 flex-shrink-0 text-text-secondary" />
+                <FileAudio className="h-4 w-4 flex-shrink-0 text-mid-gray" />
 
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export const BatchProcessingPanel: React.FC = () => {
                 </div>
 
                 {item.duration_seconds != null && (
-                  <span className="text-xs text-text-secondary flex-shrink-0">
+                  <span className="text-xs text-mid-gray flex-shrink-0">
                     {formatDuration(item.duration_seconds)}
                   </span>
                 )}
@@ -339,7 +339,7 @@ export const BatchProcessingPanel: React.FC = () => {
                   className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-mid-gray/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label={t("batchProcessing.removeItem")}
                 >
-                  <X className="h-3.5 w-3.5 text-text-secondary" />
+                  <X className="h-3.5 w-3.5 text-mid-gray" />
                 </button>
               </div>
             ))}

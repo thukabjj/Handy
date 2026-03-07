@@ -129,7 +129,7 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
                   data-search-item
                   className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
                     index === selectedIndex
-                      ? "bg-primary-light/15"
+                      ? "bg-logo-primary/15"
                       : "hover:bg-mid-gray/10"
                   }`}
                   onClick={() => handleSelect(item)}
@@ -140,12 +140,12 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
                       <span className="text-sm font-semibold text-text truncate">
                         {item.label}
                       </span>
-                      <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-mid-gray/15 text-text-secondary">
+                      <span className="shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-mid-gray/15 text-mid-gray">
                         {item.sectionLabel}
                       </span>
                     </div>
                     {item.description && (
-                      <p className="text-xs text-text-secondary mt-0.5 truncate">
+                      <p className="text-xs text-mid-gray mt-0.5 truncate">
                         {item.description}
                       </p>
                     )}

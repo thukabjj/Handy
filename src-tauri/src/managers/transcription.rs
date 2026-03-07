@@ -499,8 +499,18 @@ impl TranscriptionManager {
         {
             // If the model is loading, wait for it to complete.
             let mut is_loading = self.is_loading.lock().unwrap();
+            let deadline = Duration::from_secs(120);
             while *is_loading {
-                is_loading = self.loading_condvar.wait(is_loading).unwrap();
+                let (guard, timeout_result) = self
+                    .loading_condvar
+                    .wait_timeout(is_loading, deadline)
+                    .unwrap();
+                is_loading = guard;
+                if timeout_result.timed_out() && *is_loading {
+                    return Err(anyhow::anyhow!(
+                        "Timed out waiting for model to load (120s). Please try again."
+                    ));
+                }
             }
 
             let engine_guard = self.lock_engine();
@@ -673,13 +683,12 @@ impl TranscriptionManager {
         );
 
         // Apply text replacements if enabled
-        let replaced_result = if settings.text_replacements_enabled
-            && !settings.text_replacements.is_empty()
-        {
-            apply_replacements(&filtered_result, &settings.text_replacements)
-        } else {
-            filtered_result
-        };
+        let replaced_result =
+            if settings.text_replacements_enabled && !settings.text_replacements.is_empty() {
+                apply_replacements(&filtered_result, &settings.text_replacements)
+            } else {
+                filtered_result
+            };
 
         let et = std::time::Instant::now();
         let translation_note = if settings.translate_to_english {

@@ -43,7 +43,7 @@ const CategoryBadge: React.FC<{ category: string }> = ({ category }) => {
 };
 
 const SourceBadge: React.FC<{ source: string }> = ({ source }) => (
-  <span className="text-xs px-1.5 py-0.5 rounded bg-mid-gray/10 text-text-secondary border border-mid-gray/20">
+  <span className="text-xs px-1.5 py-0.5 rounded bg-mid-gray/10 text-mid-gray border border-mid-gray/20">
     {source}
   </span>
 );
@@ -168,7 +168,7 @@ export const VocabularyPanel: React.FC = () => {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="px-2 py-1.5 text-sm bg-mid-gray/10 border border-mid-gray/80 rounded-md text-text transition-all duration-150 hover:bg-primary-light/10 hover:border-primary-light focus:outline-none focus:bg-primary-light/20 focus:border-primary-light"
+              className="px-2 py-1.5 text-sm bg-mid-gray/10 border border-mid-gray/80 rounded-md text-text transition-all duration-150 hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary"
             >
               <option value="">{t("vocabulary.noCategory")}</option>
               {CATEGORIES.map((cat) => (

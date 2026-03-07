@@ -122,7 +122,7 @@ export const ActionItemsPanel: React.FC = () => {
   if (loading) {
     return (
       <SettingsGroup title={t("actionItems.title")}>
-        <div className="px-4 py-3 text-center text-text-secondary">
+        <div className="px-4 py-3 text-center text-mid-gray">
           {t("actionItems.loading")}
         </div>
       </SettingsGroup>
@@ -132,7 +132,7 @@ export const ActionItemsPanel: React.FC = () => {
   if (items.length === 0) {
     return (
       <SettingsGroup title={t("actionItems.title")}>
-        <div className="px-4 py-3 text-center text-text-secondary">
+        <div className="px-4 py-3 text-center text-mid-gray">
           {t("actionItems.empty")}
         </div>
       </SettingsGroup>
@@ -145,7 +145,7 @@ export const ActionItemsPanel: React.FC = () => {
       description={t("actionItems.description")}
     >
       <div className="px-4 py-3 flex items-center justify-between border-b border-mid-gray/20">
-        <span className="text-xs text-text-secondary">
+        <span className="text-xs text-mid-gray">
           {t("actionItems.stats", {
             total: items.length,
             completed: completedCount,
@@ -153,7 +153,7 @@ export const ActionItemsPanel: React.FC = () => {
         </span>
         <div className="flex items-center gap-2">
           {copyNotice && (
-            <span className="text-xs text-primary-light">
+            <span className="text-xs text-logo-primary">
               {t("actionItems.copiedToClipboard")}
             </span>
           )}
@@ -170,13 +170,13 @@ export const ActionItemsPanel: React.FC = () => {
               <div className="absolute right-0 top-full mt-1 bg-background border border-mid-gray/20 rounded-lg shadow-lg z-50 min-w-[150px] py-1">
                 <button
                   onClick={() => handleExport("markdown")}
-                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-primary-light/10 transition-colors cursor-pointer"
+                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-logo-primary/10 transition-colors cursor-pointer"
                 >
                   {t("actionItems.exportMarkdown")}
                 </button>
                 <button
                   onClick={() => handleExport("json")}
-                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-primary-light/10 transition-colors cursor-pointer"
+                  className="w-full px-3 py-1.5 text-sm text-left hover:bg-logo-primary/10 transition-colors cursor-pointer"
                 >
                   {t("actionItems.exportJson")}
                 </button>
@@ -194,11 +194,11 @@ export const ActionItemsPanel: React.FC = () => {
           >
             <button
               onClick={() => toggleItem(item)}
-              className="mt-0.5 text-text-secondary hover:text-primary-light transition-colors cursor-pointer flex-shrink-0"
+              className="mt-0.5 text-mid-gray hover:text-logo-primary transition-colors cursor-pointer flex-shrink-0"
               title={t("actionItems.toggle")}
             >
               {item.completed ? (
-                <CheckSquare className="w-4 h-4 text-primary-light" />
+                <CheckSquare className="w-4 h-4 text-logo-primary" />
               ) : (
                 <Square className="w-4 h-4" />
               )}
@@ -208,7 +208,7 @@ export const ActionItemsPanel: React.FC = () => {
               <span
                 className={`text-sm ${
                   item.completed
-                    ? "line-through text-text-secondary"
+                    ? "line-through text-mid-gray"
                     : "text-text"
                 }`}
               >
@@ -226,14 +226,14 @@ export const ActionItemsPanel: React.FC = () => {
                 </span>
 
                 {item.assignee && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-mid-gray/20 text-text-secondary">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-mid-gray/20 text-mid-gray">
                     <User className="w-2.5 h-2.5" />
                     {item.assignee}
                   </span>
                 )}
 
                 {item.deadline && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-mid-gray/20 text-text-secondary">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-mid-gray/20 text-mid-gray">
                     <Calendar className="w-2.5 h-2.5" />
                     {item.deadline}
                   </span>
@@ -243,7 +243,7 @@ export const ActionItemsPanel: React.FC = () => {
 
             <button
               onClick={() => deleteItem(item.id)}
-              className="mt-0.5 text-text-secondary hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 flex-shrink-0"
+              className="mt-0.5 text-mid-gray hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 flex-shrink-0"
               title={t("actionItems.delete")}
             >
               <Trash2 className="w-3.5 h-3.5" />

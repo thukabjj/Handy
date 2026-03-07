@@ -67,6 +67,7 @@ impl BatchProcessor {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_app_handle(&mut self, handle: AppHandle) {
         self.app_handle = Some(handle);
     }
@@ -144,13 +145,16 @@ impl BatchProcessor {
                     }
                     if let Some(ref app) = app {
                         let status = Self::build_status_static(&q);
-                        let _ = app.emit("batch-item-status", &BatchProgressEvent {
-                            item_id: item_id.clone(),
-                            status: JobStatus::Decoding,
-                            progress: 0.1,
-                            total_items: status.total,
-                            completed_items: status.completed,
-                        });
+                        let _ = app.emit(
+                            "batch-item-status",
+                            &BatchProgressEvent {
+                                item_id: item_id.clone(),
+                                status: JobStatus::Decoding,
+                                progress: 0.1,
+                                total_items: status.total,
+                                completed_items: status.completed,
+                            },
+                        );
                     }
                 }
 
@@ -184,13 +188,16 @@ impl BatchProcessor {
                             }
                             if let Some(ref app) = app {
                                 let status = Self::build_status_static(&q);
-                                let _ = app.emit("batch-item-status", &BatchProgressEvent {
-                                    item_id: item_id.clone(),
-                                    status: JobStatus::Transcribing,
-                                    progress: 0.5,
-                                    total_items: status.total,
-                                    completed_items: status.completed,
-                                });
+                                let _ = app.emit(
+                                    "batch-item-status",
+                                    &BatchProgressEvent {
+                                        item_id: item_id.clone(),
+                                        status: JobStatus::Transcribing,
+                                        progress: 0.5,
+                                        total_items: status.total,
+                                        completed_items: status.completed,
+                                    },
+                                );
                             }
                         }
 
@@ -204,13 +211,16 @@ impl BatchProcessor {
                             }
                             if let Some(ref app) = app {
                                 let status = Self::build_status_static(&q);
-                                let _ = app.emit("batch-item-status", &BatchProgressEvent {
-                                    item_id: item_id.clone(),
-                                    status: JobStatus::Completed,
-                                    progress: 1.0,
-                                    total_items: status.total,
-                                    completed_items: status.completed,
-                                });
+                                let _ = app.emit(
+                                    "batch-item-status",
+                                    &BatchProgressEvent {
+                                        item_id: item_id.clone(),
+                                        status: JobStatus::Completed,
+                                        progress: 1.0,
+                                        total_items: status.total,
+                                        completed_items: status.completed,
+                                    },
+                                );
                             }
                         }
                     }
@@ -260,9 +270,8 @@ impl BatchProcessor {
 
     pub async fn clear_completed(&self) {
         let mut queue = self.queue.lock().await;
-        queue.retain(|item| {
-            item.status != JobStatus::Completed && item.status != JobStatus::Failed
-        });
+        queue
+            .retain(|item| item.status != JobStatus::Completed && item.status != JobStatus::Failed);
     }
 
     fn build_status(&self, queue: &VecDeque<BatchItem>) -> BatchQueueStatus {
@@ -272,8 +281,14 @@ impl BatchProcessor {
     fn build_status_static(queue: &VecDeque<BatchItem>) -> BatchQueueStatus {
         let items: Vec<BatchItem> = queue.iter().cloned().collect();
         let total = items.len();
-        let completed = items.iter().filter(|i| i.status == JobStatus::Completed).count();
-        let failed = items.iter().filter(|i| i.status == JobStatus::Failed).count();
+        let completed = items
+            .iter()
+            .filter(|i| i.status == JobStatus::Completed)
+            .count();
+        let failed = items
+            .iter()
+            .filter(|i| i.status == JobStatus::Failed)
+            .count();
         let is_processing = items
             .iter()
             .any(|i| i.status == JobStatus::Decoding || i.status == JobStatus::Transcribing);

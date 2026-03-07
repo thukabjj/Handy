@@ -185,7 +185,8 @@ If no action items are found, briefly note the main topic discussed."#
         ActiveListeningPrompt {
             id: "meeting_coach_objection_handler".to_string(),
             name: "Objection Handler".to_string(),
-            prompt_template: r#"You are a real-time meeting coach. Analyze this conversation segment:
+            prompt_template:
+                r#"You are a real-time meeting coach. Analyze this conversation segment:
 
 Transcription: {{transcription}}
 Previous context: {{previous_context}}
@@ -199,7 +200,7 @@ If you detect an objection, concern, or difficult question:
 If no objection detected, provide a brief insight about the conversation flow.
 
 Be concise - this is real-time assistance. Keep response under 100 words."#
-                .to_string(),
+                    .to_string(),
             created_at: 0,
             is_default: true,
             category: PromptCategory::MeetingCoach,
@@ -327,6 +328,7 @@ impl ActiveListeningSettings {
 }
 
 /// Ensure default prompts exist in settings (for migrations)
+#[allow(dead_code)]
 pub fn ensure_active_listening_defaults(settings: &mut ActiveListeningSettings) -> bool {
     let mut changed = false;
     let defaults = default_prompts();
@@ -378,7 +380,9 @@ mod tests {
         assert_eq!(meeting_notes.id, "default_meeting_notes");
         assert_eq!(meeting_notes.name, "Meeting Notes");
         assert!(meeting_notes.prompt_template.contains("{{transcription}}"));
-        assert!(meeting_notes.prompt_template.contains("{{previous_context}}"));
+        assert!(meeting_notes
+            .prompt_template
+            .contains("{{previous_context}}"));
         assert!(meeting_notes.prompt_template.contains("{{session_topic}}"));
         assert!(meeting_notes.is_default);
         assert_eq!(meeting_notes.category, PromptCategory::NoteTaking);
@@ -533,7 +537,10 @@ mod tests {
 
         assert!(changed);
         assert_eq!(settings.prompts.len(), 8); // 1 custom + 7 defaults
-        assert_eq!(settings.selected_prompt_id, Some("custom_prompt".to_string()));
+        assert_eq!(
+            settings.selected_prompt_id,
+            Some("custom_prompt".to_string())
+        );
     }
 
     #[test]
@@ -582,7 +589,10 @@ mod tests {
         let cloned = settings.clone();
 
         assert_eq!(settings.enabled, cloned.enabled);
-        assert_eq!(settings.segment_duration_seconds, cloned.segment_duration_seconds);
+        assert_eq!(
+            settings.segment_duration_seconds,
+            cloned.segment_duration_seconds
+        );
         assert_eq!(settings.prompts.len(), cloned.prompts.len());
     }
 

@@ -273,7 +273,7 @@ impl AudioRecordingManager {
             }
         };
 
-        if settings.general.mute_while_recording && is_open {
+        if settings.mute_while_recording && is_open {
             set_mute(true);
             *did_mute_guard = true;
             debug!("Mute applied");
@@ -667,6 +667,7 @@ impl AudioRecordingManager {
     }
 
     /// Check if active listening mode is enabled
+    #[allow(dead_code)]
     pub fn is_active_listening(&self) -> bool {
         match self.mode.lock() {
             Ok(mode) => *mode == MicrophoneMode::ActiveListening,
