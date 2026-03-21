@@ -849,6 +849,27 @@ mod tests {
     }
 
     #[test]
+    fn test_owner_only_without_profile_rejects_when_fallback_disabled() {
+        let settings = WakeWordSettings {
+            enabled: true,
+            cooldown_seconds: 0,
+            voice_auth_enabled: true,
+            voice_auth_mode: VoiceAuthMode::OwnerOnly,
+            fallback_when_no_profile: false,
+            ..Default::default()
+        };
+
+        let detector = WakeWordDetector::new(settings);
+        let result = detector.detect("Hey Handy", Some(&vec![0.2; 16_000]));
+
+        assert!(!result.detected);
+        assert_eq!(
+            result.rejection_reason,
+            Some(WakeRejectionReason::MissingVoiceProfile)
+        );
+    }
+
+    #[test]
     fn test_wake_audio_fixtures_are_valid_and_non_silent() {
         let fixture_names = [
             "wake_up_command.wav",

@@ -127,6 +127,7 @@ pub fn change_wake_word_voice_auth_enabled_setting(app: AppHandle, enabled: bool
     } else {
         VoiceAuthMode::Disabled
     };
+    settings.wake_word.fallback_when_no_profile = !enabled;
     write_settings(&app, settings);
 }
 

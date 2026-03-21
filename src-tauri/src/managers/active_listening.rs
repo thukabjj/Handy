@@ -30,18 +30,20 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 
-fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> String {
+fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> Result<String, String> {
     match provider {
         LlmProvider::Custom => custom_base_url
-            .cloned()
-            .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string()),
-        LlmProvider::LocalOpenAi => custom_base_url
-            .cloned()
-            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()),
-        _ => provider
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Custom provider requires a base URL".to_string()),
+        LlmProvider::LocalOpenAi => Ok(custom_base_url
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string())),
+        _ => Ok(provider
             .default_base_url()
             .unwrap_or("https://openrouter.ai/api/v1")
-            .to_string(),
+            .to_string()),
     }
 }
 
@@ -105,27 +107,27 @@ mod provider_tests {
     #[test]
     fn test_cloud_base_url_for_supported_providers() {
         assert_eq!(
-            cloud_base_url(LlmProvider::LocalOpenAi, None),
+            cloud_base_url(LlmProvider::LocalOpenAi, None).unwrap(),
             "http://127.0.0.1:8000/v1"
         );
         assert_eq!(
-            cloud_base_url(LlmProvider::OpenRouter, None),
+            cloud_base_url(LlmProvider::OpenRouter, None).unwrap(),
             "https://openrouter.ai/api/v1"
         );
         assert_eq!(
-            cloud_base_url(LlmProvider::OpenAi, None),
+            cloud_base_url(LlmProvider::OpenAi, None).unwrap(),
             "https://api.openai.com/v1"
         );
         assert_eq!(
-            cloud_base_url(LlmProvider::Groq, None),
+            cloud_base_url(LlmProvider::Groq, None).unwrap(),
             "https://api.groq.com/openai/v1"
         );
         assert_eq!(
-            cloud_base_url(LlmProvider::Together, None),
+            cloud_base_url(LlmProvider::Together, None).unwrap(),
             "https://api.together.xyz/v1"
         );
         assert_eq!(
-            cloud_base_url(LlmProvider::Fireworks, None),
+            cloud_base_url(LlmProvider::Fireworks, None).unwrap(),
             "https://api.fireworks.ai/inference/v1"
         );
     }
@@ -136,20 +138,20 @@ mod provider_tests {
             cloud_base_url(
                 LlmProvider::LocalOpenAi,
                 Some(&"http://127.0.0.1:8080/v1".to_string()),
-            ),
+            )
+            .unwrap(),
             "http://127.0.0.1:8080/v1"
         );
         assert_eq!(
             cloud_base_url(
                 LlmProvider::Custom,
                 Some(&"https://example.com/v1".to_string()),
-            ),
+            )
+            .unwrap(),
             "https://example.com/v1"
         );
-        assert_eq!(
-            cloud_base_url(LlmProvider::Custom, None),
-            "https://openrouter.ai/api/v1"
-        );
+        let err = cloud_base_url(LlmProvider::Custom, None).unwrap_err();
+        assert!(err.contains("requires a base URL"));
     }
 }
 
@@ -920,8 +922,7 @@ Important:
                     .map_err(|e| format!("Ollama request failed: {}", e))?
             }
             _ => {
-                let base_url =
-                    cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref());
+                let base_url = cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref())?;
                 let provider = crate::settings::PostProcessProvider {
                     id: format!("{:?}", al_settings.llm_provider).to_lowercase(),
                     label: format!("{:?}", al_settings.llm_provider),
@@ -1496,8 +1497,17 @@ impl ActiveListeningManagerHandle {
             }
             _ => {
                 // Use OpenAI-compatible streaming API
-                let base_url =
-                    cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref());
+                let base_url = match cloud_base_url(
+                    al_settings.llm_provider,
+                    al_settings.llm_base_url.as_ref(),
+                ) {
+                    Ok(url) => url,
+                    Err(err) => {
+                        error!("Failed to resolve LLM provider base URL: {}", err);
+                        self.transition_to_listening();
+                        return;
+                    }
+                };
                 let provider = crate::settings::PostProcessProvider {
                     id: format!("{:?}", al_settings.llm_provider).to_lowercase(),
                     label: format!("{:?}", al_settings.llm_provider),

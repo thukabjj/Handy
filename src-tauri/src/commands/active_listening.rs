@@ -325,9 +325,10 @@ fn resolve_llm_provider_url(
 ) -> Result<String, String> {
     match provider_type {
         LlmProvider::Ollama => Err("Use fetch_ollama_models for Ollama".to_string()),
-        LlmProvider::Custom => {
-            Ok(base_url.unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string()))
-        }
+        LlmProvider::Custom => base_url
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Custom provider requires a base URL".to_string()),
         LlmProvider::LocalOpenAi => {
             Ok(base_url.unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()))
         }
@@ -442,10 +443,11 @@ mod tests {
             .unwrap(),
             "https://example.com/v1"
         );
-        assert_eq!(
-            resolve_llm_provider_url(LlmProvider::Custom, None).unwrap(),
-            "https://openrouter.ai/api/v1"
-        );
+        let err = resolve_llm_provider_url(LlmProvider::Custom, None).unwrap_err();
+        assert!(err.contains("requires a base URL"));
+        let err =
+            resolve_llm_provider_url(LlmProvider::Custom, Some("   ".to_string())).unwrap_err();
+        assert!(err.contains("requires a base URL"));
     }
 
     #[test]

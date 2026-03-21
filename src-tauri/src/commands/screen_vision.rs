@@ -58,19 +58,21 @@ static SCREEN_VISION_RUNTIME: Lazy<Arc<Mutex<ScreenVisionRuntime>>> = Lazy::new(
     }))
 });
 
-fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> String {
+fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> Result<String, String> {
     match provider {
         LlmProvider::Custom => custom_base_url
-            .cloned()
-            .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string()),
-        LlmProvider::LocalOpenAi => custom_base_url
-            .cloned()
-            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()),
-        LlmProvider::Ollama => "http://localhost:11434/v1".to_string(),
-        _ => provider
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Screen Vision custom provider requires a base URL".to_string()),
+        LlmProvider::LocalOpenAi => Ok(custom_base_url
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string())),
+        LlmProvider::Ollama => Ok("http://localhost:11434/v1".to_string()),
+        _ => Ok(provider
             .default_base_url()
             .unwrap_or("https://openrouter.ai/api/v1")
-            .to_string(),
+            .to_string()),
     }
 }
 
@@ -88,22 +90,61 @@ fn to_provider_id(provider: LlmProvider) -> &'static str {
 }
 
 fn build_provider(
-    #[allow(unused_variables)] shared_provider: LlmProvider,
-    shared_base_url: Option<&String>,
-) -> PostProcessProvider {
+    #[allow(unused_variables)] screen_vision_provider: LlmProvider,
+    screen_vision_base_url: Option<&String>,
+) -> Result<PostProcessProvider, String> {
     #[cfg(target_os = "macos")]
     let effective_provider = LlmProvider::OpenRouter;
     #[cfg(not(target_os = "macos"))]
-    let effective_provider = shared_provider;
+    let effective_provider = screen_vision_provider;
 
-    PostProcessProvider {
+    Ok(PostProcessProvider {
         id: to_provider_id(effective_provider).to_string(),
         label: "Screen Vision".to_string(),
-        base_url: cloud_base_url(effective_provider, shared_base_url),
+        base_url: cloud_base_url(effective_provider, screen_vision_base_url)?,
         allow_base_url_edit: true,
         models_endpoint: Some("/models".to_string()),
         supports_structured_output: false,
+    })
+}
+
+fn resolve_snapshot_model(
+    settings: &ScreenVisionSettings,
+    shared_provider: LlmProvider,
+    shared_ollama_model: &str,
+    shared_llm_model: Option<&String>,
+) -> String {
+    if !settings.llm_model.trim().is_empty() {
+        return settings.llm_model.trim().to_string();
     }
+
+    match settings.llm_provider {
+        LlmProvider::Ollama => shared_ollama_model.trim().to_string(),
+        _ => {
+            if settings.llm_provider == shared_provider {
+                shared_llm_model
+                    .map(|value| value.trim().to_string())
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            }
+        }
+    }
+}
+
+fn resolve_snapshot_api_key(
+    settings_api_key: Option<&String>,
+    shared_api_key: Option<&String>,
+) -> String {
+    settings_api_key
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            shared_api_key
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .unwrap_or_default()
 }
 
 fn normalize_screen_vision_settings(mut settings: ScreenVisionSettings) -> ScreenVisionSettings {
@@ -241,15 +282,13 @@ async fn run_single_snapshot(
     let started = std::time::Instant::now();
 
     let (image_bytes, capture_path) = capture_screen_png()?;
-    let provider = build_provider(shared.llm_provider, shared.llm_base_url.as_ref());
-    let model = if settings.llm_model.trim().is_empty() {
-        match shared.llm_provider {
-            LlmProvider::Ollama => shared.ollama_model,
-            _ => shared.llm_model.unwrap_or_default(),
-        }
-    } else {
-        settings.llm_model.clone()
-    };
+    let provider = build_provider(settings.llm_provider, settings.llm_base_url.as_ref())?;
+    let model = resolve_snapshot_model(
+        settings,
+        shared.llm_provider,
+        &shared.ollama_model,
+        shared.llm_model.as_ref(),
+    );
 
     let model = model.trim();
     if model.is_empty() {
@@ -270,10 +309,7 @@ async fn run_single_snapshot(
 
     let analysis = send_vision_chat_completion(
         &provider,
-        shared
-            .llm_api_key
-            .or(settings.llm_api_key.clone())
-            .unwrap_or_default(),
+        resolve_snapshot_api_key(settings.llm_api_key.as_ref(), shared.llm_api_key.as_ref()),
         model,
         settings.prompt.clone(),
         &image_bytes,
@@ -483,5 +519,60 @@ mod windows_capture_tests {
         let script = build_windows_capture_script("C:\\Users\\O'Hara\\screen.png");
         assert!(script.contains("O''Hara"));
         assert!(script.contains("$bmp.Save"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn custom_provider_requires_base_url() {
+        let err = cloud_base_url(LlmProvider::Custom, None).unwrap_err();
+        assert!(err.contains("requires a base URL"));
+    }
+
+    #[test]
+    fn snapshot_prefers_screen_vision_model_and_key() {
+        let settings = ScreenVisionSettings {
+            llm_provider: LlmProvider::OpenRouter,
+            llm_api_key: Some("screen-key".to_string()),
+            llm_model: "screen-model".to_string(),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            resolve_snapshot_model(
+                &settings,
+                LlmProvider::OpenRouter,
+                "shared-ollama",
+                Some(&"shared-model".to_string())
+            ),
+            "screen-model"
+        );
+        assert_eq!(
+            resolve_snapshot_api_key(
+                settings.llm_api_key.as_ref(),
+                Some(&"shared-key".to_string())
+            ),
+            "screen-key"
+        );
+    }
+
+    #[test]
+    fn snapshot_does_not_fall_back_to_other_provider_model() {
+        let settings = ScreenVisionSettings {
+            llm_provider: LlmProvider::Groq,
+            llm_model: "   ".to_string(),
+            ..Default::default()
+        };
+
+        assert!(resolve_snapshot_model(
+            &settings,
+            LlmProvider::OpenRouter,
+            "shared-ollama",
+            Some(&"shared-model".to_string())
+        )
+        .is_empty());
     }
 }
