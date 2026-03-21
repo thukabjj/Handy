@@ -17,6 +17,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - General settings section is visible
 - Push to Talk toggle is present
 - Audio Feedback toggle is present
@@ -29,6 +30,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Push to Talk toggle appears enabled/checked
 - Mock state updated: `window.__E2E_MOCK__.getState().settings.push_to_talk === true`
 
@@ -39,6 +41,7 @@ browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().settings.push
 ```
 
 **Verify:**
+
 - Returns `true`
 
 ### 4. Toggle Push to Talk OFF
@@ -49,6 +52,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Push to Talk toggle appears disabled/unchecked
 
 ### 5. Toggle Audio Feedback OFF
@@ -58,6 +62,7 @@ browser_click({ ref: "<audio-feedback-ref>", element: "Audio Feedback toggle" })
 ```
 
 **Verify state:**
+
 ```
 browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().settings.audio_feedback" })
 ```

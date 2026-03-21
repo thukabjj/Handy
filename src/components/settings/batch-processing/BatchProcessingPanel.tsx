@@ -33,9 +33,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({
-  status,
-}) => {
+const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({ status }) => {
   const { t } = useTranslation();
 
   const styles: Record<BatchItem["status"], string> = {
@@ -63,24 +61,26 @@ const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({
   );
 };
 
-const ProgressBar: React.FC<{ progress: number; status: BatchItem["status"] }> =
-  ({ progress, status }) => {
-    const barColor =
-      status === "Failed"
-        ? "bg-red-500"
-        : status === "Completed"
-          ? "bg-green-500"
-          : "bg-logo-primary";
+const ProgressBar: React.FC<{
+  progress: number;
+  status: BatchItem["status"];
+}> = ({ progress, status }) => {
+  const barColor =
+    status === "Failed"
+      ? "bg-red-500"
+      : status === "Completed"
+        ? "bg-green-500"
+        : "bg-logo-primary";
 
-    return (
-      <div className="h-1.5 w-full rounded-full bg-mid-gray/20">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${barColor}`}
-          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-        />
-      </div>
-    );
-  };
+  return (
+    <div className="h-1.5 w-full rounded-full bg-mid-gray/20">
+      <div
+        className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+      />
+    </div>
+  );
+};
 
 export const BatchProcessingPanel: React.FC = () => {
   const { t } = useTranslation();
@@ -179,7 +179,10 @@ export const BatchProcessingPanel: React.FC = () => {
       await commands.clearCompletedBatchItems();
       setItems((prev) =>
         prev.filter(
-          (item) => item.status !== "Completed" && item.status !== "Failed" && item.status !== "Cancelled",
+          (item) =>
+            item.status !== "Completed" &&
+            item.status !== "Failed" &&
+            item.status !== "Cancelled",
         ),
       );
     } catch (error) {
@@ -329,8 +332,7 @@ export const BatchProcessingPanel: React.FC = () => {
                 <button
                   onClick={() => handleRemoveItem(item.id)}
                   disabled={
-                    item.status === "Decoding" ||
-                    item.status === "Transcribing"
+                    item.status === "Decoding" || item.status === "Transcribing"
                   }
                   className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-mid-gray/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label={t("batchProcessing.removeItem")}

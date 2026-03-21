@@ -17,21 +17,16 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 /// Action to perform when wake-word is detected.
-#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Type, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum WakeWordAction {
     /// Start an Active Listening session
+    #[default]
     StartActiveListening,
     /// Start standard transcription
     StartRecording,
     /// No action (disabled)
     None,
-}
-
-impl Default for WakeWordAction {
-    fn default() -> Self {
-        Self::StartActiveListening
-    }
 }
 
 /// Voice authentication mode for wake-word detection.
@@ -263,7 +258,10 @@ impl WakeWordDetector {
 
         let has_signal = if self.settings.vad_enabled {
             // 0.008 was too strict on many laptop microphones and blocked valid speech.
-            samples.map(rms_energy).map(|rms| rms >= 0.002).unwrap_or(true)
+            samples
+                .map(rms_energy)
+                .map(|rms| rms >= 0.002)
+                .unwrap_or(true)
         } else {
             true
         };
@@ -506,10 +504,8 @@ fn wake_phrase_score(normalized_transcript: &str, normalized_phrase: &str) -> f3
     }
     let ordered_exact = hits as f32 / phrase_tokens.len() as f32;
     let fuzzy_window = fuzzy_window_phrase_score(&transcript_tokens, &phrase_tokens);
-    let joined_similarity = normalized_similarity(
-        &transcript_tokens.join(" "),
-        &phrase_tokens.join(" "),
-    );
+    let joined_similarity =
+        normalized_similarity(&transcript_tokens.join(" "), &phrase_tokens.join(" "));
     let mut best = ordered_exact.max(fuzzy_window).max(joined_similarity * 0.9);
 
     // Practical aliases for common wake ASR drift on "hey handy".

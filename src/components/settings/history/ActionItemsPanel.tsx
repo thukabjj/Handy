@@ -68,54 +68,45 @@ export const ActionItemsPanel: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleItem = useCallback(
-    async (item: ActionItem) => {
-      try {
-        await invoke("toggle_action_item", {
-          id: item.id,
-          completed: !item.completed,
-        });
-        setItems((prev) =>
-          prev.map((i) =>
-            i.id === item.id ? { ...i, completed: !i.completed } : i,
-          ),
-        );
-      } catch (error) {
-        console.error("Failed to toggle action item:", error);
-      }
-    },
-    [],
-  );
+  const toggleItem = useCallback(async (item: ActionItem) => {
+    try {
+      await invoke("toggle_action_item", {
+        id: item.id,
+        completed: !item.completed,
+      });
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, completed: !i.completed } : i,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to toggle action item:", error);
+    }
+  }, []);
 
-  const deleteItem = useCallback(
-    async (id: number) => {
-      try {
-        await invoke("delete_action_item", { id });
-        setItems((prev) => prev.filter((i) => i.id !== id));
-      } catch (error) {
-        console.error("Failed to delete action item:", error);
-      }
-    },
-    [],
-  );
+  const deleteItem = useCallback(async (id: number) => {
+    try {
+      await invoke("delete_action_item", { id });
+      setItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (error) {
+      console.error("Failed to delete action item:", error);
+    }
+  }, []);
 
-  const handleExport = useCallback(
-    async (format: "markdown" | "json") => {
-      setExportOpen(false);
-      try {
-        const result = await invoke<string>("export_action_items", {
-          entryId: null,
-          format,
-        });
-        await navigator.clipboard.writeText(result);
-        setCopyNotice(true);
-        setTimeout(() => setCopyNotice(false), 2000);
-      } catch (error) {
-        console.error("Failed to export action items:", error);
-      }
-    },
-    [],
-  );
+  const handleExport = useCallback(async (format: "markdown" | "json") => {
+    setExportOpen(false);
+    try {
+      const result = await invoke<string>("export_action_items", {
+        entryId: null,
+        format,
+      });
+      await navigator.clipboard.writeText(result);
+      setCopyNotice(true);
+      setTimeout(() => setCopyNotice(false), 2000);
+    } catch (error) {
+      console.error("Failed to export action items:", error);
+    }
+  }, []);
 
   const completedCount = items.filter((i) => i.completed).length;
 
@@ -207,9 +198,7 @@ export const ActionItemsPanel: React.FC = () => {
             <div className="flex-1 min-w-0">
               <span
                 className={`text-sm ${
-                  item.completed
-                    ? "line-through text-mid-gray"
-                    : "text-text"
+                  item.completed ? "line-through text-mid-gray" : "text-text"
                 }`}
               >
                 {item.task}

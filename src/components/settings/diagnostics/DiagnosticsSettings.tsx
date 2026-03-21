@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../../ui/Button";
 import { recordFrontendTelemetryEvent } from "@/lib/telemetry";
 
-type ObservabilityDataMode =
-  | "metadata_only"
-  | "sensitive_text"
-  | "developer";
+type ObservabilityDataMode = "metadata_only" | "sensitive_text" | "developer";
 
 type TelemetryLevel = "trace" | "debug" | "info" | "warn" | "error";
 
@@ -110,6 +107,47 @@ const formatTimestamp = (timestampMs?: number | null): string => {
 
 export const DiagnosticsSettings: React.FC = () => {
   const { t } = useTranslation();
+  const modeOptions = useMemo(
+    () =>
+      MODE_OPTIONS.map((option) => ({
+        ...option,
+        label: t(`diagnostics.mode.${option.value}.label`, option.label),
+        description: t(
+          `diagnostics.mode.${option.value}.description`,
+          option.description,
+        ),
+      })),
+    [t],
+  );
+  const levelOptions = useMemo(
+    () => [
+      {
+        value: "all",
+        label: t("diagnostics.filters.level.all", "All levels"),
+      },
+      {
+        value: "trace",
+        label: t("diagnostics.filters.level.trace", "Trace"),
+      },
+      {
+        value: "debug",
+        label: t("diagnostics.filters.level.debug", "Debug"),
+      },
+      {
+        value: "info",
+        label: t("diagnostics.filters.level.info", "Info"),
+      },
+      {
+        value: "warn",
+        label: t("diagnostics.filters.level.warn", "Warn"),
+      },
+      {
+        value: "error",
+        label: t("diagnostics.filters.level.error", "Error"),
+      },
+    ],
+    [t],
+  );
   const [settings, setSettings] = useState<ObservabilitySettings | null>(null);
   const [stats, setStats] = useState<TelemetryStats | null>(null);
   const [events, setEvents] = useState<TelemetryEvent[]>([]);
@@ -125,7 +163,9 @@ export const DiagnosticsSettings: React.FC = () => {
   const refreshSnapshot = async () => {
     setIsLoading(true);
     try {
-      const snapshot = await invoke<TelemetrySnapshot>("get_telemetry_snapshot");
+      const snapshot = await invoke<TelemetrySnapshot>(
+        "get_telemetry_snapshot",
+      );
       setSettings(snapshot.settings);
       setStats(snapshot.stats);
       setEvents(snapshot.events);
@@ -220,36 +260,37 @@ export const DiagnosticsSettings: React.FC = () => {
 
   const filteredEvents = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return [...events]
-      .reverse()
-      .filter((event) => {
-        if (selectedComponent !== "all" && event.component !== selectedComponent) {
-          return false;
-        }
-        if (selectedLevel !== "all" && event.level !== selectedLevel) {
-          return false;
-        }
-        if (!query) {
-          return true;
-        }
+    return [...events].reverse().filter((event) => {
+      if (
+        selectedComponent !== "all" &&
+        event.component !== selectedComponent
+      ) {
+        return false;
+      }
+      if (selectedLevel !== "all" && event.level !== selectedLevel) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
 
-        const haystack = [
-          event.component,
-          event.action,
-          event.message,
-          event.status ?? "",
-          event.session_id ?? "",
-          event.trace_id ?? "",
-          ...event.attributes.flatMap((attribute) => [
-            attribute.key,
-            attribute.value,
-          ]),
-        ]
-          .join(" ")
-          .toLowerCase();
+      const haystack = [
+        event.component,
+        event.action,
+        event.message,
+        event.status ?? "",
+        event.session_id ?? "",
+        event.trace_id ?? "",
+        ...event.attributes.flatMap((attribute) => [
+          attribute.key,
+          attribute.value,
+        ]),
+      ]
+        .join(" ")
+        .toLowerCase();
 
-        return haystack.includes(query);
-      });
+      return haystack.includes(query);
+    });
   }, [events, search, selectedComponent, selectedLevel]);
 
   const persistSettings = async (nextSettings: ObservabilitySettings) => {
@@ -326,17 +367,26 @@ export const DiagnosticsSettings: React.FC = () => {
             >
               {t("common.refresh", "Refresh")}
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => void exportBundle()}>
-              Export bundle
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void exportBundle()}
+            >
+              {t("diagnostics.actions.exportBundle", "Export bundle")}
             </Button>
-            <Button variant="danger-ghost" size="sm" onClick={() => void clearEvents()}>
+            <Button
+              variant="danger-ghost"
+              size="sm"
+              onClick={() => void clearEvents()}
+            >
               {t("common.clear", "Clear")}
             </Button>
           </div>
         </div>
         {exportPath && (
           <p className="mt-3 text-xs text-mid-gray">
-            Latest bundle: <span className="font-mono text-text">{exportPath}</span>
+            {t("diagnostics.latestBundle", "Latest bundle:")}{" "}
+            <span className="font-mono text-text">{exportPath}</span>
           </p>
         )}
       </div>
@@ -344,7 +394,7 @@ export const DiagnosticsSettings: React.FC = () => {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-mid-gray/20 bg-background/50 p-3">
           <div className="text-xs uppercase tracking-wide text-mid-gray">
-            Buffered
+            {t("diagnostics.stats.buffered", "Buffered")}
           </div>
           <div className="mt-2 text-2xl font-semibold">
             {stats?.buffered_events ?? 0}
@@ -352,7 +402,7 @@ export const DiagnosticsSettings: React.FC = () => {
         </div>
         <div className="rounded-lg border border-mid-gray/20 bg-background/50 p-3">
           <div className="text-xs uppercase tracking-wide text-mid-gray">
-            Errors
+            {t("diagnostics.stats.errors", "Errors")}
           </div>
           <div className="mt-2 text-2xl font-semibold text-red-300">
             {stats?.error_events ?? 0}
@@ -360,7 +410,7 @@ export const DiagnosticsSettings: React.FC = () => {
         </div>
         <div className="rounded-lg border border-mid-gray/20 bg-background/50 p-3">
           <div className="text-xs uppercase tracking-wide text-mid-gray">
-            Warnings
+            {t("diagnostics.stats.warnings", "Warnings")}
           </div>
           <div className="mt-2 text-2xl font-semibold text-amber-300">
             {stats?.warn_events ?? 0}
@@ -368,7 +418,7 @@ export const DiagnosticsSettings: React.FC = () => {
         </div>
         <div className="rounded-lg border border-mid-gray/20 bg-background/50 p-3">
           <div className="text-xs uppercase tracking-wide text-mid-gray">
-            Dropped
+            {t("diagnostics.stats.dropped", "Dropped")}
           </div>
           <div className="mt-2 text-2xl font-semibold">
             {stats?.dropped_events ?? 0}
@@ -380,7 +430,7 @@ export const DiagnosticsSettings: React.FC = () => {
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr_160px_160px]">
           <label className="space-y-2 text-sm">
             <span className="block text-xs uppercase tracking-wide text-mid-gray">
-              Mode
+              {t("diagnostics.settings.mode", "Mode")}
             </span>
             <select
               className="w-full rounded-md border border-mid-gray/20 bg-background px-3 py-2 text-sm"
@@ -393,22 +443,23 @@ export const DiagnosticsSettings: React.FC = () => {
                 });
               }}
             >
-              {MODE_OPTIONS.map((option) => (
+              {modeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
             <span className="block text-xs text-mid-gray">
-              {MODE_OPTIONS.find(
-                (option) => option.value === (settings?.data_mode ?? "metadata_only"),
+              {modeOptions.find(
+                (option) =>
+                  option.value === (settings?.data_mode ?? "metadata_only"),
               )?.description ?? ""}
             </span>
           </label>
 
           <label className="space-y-2 text-sm">
             <span className="block text-xs uppercase tracking-wide text-mid-gray">
-              Buffer size
+              {t("diagnostics.settings.bufferSize", "Buffer size")}
             </span>
             <input
               className="w-full rounded-md border border-mid-gray/20 bg-background px-3 py-2 text-sm"
@@ -421,7 +472,9 @@ export const DiagnosticsSettings: React.FC = () => {
                 const nextValue = Number(event.target.value);
                 setSettings({
                   ...settings,
-                  max_events: Number.isFinite(nextValue) ? nextValue : settings.max_events,
+                  max_events: Number.isFinite(nextValue)
+                    ? nextValue
+                    : settings.max_events,
                 });
               }}
               onBlur={() => {
@@ -435,7 +488,7 @@ export const DiagnosticsSettings: React.FC = () => {
           </label>
 
           <label className="flex items-center justify-between gap-3 rounded-md border border-mid-gray/20 bg-background px-3 py-2 text-sm">
-            <span>Enabled</span>
+            <span>{t("common.enabled", "Enabled")}</span>
             <input
               type="checkbox"
               checked={settings?.enabled ?? true}
@@ -450,7 +503,7 @@ export const DiagnosticsSettings: React.FC = () => {
           </label>
 
           <label className="flex items-center justify-between gap-3 rounded-md border border-mid-gray/20 bg-background px-3 py-2 text-sm">
-            <span>Live stream</span>
+            <span>{t("diagnostics.settings.liveStream", "Live stream")}</span>
             <input
               type="checkbox"
               checked={settings?.emit_live_events ?? true}
@@ -479,7 +532,9 @@ export const DiagnosticsSettings: React.FC = () => {
           >
             {componentOptions.map((component) => (
               <option key={component} value={component}>
-                {component === "all" ? "All components" : component}
+                {component === "all"
+                  ? t("diagnostics.filters.component.all", "All components")
+                  : component}
               </option>
             ))}
           </select>
@@ -490,19 +545,20 @@ export const DiagnosticsSettings: React.FC = () => {
               setSelectedLevel(event.target.value as "all" | TelemetryLevel)
             }
           >
-            <option value="all">All levels</option>
-            <option value="trace">Trace</option>
-            <option value="debug">Debug</option>
-            <option value="info">Info</option>
-            <option value="warn">Warn</option>
-            <option value="error">Error</option>
+            {levelOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <Button
             variant={livePaused ? "secondary" : "ghost"}
             size="sm"
             onClick={() => setLivePaused((value) => !value)}
           >
-            {livePaused ? "Resume live" : "Pause live"}
+            {livePaused
+              ? t("diagnostics.actions.resumeLive", "Resume live")
+              : t("diagnostics.actions.pauseLive", "Pause live")}
           </Button>
         </div>
       </div>
@@ -510,35 +566,51 @@ export const DiagnosticsSettings: React.FC = () => {
       <div className="grid gap-4 xl:grid-cols-[1.4fr_2fr]">
         <div className="rounded-lg border border-mid-gray/20 bg-background/40 p-4">
           <h4 className="text-xs font-medium uppercase tracking-wide text-mid-gray">
-            Components
+            {t("diagnostics.components.title", "Components")}
           </h4>
           <div className="mt-3 space-y-2">
-            {(stats?.component_breakdown ?? []).slice(0, 12).map((component) => (
-              <div
-                key={component.component}
-                className="rounded-md border border-mid-gray/20 bg-background/30 px-3 py-2"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {component.component}
+            {(stats?.component_breakdown ?? [])
+              .slice(0, 12)
+              .map((component) => (
+                <div
+                  key={component.component}
+                  className="rounded-md border border-mid-gray/20 bg-background/30 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {component.component}
+                      </div>
+                      <div className="text-xs text-mid-gray">
+                        {t("diagnostics.components.lastEvent", "Last event")}{" "}
+                        {formatTimestamp(component.last_event_at_ms)}
+                      </div>
                     </div>
-                    <div className="text-xs text-mid-gray">
-                      Last event {formatTimestamp(component.last_event_at_ms)}
-                    </div>
-                  </div>
-                  <div className="text-right text-xs text-mid-gray">
-                    <div>{component.total_events} total</div>
-                    <div>
-                      {component.error_events} errors, {component.warn_events} warnings
+                    <div className="text-right text-xs text-mid-gray">
+                      <div>
+                        {t("diagnostics.components.total", {
+                          count: component.total_events,
+                          defaultValue: "{{count}} total",
+                        })}
+                      </div>
+                      <div>
+                        {t("diagnostics.components.errorsWarnings", {
+                          errors: component.error_events,
+                          warnings: component.warn_events,
+                          defaultValue:
+                            "{{errors}} errors, {{warnings}} warnings",
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
             {!stats?.component_breakdown?.length && !isLoading && (
               <div className="rounded-md border border-dashed border-mid-gray/20 px-3 py-6 text-center text-sm text-mid-gray">
-                No telemetry captured yet.
+                {t(
+                  "diagnostics.components.empty",
+                  "No telemetry captured yet.",
+                )}
               </div>
             )}
           </div>
@@ -547,10 +619,14 @@ export const DiagnosticsSettings: React.FC = () => {
         <div className="rounded-lg border border-mid-gray/20 bg-background/40 p-4">
           <div className="flex items-center justify-between gap-3">
             <h4 className="text-xs font-medium uppercase tracking-wide text-mid-gray">
-              Event stream
+              {t("diagnostics.events.title", "Event stream")}
             </h4>
             <span className="text-xs text-mid-gray">
-              {filteredEvents.length} visible / {events.length} buffered
+              {t("diagnostics.events.visibleBuffered", {
+                visible: filteredEvents.length,
+                buffered: events.length,
+                defaultValue: "{{visible}} visible / {{buffered}} buffered",
+              })}
             </span>
           </div>
 
@@ -580,7 +656,10 @@ export const DiagnosticsSettings: React.FC = () => {
                   {event.duration_ms !== null &&
                     event.duration_ms !== undefined && (
                       <span className="rounded-full border border-mid-gray/20 px-2 py-0.5 text-[10px] text-mid-gray">
-                        {event.duration_ms} ms
+                        {t("diagnostics.events.durationMs", {
+                          duration: event.duration_ms,
+                          defaultValue: "{{duration}} ms",
+                        })}
                       </span>
                     )}
                 </div>
@@ -590,15 +669,31 @@ export const DiagnosticsSettings: React.FC = () => {
                     {event.component}
                   </span>
                   <span className="text-xs text-mid-gray">/</span>
-                  <span className="font-mono text-xs text-text">{event.action}</span>
+                  <span className="font-mono text-xs text-text">
+                    {event.action}
+                  </span>
                 </div>
 
                 <p className="mt-2 text-sm text-text">{event.message}</p>
 
                 {(event.trace_id || event.session_id) && (
                   <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-mid-gray">
-                    {event.trace_id && <span>trace: {event.trace_id}</span>}
-                    {event.session_id && <span>session: {event.session_id}</span>}
+                    {event.trace_id && (
+                      <span>
+                        {t("diagnostics.events.trace", {
+                          traceId: event.trace_id,
+                          defaultValue: "trace: {{traceId}}",
+                        })}
+                      </span>
+                    )}
+                    {event.session_id && (
+                      <span>
+                        {t("diagnostics.events.session", {
+                          sessionId: event.session_id,
+                          defaultValue: "session: {{sessionId}}",
+                        })}
+                      </span>
+                    )}
                   </div>
                 )}
 
@@ -628,7 +723,10 @@ export const DiagnosticsSettings: React.FC = () => {
 
             {!filteredEvents.length && !isLoading && (
               <div className="rounded-md border border-dashed border-mid-gray/20 px-3 py-10 text-center text-sm text-mid-gray">
-                No events match the current filters.
+                {t(
+                  "diagnostics.events.emptyFiltered",
+                  "No events match the current filters.",
+                )}
               </div>
             )}
           </div>

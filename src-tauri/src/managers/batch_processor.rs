@@ -228,12 +228,18 @@ impl BatchProcessor {
                                 item.duration_seconds = Some(decoded.duration_seconds);
                                 item.status = JobStatus::Transcribing;
                                 item.progress = 0.5;
-                                TelemetryEventBuilder::new("batch_processing", "item_transcribing_started")
-                                    .message("Batch item transcription started")
-                                    .session_id(item_id.clone())
-                                    .attr("file_name", file_name)
-                                    .attr("duration_seconds", format!("{:.2}", decoded.duration_seconds))
-                                    .emit();
+                                TelemetryEventBuilder::new(
+                                    "batch_processing",
+                                    "item_transcribing_started",
+                                )
+                                .message("Batch item transcription started")
+                                .session_id(item_id.clone())
+                                .attr("file_name", file_name)
+                                .attr(
+                                    "duration_seconds",
+                                    format!("{:.2}", decoded.duration_seconds),
+                                )
+                                .emit();
                             }
                             if let Some(ref app) = app {
                                 let status = Self::build_status_static(&q);
@@ -265,14 +271,17 @@ impl BatchProcessor {
                                         item.status = JobStatus::Failed;
                                         item.error = Some(format!("Transcription failed: {}", e));
                                         item.progress = 0.0;
-                                        TelemetryEventBuilder::new("batch_processing", "item_failed")
-                                            .level(TelemetryLevel::Error)
-                                            .message("Batch item transcription failed")
-                                            .session_id(item_id.clone())
-                                            .attr("file_name", file_name)
-                                            .status("transcription_failed")
-                                            .attr("error", &e)
-                                            .emit();
+                                        TelemetryEventBuilder::new(
+                                            "batch_processing",
+                                            "item_failed",
+                                        )
+                                        .level(TelemetryLevel::Error)
+                                        .message("Batch item transcription failed")
+                                        .session_id(item_id.clone())
+                                        .attr("file_name", file_name)
+                                        .status("transcription_failed")
+                                        .attr("error", &e)
+                                        .emit();
                                     }
                                     let status = Self::build_status_static(&q);
                                     let _ = app.emit(
@@ -321,7 +330,10 @@ impl BatchProcessor {
                                     .message("Batch item completed")
                                     .session_id(item_id.clone())
                                     .attr("file_name", file_name)
-                                    .attr("duration_seconds", format!("{:.2}", decoded.duration_seconds))
+                                    .attr(
+                                        "duration_seconds",
+                                        format!("{:.2}", decoded.duration_seconds),
+                                    )
                                     .emit();
                             }
                             if let Some(ref app) = app {

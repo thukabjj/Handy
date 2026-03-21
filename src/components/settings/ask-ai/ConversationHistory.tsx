@@ -35,7 +35,9 @@ const formatTime = (timestamp: number): string => {
 };
 
 // Format conversation to markdown for export
-const formatConversationAsMarkdown = (conversation: AskAiConversation): string => {
+const formatConversationAsMarkdown = (
+  conversation: AskAiConversation,
+): string => {
   const header = `# ${conversation.title || "Ask AI Conversation"}\n`;
   const date = `_${formatDate(conversation.created_at)} at ${formatTime(conversation.created_at)}_\n\n`;
 
@@ -155,11 +157,7 @@ const ConversationCard: React.FC<{
             {conversation.turns.map((turn, index) => (
               <div
                 key={turn.id}
-                className={
-                  index > 0
-                    ? "pt-4 border-t border-mid-gray/10"
-                    : ""
-                }
+                className={index > 0 ? "pt-4 border-t border-mid-gray/10" : ""}
               >
                 <TurnDisplay turn={turn} index={index} />
               </div>
@@ -223,7 +221,7 @@ export const ConversationHistory: React.FC = () => {
         return c.turns.some(
           (t) =>
             t.question.toLowerCase().includes(searchLower) ||
-            t.response.toLowerCase().includes(searchLower)
+            t.response.toLowerCase().includes(searchLower),
         );
       })
     : conversations;
@@ -281,13 +279,16 @@ export const ConversationHistory: React.FC = () => {
             <p className="text-mid-gray">
               {t(
                 "askAi.history.empty",
-                "No conversations yet. Use Ask AI to start a conversation."
+                "No conversations yet. Use Ask AI to start a conversation.",
               )}
             </p>
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-mid-gray">
-            {t("askAi.history.noResults", "No conversations match your search.")}
+            {t(
+              "askAi.history.noResults",
+              "No conversations match your search.",
+            )}
           </div>
         ) : (
           <div className="space-y-2">

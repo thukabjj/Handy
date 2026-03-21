@@ -59,10 +59,7 @@ pub fn update_observability_settings(
 
 #[tauri::command]
 #[specta::specta]
-pub fn change_observability_enabled_setting(
-    app: AppHandle,
-    enabled: bool,
-) -> Result<(), String> {
+pub fn change_observability_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.observability.enabled = enabled;
     write_settings(&app, settings);
@@ -159,8 +156,8 @@ pub fn export_telemetry_snapshot_bundle(app: AppHandle) -> Result<String, String
     let settings = get_settings(&app);
     let app_data_dir = crate::portable::app_data_dir(&app)
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))?;
-    let log_dir =
-        crate::portable::app_log_dir(&app).map_err(|e| format!("Failed to resolve log dir: {}", e))?;
+    let log_dir = crate::portable::app_log_dir(&app)
+        .map_err(|e| format!("Failed to resolve log dir: {}", e))?;
     let diagnostics_dir = app_data_dir.join("diagnostics");
     std::fs::create_dir_all(&diagnostics_dir)
         .map_err(|e| format!("Failed to create diagnostics dir: {}", e))?;

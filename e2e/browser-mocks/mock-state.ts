@@ -229,7 +229,16 @@ function createDefaultSettings(): MockSettings {
     },
     sound_detection: {
       enabled: false,
-      categories: ["doorbell", "alarm", "phone_ring", "dog_bark", "baby_cry", "knocking", "siren", "applause"],
+      categories: [
+        "doorbell",
+        "alarm",
+        "phone_ring",
+        "dog_bark",
+        "baby_cry",
+        "knocking",
+        "siren",
+        "applause",
+      ],
       threshold: 0.5,
       notification_enabled: true,
     },
@@ -375,7 +384,9 @@ export function updateSettings(partial: Partial<MockSettings>): void {
 }
 
 /** Patch any top-level state fields */
-export function updateState(partial: Partial<Omit<MockState, "eventListeners">>): void {
+export function updateState(
+  partial: Partial<Omit<MockState, "eventListeners">>,
+): void {
   Object.assign(mockState, partial);
 }
 

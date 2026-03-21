@@ -264,7 +264,10 @@ export const ScreenVisionSettings: React.FC = () => {
           grouped={true}
         >
           <div className="min-w-[220px] rounded-md border border-mid-gray/30 bg-mid-gray/10 px-3 py-2 text-sm text-text">
-            OpenRouter
+            {t(
+              "settings.activeListening.llm.provider.openRouter",
+              "OpenRouter",
+            )}
           </div>
         </SettingContainer>
       ) : (

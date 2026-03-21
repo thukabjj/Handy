@@ -308,10 +308,7 @@ const handlers: Record<string, (args: Args) => unknown> = {
   fetch_llm_models: (a) => {
     const providerType = a.providerType ?? "open_router";
     if (providerType === "open_router") {
-      return [
-        "qwen/qwen2.5-vl-72b-instruct:free",
-        "openrouter/auto",
-      ];
+      return ["qwen/qwen2.5-vl-72b-instruct:free", "openrouter/auto"];
     }
     if (providerType === "open_ai") {
       return ["gpt-4o-mini", "gpt-4.1-mini"];

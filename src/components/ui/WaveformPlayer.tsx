@@ -110,7 +110,10 @@ export const WaveformPlayer: React.FC<WaveformPlayerProps> = ({
     (seconds: number) => {
       const ws = wavesurferRef.current;
       if (!ws || !isReady) return;
-      const newTime = Math.max(0, Math.min(ws.getCurrentTime() + seconds, duration));
+      const newTime = Math.max(
+        0,
+        Math.min(ws.getCurrentTime() + seconds, duration),
+      );
       ws.seekTo(newTime / duration);
     },
     [isReady, duration],

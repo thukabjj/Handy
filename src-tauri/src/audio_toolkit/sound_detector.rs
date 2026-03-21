@@ -24,6 +24,12 @@ pub struct SoundDetector {
     categories: Vec<SoundCategory>,
 }
 
+impl Default for SoundDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SoundDetector {
     /// Create a new disabled SoundDetector with no categories
     pub fn new() -> Self {

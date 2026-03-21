@@ -15,7 +15,9 @@ export const SpeedControl: React.FC<SpeedControlProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
-  const currentIndex = SPEED_PRESETS.indexOf(speed as (typeof SPEED_PRESETS)[number]);
+  const currentIndex = SPEED_PRESETS.indexOf(
+    speed as (typeof SPEED_PRESETS)[number],
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

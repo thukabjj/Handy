@@ -204,7 +204,9 @@ const ModelCard: React.FC<ModelCardProps> = ({
             }
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>{getLanguageDisplayText(model.supported_languages ?? [], t)}</span>
+            <span>
+              {getLanguageDisplayText(model.supported_languages ?? [], t)}
+            </span>
           </div>
         )}
         {model.supports_translation && (

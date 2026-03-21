@@ -13,8 +13,7 @@ interface SettingsSearchProps {
 
 function SettingsSearch({ onNavigate }: SettingsSearchProps) {
   const { t } = useTranslation();
-  const { results, query, setQuery, isOpen, setIsOpen } =
-    useSettingsSearch();
+  const { results, query, setQuery, isOpen, setIsOpen } = useSettingsSearch();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -94,10 +93,7 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
       onClick={() => setIsOpen(false)}
     >
-      <div
-        className="w-full max-w-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="bg-background/80 backdrop-blur-xl border border-mid-gray/20 rounded-xl shadow-2xl overflow-hidden">
           {/* Search input */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-mid-gray/20">
@@ -108,16 +104,16 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t("settings.search.placeholder", "Search settings...")}
+              placeholder={t(
+                "settings.search.placeholder",
+                "Search settings...",
+              )}
               className="flex-1 bg-transparent text-text text-sm outline-none placeholder:text-mid-gray"
             />
           </div>
 
           {/* Results list */}
-          <div
-            ref={listRef}
-            className="max-h-[40vh] overflow-y-auto py-1"
-          >
+          <div ref={listRef} className="max-h-[40vh] overflow-y-auto py-1">
             {results.length === 0 ? (
               <div className="px-4 py-6 text-center text-sm text-mid-gray">
                 {t("settings.search.noResults", "No results found")}
@@ -181,9 +177,7 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
                 {t("settings.search.close", "close")}
               </span>
             </div>
-            <span>
-              {isMac ? "\u2318" : "Ctrl+"}K
-            </span>
+            <span>{isMac ? "\u2318" : "Ctrl+"}K</span>
           </div>
         </div>
       </div>

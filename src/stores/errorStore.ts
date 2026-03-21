@@ -24,7 +24,10 @@ interface ErrorStore {
   /**
    * Add an error to the store and display a toast notification
    */
-  addError: (error: HandyError | string | unknown, context?: string) => AppError;
+  addError: (
+    error: HandyError | string | unknown,
+    context?: string,
+  ) => AppError;
 
   /**
    * Dismiss a specific error by ID
@@ -115,7 +118,7 @@ export const useErrorStore = create<ErrorStore>((set, get) => ({
   dismissError: (id) => {
     set((state) => ({
       errors: state.errors.map((e) =>
-        e.id === id ? { ...e, dismissed: true } : e
+        e.id === id ? { ...e, dismissed: true } : e,
       ),
     }));
   },
@@ -127,9 +130,7 @@ export const useErrorStore = create<ErrorStore>((set, get) => ({
   },
 
   getErrorsByCategory: (category) => {
-    return get().errors.filter(
-      (e) => e.category === category && !e.dismissed
-    );
+    return get().errors.filter((e) => e.category === category && !e.dismissed);
   },
 
   hasActiveErrors: () => {
@@ -153,10 +154,7 @@ export const useErrorStore = create<ErrorStore>((set, get) => ({
  * Helper function to handle errors from Tauri command results
  * Use this when calling Tauri commands that may return errors
  */
-export function handleCommandError(
-  error: unknown,
-  context: string
-): void {
+export function handleCommandError(error: unknown, context: string): void {
   useErrorStore.getState().addError(error, context);
 }
 

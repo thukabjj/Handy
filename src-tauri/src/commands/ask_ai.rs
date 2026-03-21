@@ -150,7 +150,7 @@ pub fn change_ask_ai_ollama_model_setting(app: AppHandle, model: String) -> Resu
 #[specta::specta]
 pub fn change_ask_ai_llm_provider(app: AppHandle, provider: LlmProvider) -> Result<(), String> {
     let mut settings = get_settings(&app);
-    settings.active_listening.llm_provider = provider.clone();
+    settings.active_listening.llm_provider = provider;
     settings.ask_ai.llm_provider = provider;
     write_settings(&app, settings);
     debug!("Centralized LLM provider updated via Ask AI command");
@@ -202,7 +202,10 @@ pub fn change_ask_ai_llm_base_url(app: AppHandle, base_url: String) -> Result<()
     settings.active_listening.llm_base_url = normalized.clone();
     settings.ask_ai.llm_base_url = normalized;
     write_settings(&app, settings);
-    debug!("Centralized LLM base URL updated via Ask AI command: {}", base_url);
+    debug!(
+        "Centralized LLM base URL updated via Ask AI command: {}",
+        base_url
+    );
     Ok(())
 }
 

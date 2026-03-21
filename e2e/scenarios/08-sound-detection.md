@@ -17,6 +17,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - General settings section is visible
 - Sound Detection section is present (may need to scroll)
 
@@ -36,6 +37,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Sound Detection toggle is now enabled
 - Additional settings may appear (threshold, alert sound, etc.)
 
@@ -46,6 +48,7 @@ browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().settings.soun
 ```
 
 **Verify:**
+
 - Returns `true`
 
 ### 5. Adjust threshold (if slider is present)
@@ -63,6 +66,7 @@ browser_click({ ref: "<sound-detection-toggle-ref>", element: "Sound Detection t
 ```
 
 **Verify:**
+
 - Toggle returns to disabled state
 - Additional settings hidden
 

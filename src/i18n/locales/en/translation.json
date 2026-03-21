@@ -846,6 +846,7 @@
     "update": "Update",
     "close": "Close",
     "open": "Open",
+    "refresh": "Refresh",
     "default": "Default",
     "enabled": "Enabled",
     "disabled": "Disabled",
@@ -876,6 +877,70 @@
       "knocking": "Knocking",
       "siren": "Siren",
       "applause": "Applause"
+    }
+  },
+  "diagnostics": {
+    "title": "Observability",
+    "description": "Structured diagnostics across backend, overlay, wake pipeline, and provider requests. Use the data mode carefully because sensitive text can be captured locally.",
+    "actions": {
+      "exportBundle": "Export bundle",
+      "pauseLive": "Pause live",
+      "resumeLive": "Resume live"
+    },
+    "latestBundle": "Latest bundle:",
+    "stats": {
+      "buffered": "Buffered",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "dropped": "Dropped"
+    },
+    "settings": {
+      "mode": "Mode",
+      "bufferSize": "Buffer size",
+      "liveStream": "Live stream"
+    },
+    "mode": {
+      "metadata_only": {
+        "label": "Metadata only",
+        "description": "Safe default. Content fields are redacted."
+      },
+      "sensitive_text": {
+        "label": "Sensitive text",
+        "description": "Includes transcripts and prompts in the diagnostics stream."
+      },
+      "developer": {
+        "label": "Developer",
+        "description": "Maximum local diagnostics detail."
+      }
+    },
+    "filters": {
+      "component": {
+        "all": "All components"
+      },
+      "level": {
+        "all": "All levels",
+        "trace": "Trace",
+        "debug": "Debug",
+        "info": "Info",
+        "warn": "Warn",
+        "error": "Error"
+      }
+    },
+    "components": {
+      "title": "Components",
+      "lastEvent": "Last event",
+      "total_one": "{{count}} total",
+      "total_other": "{{count}} total",
+      "errorsWarnings": "{{errors}} errors, {{warnings}} warnings",
+      "empty": "No telemetry captured yet."
+    },
+    "events": {
+      "title": "Event stream",
+      "visibleBuffered": "{{visible}} visible / {{buffered}} buffered",
+      "durationMs": "{{duration}} ms",
+      "trace": "trace: {{traceId}}",
+      "session": "session: {{sessionId}}",
+      "emptyFiltered": "No events match the current filters."
     }
   },
   "accessibility": {

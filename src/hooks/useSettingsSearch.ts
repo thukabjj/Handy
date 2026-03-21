@@ -143,7 +143,12 @@ const SEARCHABLE_ENTRIES: Record<
         featurePanel: "suggestions",
       },
       keyPrefix: "unifiedSettings.features.suggestions",
-      keywords: ["coaching", "quick responses", "rag suggestions", "talking points"],
+      keywords: [
+        "coaching",
+        "quick responses",
+        "rag suggestions",
+        "talking points",
+      ],
     },
     {
       target: {
@@ -172,7 +177,12 @@ const SEARCHABLE_ENTRIES: Record<
         featurePanel: "suggestions",
       },
       keyPrefix: "settings.suggestions.enable",
-      keywords: ["coaching", "quick responses", "rag suggestions", "talking points"],
+      keywords: [
+        "coaching",
+        "quick responses",
+        "rag suggestions",
+        "talking points",
+      ],
     },
     {
       target: {

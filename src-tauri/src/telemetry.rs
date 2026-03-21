@@ -285,8 +285,18 @@ impl TelemetryManager {
 
     pub fn snapshot(&self) -> TelemetrySnapshot {
         let settings = self.settings();
-        let events = self.events.lock().unwrap().iter().cloned().collect::<Vec<_>>();
-        let stats = build_stats(&events, &settings, self.dropped_events.load(Ordering::Relaxed));
+        let events = self
+            .events
+            .lock()
+            .unwrap()
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let stats = build_stats(
+            &events,
+            &settings,
+            self.dropped_events.load(Ordering::Relaxed),
+        );
         TelemetrySnapshot {
             settings,
             stats,
@@ -299,7 +309,13 @@ impl TelemetryManager {
         let events = self.events.lock().unwrap();
         let iter = events.iter().cloned();
         match limit {
-            Some(limit) => iter.rev().take(limit).collect::<Vec<_>>().into_iter().rev().collect(),
+            Some(limit) => iter
+                .rev()
+                .take(limit)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect(),
             None => iter.collect(),
         }
     }

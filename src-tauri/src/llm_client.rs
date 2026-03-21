@@ -206,28 +206,32 @@ pub async fn send_chat_completion_with_schema(
         ));
     }
 
-    let completion: ChatCompletionResponse = response
-        .json()
-        .await
-        .map_err(|e| {
-            TelemetryEventBuilder::new("llm_client", "chat_completion_failed")
-                .level(TelemetryLevel::Error)
-                .message("Failed to parse non-streaming chat completion response")
-                .attr("provider_id", &provider.id)
-                .attr("model", model)
-                .duration_ms(start.elapsed().as_millis() as u64)
-                .status("parse_error")
-                .attr("error", &e)
-                .emit();
-            format!("Failed to parse API response: {}", e)
-        })?;
+    let completion: ChatCompletionResponse = response.json().await.map_err(|e| {
+        TelemetryEventBuilder::new("llm_client", "chat_completion_failed")
+            .level(TelemetryLevel::Error)
+            .message("Failed to parse non-streaming chat completion response")
+            .attr("provider_id", &provider.id)
+            .attr("model", model)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status("parse_error")
+            .attr("error", &e)
+            .emit();
+        format!("Failed to parse API response: {}", e)
+    })?;
 
     TelemetryEventBuilder::new("llm_client", "chat_completion_completed")
         .message("Non-streaming chat completion completed")
         .attr("provider_id", &provider.id)
         .attr("model", model)
         .duration_ms(start.elapsed().as_millis() as u64)
-        .attr("has_content", completion.choices.first().and_then(|choice| choice.message.content.as_ref()).is_some())
+        .attr(
+            "has_content",
+            completion
+                .choices
+                .first()
+                .and_then(|choice| choice.message.content.as_ref())
+                .is_some(),
+        )
         .emit();
 
     Ok(completion
@@ -311,21 +315,18 @@ pub async fn send_vision_chat_completion(
         ));
     }
 
-    let response_json: Value = response
-        .json()
-        .await
-        .map_err(|e| {
-            TelemetryEventBuilder::new("llm_client", "vision_completion_failed")
-                .level(TelemetryLevel::Error)
-                .message("Failed to parse vision chat completion response")
-                .attr("provider_id", &provider.id)
-                .attr("model", model)
-                .duration_ms(start.elapsed().as_millis() as u64)
-                .status("parse_error")
-                .attr("error", &e)
-                .emit();
-            format!("Failed to parse API response: {}", e)
-        })?;
+    let response_json: Value = response.json().await.map_err(|e| {
+        TelemetryEventBuilder::new("llm_client", "vision_completion_failed")
+            .level(TelemetryLevel::Error)
+            .message("Failed to parse vision chat completion response")
+            .attr("provider_id", &provider.id)
+            .attr("model", model)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status("parse_error")
+            .attr("error", &e)
+            .emit();
+        format!("Failed to parse API response: {}", e)
+    })?;
 
     // Handles both string content and array content formats.
     if let Some(content) = response_json
@@ -572,21 +573,17 @@ pub async fn fetch_models(
 
     let client = create_client(provider, &api_key)?;
 
-    let response = client
-        .get(&url)
-        .send()
-        .await
-        .map_err(|e| {
-            TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
-                .level(TelemetryLevel::Error)
-                .message("Model list request failed")
-                .attr("provider_id", &provider.id)
-                .duration_ms(start.elapsed().as_millis() as u64)
-                .status("transport_error")
-                .attr("error", &e)
-                .emit();
-            format!("Failed to fetch models: {}", e)
-        })?;
+    let response = client.get(&url).send().await.map_err(|e| {
+        TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
+            .level(TelemetryLevel::Error)
+            .message("Model list request failed")
+            .attr("provider_id", &provider.id)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status("transport_error")
+            .attr("error", &e)
+            .emit();
+        format!("Failed to fetch models: {}", e)
+    })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -608,20 +605,17 @@ pub async fn fetch_models(
         ));
     }
 
-    let parsed: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| {
-            TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
-                .level(TelemetryLevel::Error)
-                .message("Failed to parse model list response")
-                .attr("provider_id", &provider.id)
-                .duration_ms(start.elapsed().as_millis() as u64)
-                .status("parse_error")
-                .attr("error", &e)
-                .emit();
-            format!("Failed to parse response: {}", e)
-        })?;
+    let parsed: serde_json::Value = response.json().await.map_err(|e| {
+        TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
+            .level(TelemetryLevel::Error)
+            .message("Failed to parse model list response")
+            .attr("provider_id", &provider.id)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status("parse_error")
+            .attr("error", &e)
+            .emit();
+        format!("Failed to parse response: {}", e)
+    })?;
 
     let mut models = Vec::new();
 

@@ -53,19 +53,19 @@ This document describes the system architecture of Handy, a cross-platform deskt
 
 ## Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| **Frontend** | React 18 + TypeScript | UI components, state management |
-| **UI Framework** | Tailwind CSS | Styling, responsive design |
-| **State** | Zustand | Global state management |
-| **Build** | Vite | Fast frontend bundling |
-| **Desktop** | Tauri 2.x | Native desktop shell, IPC |
-| **Backend** | Rust | Core business logic, performance |
-| **Audio** | CPAL + Whisper | Recording, transcription |
-| **VAD** | Silero VAD (ONNX) | Voice activity detection |
-| **Database** | SQLite | History, conversation storage |
-| **LLM** | Ollama | Local AI inference |
-| **i18n** | i18next | Internationalization (17 locales) |
+| Layer            | Technology            | Purpose                           |
+| ---------------- | --------------------- | --------------------------------- |
+| **Frontend**     | React 18 + TypeScript | UI components, state management   |
+| **UI Framework** | Tailwind CSS          | Styling, responsive design        |
+| **State**        | Zustand               | Global state management           |
+| **Build**        | Vite                  | Fast frontend bundling            |
+| **Desktop**      | Tauri 2.x             | Native desktop shell, IPC         |
+| **Backend**      | Rust                  | Core business logic, performance  |
+| **Audio**        | CPAL + Whisper        | Recording, transcription          |
+| **VAD**          | Silero VAD (ONNX)     | Voice activity detection          |
+| **Database**     | SQLite                | History, conversation storage     |
+| **LLM**          | Ollama                | Local AI inference                |
+| **i18n**         | i18next               | Internationalization (17 locales) |
 
 ---
 
@@ -177,17 +177,17 @@ This document describes the system architecture of Handy, a cross-platform deskt
 
 Managers encapsulate business logic and maintain state:
 
-| Manager | Responsibility | Key State |
-|---------|---------------|-----------|
-| `AudioRecordingManager` | Device selection, recording control | Active device, recording state |
-| `ModelManager` | Model downloads, lifecycle | Downloaded models, active model |
-| `TranscriptionManager` | Speech-to-text processing | Loaded engine, processing queue |
-| `HistoryManager` | Transcription persistence | SQLite connection |
+| Manager                  | Responsibility                      | Key State                        |
+| ------------------------ | ----------------------------------- | -------------------------------- |
+| `AudioRecordingManager`  | Device selection, recording control | Active device, recording state   |
+| `ModelManager`           | Model downloads, lifecycle          | Downloaded models, active model  |
+| `TranscriptionManager`   | Speech-to-text processing           | Loaded engine, processing queue  |
+| `HistoryManager`         | Transcription persistence           | SQLite connection                |
 | `ActiveListeningManager` | Continuous transcription + insights | Session state, transcript buffer |
-| `AskAiManager` | Voice conversation control | Conversation state |
-| `AskAiHistoryManager` | Conversation persistence | SQLite connection |
-| `RagManager` | Document indexing, vector search | Index state, embeddings |
-| `SuggestionEngine` | Context-aware suggestions | Active suggestions |
+| `AskAiManager`           | Voice conversation control          | Conversation state               |
+| `AskAiHistoryManager`    | Conversation persistence            | SQLite connection                |
+| `RagManager`             | Document indexing, vector search    | Index state, embeddings          |
+| `SuggestionEngine`       | Context-aware suggestions           | Active suggestions               |
 
 #### Command Layer
 
@@ -297,25 +297,28 @@ App.tsx
 
 Events flow from Rust to React via Tauri's event system:
 
-| Event | Payload | Trigger |
-|-------|---------|---------|
-| `audio-level` | `{ level: number }` | During recording |
-| `transcription-progress` | `{ progress: number }` | During processing |
-| `transcription-complete` | `{ text: string, duration: number }` | After transcription |
-| `model-state-changed` | `{ modelId: string, state: string }` | Model download/load |
+| Event                      | Payload                                  | Trigger              |
+| -------------------------- | ---------------------------------------- | -------------------- |
+| `audio-level`              | `{ level: number }`                      | During recording     |
+| `transcription-progress`   | `{ progress: number }`                   | During processing    |
+| `transcription-complete`   | `{ text: string, duration: number }`     | After transcription  |
+| `model-state-changed`      | `{ modelId: string, state: string }`     | Model download/load  |
 | `active-listening-insight` | `{ insight: string, timestamp: number }` | AI generates insight |
-| `ask-ai-response` | `{ text: string, streaming: boolean }` | LLM response chunk |
-| `suggestions-updated` | `Suggestion[]` | Context changes |
-| `error` | `{ message: string, category: string }` | Error occurred |
+| `ask-ai-response`          | `{ text: string, streaming: boolean }`   | LLM response chunk   |
+| `suggestions-updated`      | `Suggestion[]`                           | Context changes      |
+| `error`                    | `{ message: string, category: string }`  | Error occurred       |
 
 ### Frontend Event Handling
 
 ```typescript
 // Hook-based event listening
 useEffect(() => {
-  const unlisten = listen<TranscriptionPayload>("transcription-complete", (event) => {
-    setTranscription(event.payload.text);
-  });
+  const unlisten = listen<TranscriptionPayload>(
+    "transcription-complete",
+    (event) => {
+      setTranscription(event.payload.text);
+    },
+  );
 
   return () => {
     unlisten.then((fn) => fn());
@@ -391,12 +394,12 @@ Settings persisted via `tauri-plugin-store`:
 
 ### Permission Model
 
-| Permission | Platform | Purpose |
-|------------|----------|---------|
-| Microphone | All | Audio recording |
-| Accessibility | macOS | Text paste automation |
-| Notification | All | Transcription alerts |
-| File System | All | Model storage, history |
+| Permission    | Platform | Purpose                |
+| ------------- | -------- | ---------------------- |
+| Microphone    | All      | Audio recording        |
+| Accessibility | macOS    | Text paste automation  |
+| Notification  | All      | Transcription alerts   |
+| File System   | All      | Model storage, history |
 
 ### Data Privacy
 
@@ -650,4 +653,4 @@ Handy enforces single-instance behavior:
 
 ---
 
-*Last updated: 2026-03-01*
+_Last updated: 2026-03-01_

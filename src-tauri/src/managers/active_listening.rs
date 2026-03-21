@@ -30,7 +30,10 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
 
-fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> Result<String, String> {
+fn cloud_base_url(
+    provider: LlmProvider,
+    custom_base_url: Option<&String>,
+) -> Result<String, String> {
     match provider {
         LlmProvider::Custom => custom_base_url
             .map(|value| value.trim().to_string())
@@ -69,7 +72,9 @@ fn extract_wake_query(transcript: &str) -> Option<String> {
         return None;
     }
 
-    let wake_tokens = ["hey", "hi", "ok", "okay", "yo", "handy", "andy", "hendy", "hindi"];
+    let wake_tokens = [
+        "hey", "hi", "ok", "okay", "yo", "handy", "andy", "hendy", "hindi",
+    ];
     let mut tokens: Vec<&str> = normalized.split_whitespace().collect();
     while let Some(first) = tokens.first().copied() {
         if wake_tokens.contains(&first) {
@@ -156,10 +161,11 @@ mod provider_tests {
 }
 
 /// State of the active listening session
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ActiveListeningState {
     /// No active session
+    #[default]
     Idle,
     /// Listening and accumulating audio
     Listening,
@@ -173,12 +179,6 @@ pub enum ActiveListeningState {
 enum ActiveListeningSessionOrigin {
     Manual,
     WakeWord,
-}
-
-impl Default for ActiveListeningState {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 /// Information about an active listening session
@@ -542,7 +542,8 @@ impl ActiveListeningManager {
     pub fn push_audio_samples(&self, samples: &[f32]) {
         let state = self.get_state();
         let settings = get_settings(&self.app_handle);
-        let wake_monitoring_idle = state == ActiveListeningState::Idle && settings.wake_word.enabled;
+        let wake_monitoring_idle =
+            state == ActiveListeningState::Idle && settings.wake_word.enabled;
         let rms = if samples.is_empty() {
             0.0
         } else {
@@ -570,8 +571,7 @@ impl ActiveListeningManager {
         if state != ActiveListeningState::Listening && !wake_monitoring_idle {
             debug!(
                 "Skipping audio samples push - state is {:?}, wake monitoring idle: {}",
-                state
-                ,wake_monitoring_idle
+                state, wake_monitoring_idle
             );
             return;
         }
@@ -693,10 +693,16 @@ impl ActiveListeningManager {
             let al_manager = app_handle.state::<Arc<ActiveListeningManager>>();
 
             if let Err(err) = audio_manager.stop_active_listening() {
-                warn!("Failed to stop wake-started listening stream on timeout: {}", err);
+                warn!(
+                    "Failed to stop wake-started listening stream on timeout: {}",
+                    err
+                );
             }
             if let Err(err) = al_manager.stop_session() {
-                warn!("Failed to stop wake-started listening session on timeout: {}", err);
+                warn!(
+                    "Failed to stop wake-started listening session on timeout: {}",
+                    err
+                );
             }
             if let Err(err) = sync_wake_word_monitoring(&app_handle) {
                 warn!(
@@ -922,7 +928,8 @@ Important:
                     .map_err(|e| format!("Ollama request failed: {}", e))?
             }
             _ => {
-                let base_url = cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref())?;
+                let base_url =
+                    cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref())?;
                 let provider = crate::settings::PostProcessProvider {
                     id: format!("{:?}", al_settings.llm_provider).to_lowercase(),
                     label: format!("{:?}", al_settings.llm_provider),
@@ -1133,7 +1140,10 @@ impl ActiveListeningManagerHandle {
             action
         );
         if let Some(query) = extract_wake_query(transcription.trim()) {
-            info!("[wake-pipeline] dispatching wake query to Ask AI: {}", query);
+            info!(
+                "[wake-pipeline] dispatching wake query to Ask AI: {}",
+                query
+            );
             let ask_ai_manager = self.app_handle.state::<Arc<AskAiManager>>();
             if let Err(err) = ask_ai_manager.process_transcribed_question(query.clone()) {
                 warn!("Failed to process wake query via Ask AI: {}", err);
@@ -1288,14 +1298,17 @@ impl ActiveListeningManagerHandle {
                     let ask_ai_manager = self.app_handle.state::<Arc<AskAiManager>>();
                     if let Err(err) = ask_ai_manager.process_transcribed_question(query.clone()) {
                         warn!("Failed to process active wake query via Ask AI: {}", err);
-                        TelemetryEventBuilder::new("wake_word", "active_wake_query_dispatch_failed")
-                            .level(TelemetryLevel::Warn)
-                            .message("Wake query inside active listening could not be dispatched")
-                            .session_id(session_id.clone())
-                            .status("dispatch_failed")
-                            .attr("error", err)
-                            .sensitive_attr("query", query)
-                            .emit();
+                        TelemetryEventBuilder::new(
+                            "wake_word",
+                            "active_wake_query_dispatch_failed",
+                        )
+                        .level(TelemetryLevel::Warn)
+                        .message("Wake query inside active listening could not be dispatched")
+                        .session_id(session_id.clone())
+                        .status("dispatch_failed")
+                        .attr("error", err)
+                        .sensitive_attr("query", query)
+                        .emit();
                     } else {
                         TelemetryEventBuilder::new("wake_word", "active_wake_query_dispatched")
                             .message("Wake query inside active listening dispatched to Ask AI")

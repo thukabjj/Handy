@@ -4,14 +4,14 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Quick Reference
 
-| Command | Description |
-|---------|-------------|
-| `make install` | Install all dependencies (frontend + VAD model) |
-| `make dev` | Run in development mode |
-| `make check` | Full check (Rust + TypeScript) |
-| `make lint` | Run all linters |
-| `make test` | Run all tests |
-| `bun run tauri build` | Build for production |
+| Command               | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `make install`        | Install all dependencies (frontend + VAD model) |
+| `make dev`            | Run in development mode                         |
+| `make check`          | Full check (Rust + TypeScript)                  |
+| `make lint`           | Run all linters                                 |
+| `make test`           | Run all tests                                   |
+| `bun run tauri build` | Build for production                            |
 
 ## Prerequisites
 
@@ -59,6 +59,7 @@ bun run build               # Frontend only
 ## Architecture Overview
 
 Handy is a cross-platform desktop speech-to-text application built with:
+
 - **Backend**: Tauri 2.x (Rust)
 - **Frontend**: React + TypeScript + Tailwind CSS
 - **State**: Zustand (frontend) + Tauri managed state (backend)
@@ -180,17 +181,17 @@ fn initialize_core_logic(app_handle: &AppHandle) {
 
 **Managers in this project:**
 
-| Manager | Purpose | File |
-|---------|---------|------|
-| `AudioRecordingManager` | Audio recording, device enumeration | `managers/audio.rs` |
-| `ModelManager` | Model downloads, info, caching | `managers/model.rs` |
-| `TranscriptionManager` | Speech-to-text with lazy loading | `managers/transcription.rs` |
-| `HistoryManager` | SQLite transcription history | `managers/history.rs` |
-| `ActiveListeningManager` | Continuous transcription + Ollama AI | `managers/active_listening.rs` |
-| `AskAiManager` | Multi-turn voice conversations | `managers/ask_ai.rs` |
-| `AskAiHistoryManager` | Conversation persistence | `managers/ask_ai_history.rs` |
-| `RagManager` | Vector embeddings, semantic search | `managers/rag.rs` |
-| `SuggestionEngine` | Quick responses, LLM suggestions | `managers/suggestion_engine.rs` |
+| Manager                  | Purpose                              | File                            |
+| ------------------------ | ------------------------------------ | ------------------------------- |
+| `AudioRecordingManager`  | Audio recording, device enumeration  | `managers/audio.rs`             |
+| `ModelManager`           | Model downloads, info, caching       | `managers/model.rs`             |
+| `TranscriptionManager`   | Speech-to-text with lazy loading     | `managers/transcription.rs`     |
+| `HistoryManager`         | SQLite transcription history         | `managers/history.rs`           |
+| `ActiveListeningManager` | Continuous transcription + Ollama AI | `managers/active_listening.rs`  |
+| `AskAiManager`           | Multi-turn voice conversations       | `managers/ask_ai.rs`            |
+| `AskAiHistoryManager`    | Conversation persistence             | `managers/ask_ai_history.rs`    |
+| `RagManager`             | Vector embeddings, semantic search   | `managers/rag.rs`               |
+| `SuggestionEngine`       | Quick responses, LLM suggestions     | `managers/suggestion_engine.rs` |
 
 ### 2. Command Pattern (Rust)
 
@@ -241,6 +242,7 @@ pub async fn set_selected_microphone(
 ```
 
 **Naming conventions:**
+
 - `get_*` - Retrieve data
 - `set_*` / `update_*` - Modify data
 - `change_*_setting` - Update a setting with persistence
@@ -432,34 +434,36 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 
 interface ModelStateEvent {
-    event_type: string;
-    model_id: string | null;
-    error: string | null;
+  event_type: string;
+  model_id: string | null;
+  error: string | null;
 }
 
 function useModelEvents() {
-    useEffect(() => {
-        const unlisten = listen<ModelStateEvent>("model-state-changed", (event) => {
-            console.log("Model state:", event.payload);
-            if (event.payload.event_type === "loaded") {
-                // Handle model loaded
-            }
-        });
-        return () => { unlisten.then(fn => fn()); };
-    }, []);
+  useEffect(() => {
+    const unlisten = listen<ModelStateEvent>("model-state-changed", (event) => {
+      console.log("Model state:", event.payload);
+      if (event.payload.event_type === "loaded") {
+        // Handle model loaded
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 }
 ```
 
 **Events in this project:**
 
-| Event | Payload | Purpose |
-|-------|---------|---------|
-| `model-state-changed` | `{ event_type, model_id, error }` | Model loaded/unloaded |
-| `model-download-progress` | `{ model_id, downloaded, total }` | Download progress |
-| `audio-level` | `number` | Recording visualization |
-| `transcription-complete` | `{ text, model_id }` | Transcription finished |
-| `active-listening-insight` | `{ segment_id, insight }` | AI insight generated |
-| `ask-ai-response` | `{ response, turn_id }` | Conversation response |
+| Event                      | Payload                           | Purpose                 |
+| -------------------------- | --------------------------------- | ----------------------- |
+| `model-state-changed`      | `{ event_type, model_id, error }` | Model loaded/unloaded   |
+| `model-download-progress`  | `{ model_id, downloaded, total }` | Download progress       |
+| `audio-level`              | `number`                          | Recording visualization |
+| `transcription-complete`   | `{ text, model_id }`              | Transcription finished  |
+| `active-listening-insight` | `{ segment_id, insight }`         | AI insight generated    |
+| `ask-ai-response`          | `{ response, turn_id }`           | Conversation response   |
 
 ### 7. Component Pattern (React)
 
@@ -475,57 +479,54 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { ResetButton } from "@/components/ui/ResetButton";
 
 interface MicrophoneSelectorProps {
-    descriptionMode?: "inline" | "tooltip";
-    grouped?: boolean;
+  descriptionMode?: "inline" | "tooltip";
+  grouped?: boolean;
 }
 
 export const MicrophoneSelector: React.FC<MicrophoneSelectorProps> = React.memo(
-    ({ descriptionMode = "tooltip", grouped = false }) => {
-        const { t } = useTranslation();
-        const {
-            getSetting,
-            updateSetting,
-            resetSetting,
-            isUpdating,
-            audioDevices
-        } = useSettings();
+  ({ descriptionMode = "tooltip", grouped = false }) => {
+    const { t } = useTranslation();
+    const {
+      getSetting,
+      updateSetting,
+      resetSetting,
+      isUpdating,
+      audioDevices,
+    } = useSettings();
 
-        const selectedMicrophone = getSetting("selected_microphone") || "Default";
-        const isLoading = isUpdating("selected_microphone");
+    const selectedMicrophone = getSetting("selected_microphone") || "Default";
+    const isLoading = isUpdating("selected_microphone");
 
-        const handleSelect = async (deviceName: string) => {
-            await updateSetting("selected_microphone", deviceName);
-        };
+    const handleSelect = async (deviceName: string) => {
+      await updateSetting("selected_microphone", deviceName);
+    };
 
-        const handleReset = async () => {
-            await resetSetting("selected_microphone");
-        };
+    const handleReset = async () => {
+      await resetSetting("selected_microphone");
+    };
 
-        return (
-            <SettingContainer
-                title={t("settings.sound.microphone.title")}
-                description={t("settings.sound.microphone.description")}
-                descriptionMode={descriptionMode}
-                grouped={grouped}
-            >
-                <div className="flex items-center space-x-1">
-                    <Dropdown
-                        options={audioDevices.map(d => ({
-                            value: d.name,
-                            label: d.name,
-                        }))}
-                        value={selectedMicrophone}
-                        onChange={handleSelect}
-                        disabled={isLoading}
-                    />
-                    <ResetButton
-                        onReset={handleReset}
-                        disabled={isLoading}
-                    />
-                </div>
-            </SettingContainer>
-        );
-    }
+    return (
+      <SettingContainer
+        title={t("settings.sound.microphone.title")}
+        description={t("settings.sound.microphone.description")}
+        descriptionMode={descriptionMode}
+        grouped={grouped}
+      >
+        <div className="flex items-center space-x-1">
+          <Dropdown
+            options={audioDevices.map((d) => ({
+              value: d.name,
+              label: d.name,
+            }))}
+            value={selectedMicrophone}
+            onChange={handleSelect}
+            disabled={isLoading}
+          />
+          <ResetButton onReset={handleReset} disabled={isLoading} />
+        </div>
+      </SettingContainer>
+    );
+  },
 );
 ```
 
@@ -539,58 +540,56 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { commands, type Settings } from "@/bindings";
 
 interface SettingsStore {
-    settings: Settings | null;
-    isLoading: boolean;
-    isUpdating: Record<string, boolean>;
+  settings: Settings | null;
+  isLoading: boolean;
+  isUpdating: Record<string, boolean>;
 
-    initialize: () => Promise<void>;
-    updateSetting: <K extends keyof Settings>(
-        key: K,
-        value: Settings[K]
-    ) => Promise<void>;
+  initialize: () => Promise<void>;
+  updateSetting: <K extends keyof Settings>(
+    key: K,
+    value: Settings[K],
+  ) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
-    subscribeWithSelector((set, get) => ({
-        settings: null,
-        isLoading: true,
-        isUpdating: {},
+  subscribeWithSelector((set, get) => ({
+    settings: null,
+    isLoading: true,
+    isUpdating: {},
 
-        initialize: async () => {
-            const result = await commands.getAppSettings();
-            if (result.status === "ok") {
-                set({ settings: result.data, isLoading: false });
-            }
-        },
+    initialize: async () => {
+      const result = await commands.getAppSettings();
+      if (result.status === "ok") {
+        set({ settings: result.data, isLoading: false });
+      }
+    },
 
-        updateSetting: async (key, value) => {
-            const prev = get().settings;
+    updateSetting: async (key, value) => {
+      const prev = get().settings;
 
-            // Optimistic update
-            set(state => ({
-                settings: state.settings
-                    ? { ...state.settings, [key]: value }
-                    : null,
-                isUpdating: { ...state.isUpdating, [key]: true },
-            }));
+      // Optimistic update
+      set((state) => ({
+        settings: state.settings ? { ...state.settings, [key]: value } : null,
+        isUpdating: { ...state.isUpdating, [key]: true },
+      }));
 
-            try {
-                // Call backend handler
-                const handler = settingUpdaters[key];
-                if (handler) {
-                    await handler(value);
-                }
-            } catch (error) {
-                // Rollback on failure
-                set({ settings: prev });
-                throw error;
-            } finally {
-                set(state => ({
-                    isUpdating: { ...state.isUpdating, [key]: false },
-                }));
-            }
-        },
-    }))
+      try {
+        // Call backend handler
+        const handler = settingUpdaters[key];
+        if (handler) {
+          await handler(value);
+        }
+      } catch (error) {
+        // Rollback on failure
+        set({ settings: prev });
+        throw error;
+      } finally {
+        set((state) => ({
+          isUpdating: { ...state.isUpdating, [key]: false },
+        }));
+      }
+    },
+  })),
 );
 ```
 
@@ -604,31 +603,37 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import type { Settings } from "@/bindings";
 
 export function useSettings() {
-    const store = useSettingsStore();
+  const store = useSettingsStore();
 
-    const getSetting = useCallback(<K extends keyof Settings>(key: K) => {
-        return store.settings?.[key];
-    }, [store.settings]);
+  const getSetting = useCallback(
+    <K extends keyof Settings>(key: K) => {
+      return store.settings?.[key];
+    },
+    [store.settings],
+  );
 
-    const updateSetting = useCallback(async <K extends keyof Settings>(
-        key: K,
-        value: Settings[K]
-    ) => {
-        await store.updateSetting(key, value);
-    }, [store.updateSetting]);
+  const updateSetting = useCallback(
+    async <K extends keyof Settings>(key: K, value: Settings[K]) => {
+      await store.updateSetting(key, value);
+    },
+    [store.updateSetting],
+  );
 
-    const isUpdating = useCallback((key: string) => {
-        return store.isUpdating[key] ?? false;
-    }, [store.isUpdating]);
+  const isUpdating = useCallback(
+    (key: string) => {
+      return store.isUpdating[key] ?? false;
+    },
+    [store.isUpdating],
+  );
 
-    return {
-        settings: store.settings,
-        isLoading: store.isLoading,
-        getSetting,
-        updateSetting,
-        isUpdating,
-        refreshSettings: store.initialize,
-    };
+  return {
+    settings: store.settings,
+    isLoading: store.isLoading,
+    getSetting,
+    updateSetting,
+    isUpdating,
+    refreshSettings: store.initialize,
+  };
 }
 ```
 
@@ -641,32 +646,32 @@ import { commands } from "@/bindings";
 
 // Pattern: Always check result status
 async function loadModels() {
-    const result = await commands.getAvailableModels();
+  const result = await commands.getAvailableModels();
 
-    if (result.status === "ok") {
-        // TypeScript knows result.data is ModelInfo[]
-        return result.data;
-    } else {
-        // TypeScript knows result.error is string
-        console.error("Failed to load models:", result.error);
-        throw new Error(result.error);
-    }
+  if (result.status === "ok") {
+    // TypeScript knows result.data is ModelInfo[]
+    return result.data;
+  } else {
+    // TypeScript knows result.error is string
+    console.error("Failed to load models:", result.error);
+    throw new Error(result.error);
+  }
 }
 
 // Pattern: With error store
 import { useErrorStore } from "@/stores/errorStore";
 
 function useModelDownload() {
-    const { addError } = useErrorStore();
+  const { addError } = useErrorStore();
 
-    const downloadModel = async (modelId: string) => {
-        const result = await commands.downloadModel(modelId);
-        if (result.status === "error") {
-            addError(result.error, "Model download failed");
-        }
-    };
+  const downloadModel = async (modelId: string) => {
+    const result = await commands.downloadModel(modelId);
+    if (result.status === "error") {
+      addError(result.error, "Model download failed");
+    }
+  };
 
-    return { downloadModel };
+  return { downloadModel };
 }
 ```
 
@@ -681,12 +686,14 @@ This fork includes features not present in upstream `cjpais/Handy`:
 Continuous transcription with AI-generated insights via Ollama.
 
 **Files:**
+
 - `src-tauri/src/managers/active_listening.rs` (~1,367 lines)
 - `src-tauri/src/commands/active_listening.rs`
 - `src-tauri/src/settings/active_listening.rs`
 - `src/components/settings/active-listening/`
 
 **Key Commands:**
+
 - `start_active_listening_session` - Begin continuous transcription
 - `stop_active_listening_session` - Stop session, generate summary
 - `get_active_listening_state` - Get current session state
@@ -698,12 +705,14 @@ Continuous transcription with AI-generated insights via Ollama.
 Multi-turn voice conversations with local LLM.
 
 **Files:**
+
 - `src-tauri/src/managers/ask_ai.rs` (~583 lines)
 - `src-tauri/src/managers/ask_ai_history.rs` (~545 lines)
 - `src-tauri/src/commands/ask_ai.rs`
 - `src/components/settings/ask-ai/`
 
 **Key Commands:**
+
 - `get_ask_ai_state` - Current conversation state
 - `can_start_ask_ai_recording` - Check if ready for input
 - `start_new_ask_ai_conversation` - Begin new conversation
@@ -715,12 +724,14 @@ Multi-turn voice conversations with local LLM.
 Vector embeddings and semantic search for contextual responses.
 
 **Files:**
+
 - `src-tauri/src/managers/rag.rs` (~590 lines)
 - `src-tauri/src/commands/rag.rs`
 - `src-tauri/src/settings/knowledge_base.rs`
 - `src/components/settings/knowledge-base/`
 
 **Key Commands:**
+
 - `rag_add_document` - Index a document
 - `rag_search` - Semantic search
 - `rag_delete_document` - Remove document
@@ -732,11 +743,13 @@ Vector embeddings and semantic search for contextual responses.
 Context-aware quick responses and AI suggestions.
 
 **Files:**
+
 - `src-tauri/src/managers/suggestion_engine.rs` (~539 lines)
 - `src-tauri/src/commands/suggestions.rs`
 - `src-tauri/src/settings/suggestions.rs`
 
 **Key Commands:**
+
 - `get_suggestions_settings` - Get suggestion config
 - `get_quick_responses` - List quick responses
 - `add_quick_response` - Add new quick response
@@ -779,10 +792,12 @@ impl OllamaClient {
 All user-facing strings use i18next.
 
 **Adding a translation:**
+
 1. Add key to `src/i18n/locales/en/translation.json`
 2. Use in component: `const { t } = useTranslation(); t('key.path')`
 
 **Supported locales (17):**
+
 ```
 ar, cs, de, en, es, fr, it, ja, ko, pl, pt, ru, tr, uk, vi, zh, zh-TW
 ```
@@ -793,26 +808,28 @@ ESLint enforces no hardcoded strings via `eslint-plugin-i18next`.
 
 ## CLI Parameters
 
-| Flag | Description |
-|------|-------------|
-| `--toggle-transcription` | Toggle recording on/off |
-| `--toggle-post-process` | Toggle recording with post-processing |
-| `--cancel` | Cancel current operation |
-| `--start-hidden` | Launch without main window |
-| `--no-tray` | Launch without tray icon |
-| `--debug` | Enable verbose logging |
+| Flag                     | Description                           |
+| ------------------------ | ------------------------------------- |
+| `--toggle-transcription` | Toggle recording on/off               |
+| `--toggle-post-process`  | Toggle recording with post-processing |
+| `--cancel`               | Cancel current operation              |
+| `--start-hidden`         | Launch without main window            |
+| `--no-tray`              | Launch without tray icon              |
+| `--debug`                | Enable verbose logging                |
 
 ---
 
 ## Code Style
 
 ### Rust
+
 - Run `cargo fmt` and `cargo clippy` before committing
 - Use `HandyError` with categories, not plain strings
 - Use `SafeLock`/`SafeRwLock` instead of `.unwrap()` on locks
 - Document public APIs with `///` comments
 
 ### TypeScript/React
+
 - Strict TypeScript, avoid `any`
 - Functional components with hooks
 - Wrap settings components with `React.memo()`
@@ -820,6 +837,7 @@ ESLint enforces no hardcoded strings via `eslint-plugin-i18next`.
 - Import order: external → tauri → stores/hooks → components → utils
 
 ### Commits
+
 - `feat:` new features
 - `fix:` bug fixes
 - `docs:` documentation
@@ -834,6 +852,7 @@ ESLint enforces no hardcoded strings via `eslint-plugin-i18next`.
 **Debug Mode:** `Cmd+Shift+D` (macOS) / `Ctrl+Shift+D` (Windows/Linux)
 
 **Rust Logging:**
+
 ```bash
 RUST_LOG=debug bun run tauri dev
 RUST_LOG=handy=trace bun run tauri dev
@@ -884,4 +903,4 @@ RUST_LOG=handy=trace bun run tauri dev
 
 ---
 
-*See also: [CONTRIBUTING.md](./CONTRIBUTING.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [FEATURES.md](./FEATURES.md)*
+_See also: [CONTRIBUTING.md](./CONTRIBUTING.md), [ARCHITECTURE.md](./ARCHITECTURE.md), [FEATURES.md](./FEATURES.md)_

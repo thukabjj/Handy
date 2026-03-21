@@ -10,23 +10,23 @@
  * - macOS: Limited support (WKWebView doesn't have a WebDriver implementation)
  */
 
-describe('Handy Application', () => {
-  describe('Application Launch', () => {
-    it('should launch successfully', async () => {
+describe("Handy Application", () => {
+  describe("Application Launch", () => {
+    it("should launch successfully", async () => {
       // The app should be running if we got here
       const title = await browser.getTitle();
       // Tauri apps may have different titles, just check it exists
-      expect(typeof title).toBe('string');
+      expect(typeof title).toBe("string");
     });
 
-    it('should have a valid window', async () => {
+    it("should have a valid window", async () => {
       const windowHandle = await browser.getWindowHandle();
       expect(windowHandle).toBeTruthy();
     });
   });
 
-  describe('Main Window Structure', () => {
-    it('should render the main navigation', async () => {
+  describe("Main Window Structure", () => {
+    it("should render the main navigation", async () => {
       // Wait for the app to fully load
       await browser.pause(2000);
 
@@ -37,12 +37,12 @@ describe('Handy Application', () => {
       // If nav doesn't exist, we might be on the onboarding screen
       if (!navExists) {
         console.log(
-          'Navigation not found - app may be showing onboarding screen'
+          "Navigation not found - app may be showing onboarding screen",
         );
       }
     });
 
-    it('should have main content area', async () => {
+    it("should have main content area", async () => {
       const main = await $('main[role="main"]');
       const mainExists = await main.isExisting();
 
@@ -51,7 +51,7 @@ describe('Handy Application', () => {
       }
     });
 
-    it('should have footer', async () => {
+    it("should have footer", async () => {
       const footer = await $('footer[role="contentinfo"]');
       const footerExists = await footer.isExisting();
 
@@ -61,8 +61,8 @@ describe('Handy Application', () => {
     });
   });
 
-  describe('Sidebar Navigation', () => {
-    it('should display sidebar sections', async () => {
+  describe("Sidebar Navigation", () => {
+    it("should display sidebar sections", async () => {
       // Wait for app to load
       await browser.pause(1000);
 
@@ -71,86 +71,86 @@ describe('Handy Application', () => {
 
       if (sidebarExists) {
         // Check for General section (always visible)
-        const generalText = await sidebar.$('*=General');
+        const generalText = await sidebar.$("*=General");
         if (await generalText.isExisting()) {
           expect(await generalText.isDisplayed()).toBe(true);
         }
       }
     });
 
-    it('should allow clicking on sidebar sections', async () => {
+    it("should allow clicking on sidebar sections", async () => {
       const sidebar = await $('nav[aria-label="Settings navigation"]');
       const sidebarExists = await sidebar.isExisting();
 
       if (sidebarExists) {
         // Try to click on Advanced section
-        const advancedSection = await sidebar.$('*=Advanced');
+        const advancedSection = await sidebar.$("*=Advanced");
         if (await advancedSection.isExisting()) {
           await advancedSection.click();
           await browser.pause(500);
 
           // Verify the section changed (element should have active styling)
           const parent = await advancedSection.parentElement();
-          const className = await parent.getAttribute('class');
-          expect(className).toContain('bg-logo-primary');
+          const className = await parent.getAttribute("class");
+          expect(className).toContain("bg-logo-primary");
         }
       }
     });
 
-    it('should navigate to History section', async () => {
+    it("should navigate to History section", async () => {
       const sidebar = await $('nav[aria-label="Settings navigation"]');
       const sidebarExists = await sidebar.isExisting();
 
       if (sidebarExists) {
-        const historySection = await sidebar.$('*=History');
+        const historySection = await sidebar.$("*=History");
         if (await historySection.isExisting()) {
           await historySection.click();
           await browser.pause(500);
 
           const parent = await historySection.parentElement();
-          const className = await parent.getAttribute('class');
-          expect(className).toContain('bg-logo-primary');
+          const className = await parent.getAttribute("class");
+          expect(className).toContain("bg-logo-primary");
         }
       }
     });
 
-    it('should navigate to About section', async () => {
+    it("should navigate to About section", async () => {
       const sidebar = await $('nav[aria-label="Settings navigation"]');
       const sidebarExists = await sidebar.isExisting();
 
       if (sidebarExists) {
-        const aboutSection = await sidebar.$('*=About');
+        const aboutSection = await sidebar.$("*=About");
         if (await aboutSection.isExisting()) {
           await aboutSection.click();
           await browser.pause(500);
 
           const parent = await aboutSection.parentElement();
-          const className = await parent.getAttribute('class');
-          expect(className).toContain('bg-logo-primary');
+          const className = await parent.getAttribute("class");
+          expect(className).toContain("bg-logo-primary");
         }
       }
     });
 
-    it('should return to General section', async () => {
+    it("should return to General section", async () => {
       const sidebar = await $('nav[aria-label="Settings navigation"]');
       const sidebarExists = await sidebar.isExisting();
 
       if (sidebarExists) {
-        const generalSection = await sidebar.$('*=General');
+        const generalSection = await sidebar.$("*=General");
         if (await generalSection.isExisting()) {
           await generalSection.click();
           await browser.pause(500);
 
           const parent = await generalSection.parentElement();
-          const className = await parent.getAttribute('class');
-          expect(className).toContain('bg-logo-primary');
+          const className = await parent.getAttribute("class");
+          expect(className).toContain("bg-logo-primary");
         }
       }
     });
   });
 
-  describe('Window Management', () => {
-    it('should allow window resize', async () => {
+  describe("Window Management", () => {
+    it("should allow window resize", async () => {
       const originalSize = await browser.getWindowSize();
 
       await browser.setWindowSize(1200, 800);
@@ -163,7 +163,7 @@ describe('Handy Application', () => {
       await browser.setWindowSize(originalSize.width, originalSize.height);
     });
 
-    it('should handle minimum window size gracefully', async () => {
+    it("should handle minimum window size gracefully", async () => {
       const originalSize = await browser.getWindowSize();
 
       // Try to set a small window size

@@ -65,7 +65,9 @@ export const LabsSettings: React.FC = () => {
         onToggle={handlePostProcessingToggle}
         icon={<Sparkles className="h-5 w-5" />}
       >
-        {postProcessEnabled && <FeatureConfigHint featureKey="postProcessing" />}
+        {postProcessEnabled && (
+          <FeatureConfigHint featureKey="postProcessing" />
+        )}
       </FeatureCard>
 
       {/* Active Listening */}
@@ -83,7 +85,7 @@ export const LabsSettings: React.FC = () => {
             model={
               settings?.active_listening?.llm_provider === "ollama"
                 ? settings?.active_listening?.ollama_model
-                : settings?.active_listening?.llm_model ?? undefined
+                : (settings?.active_listening?.llm_model ?? undefined)
             }
           />
         )}
@@ -104,7 +106,7 @@ export const LabsSettings: React.FC = () => {
             model={
               settings?.active_listening?.llm_provider === "ollama"
                 ? settings?.active_listening?.ollama_model
-                : settings?.active_listening?.llm_model ?? undefined
+                : (settings?.active_listening?.llm_model ?? undefined)
             }
           />
         )}
@@ -122,7 +124,9 @@ export const LabsSettings: React.FC = () => {
         {knowledgeBaseEnabled && (
           <FeatureConfigHint
             featureKey="knowledgeBase"
-            embeddingModel={settings?.knowledge_base?.embedding_model ?? undefined}
+            embeddingModel={
+              settings?.knowledge_base?.embedding_model ?? undefined
+            }
           />
         )}
       </FeatureCard>
@@ -177,7 +181,10 @@ const FeatureConfigHint: React.FC<FeatureConfigHintProps> = ({
                 )}
               </>
             ) : (
-              t("labs.notConfigured", "Not configured - requires an AI provider")
+              t(
+                "labs.notConfigured",
+                "Not configured - requires an AI provider",
+              )
             )}
           </span>
         </div>

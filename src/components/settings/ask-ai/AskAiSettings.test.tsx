@@ -25,7 +25,8 @@ describe("AskAiSettings centralized provider UI", () => {
     mockUseSettings.mockReturnValue({
       settings: null,
       getSetting: (key: string) => {
-        if (key === "ask_ai") return { enabled: true, system_prompt: "", llm_model: "gpt-4o-mini" };
+        if (key === "ask_ai")
+          return { enabled: true, system_prompt: "", llm_model: "gpt-4o-mini" };
         if (key === "active_listening") return { llm_provider: "open_ai" };
         if (key === "bindings") return { ask_ai: { id: "ask_ai" } };
         return undefined;
@@ -35,15 +36,20 @@ describe("AskAiSettings centralized provider UI", () => {
 
     render(<AskAiSettings />);
 
-    expect(screen.getByText("settings.askAi.llm.sharedConfigNotice")).toBeInTheDocument();
-    expect(screen.getByText("settings.askAi.llm.modelOverride.title")).toBeInTheDocument();
+    expect(
+      screen.getByText("settings.askAi.llm.sharedConfigNotice"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("settings.askAi.llm.modelOverride.title"),
+    ).toBeInTheDocument();
   });
 
   it("uses ollama override field when centralized provider is ollama", () => {
     mockUseSettings.mockReturnValue({
       settings: null,
       getSetting: (key: string) => {
-        if (key === "ask_ai") return { enabled: true, system_prompt: "", ollama_model: "llama3.2" };
+        if (key === "ask_ai")
+          return { enabled: true, system_prompt: "", ollama_model: "llama3.2" };
         if (key === "active_listening") return { llm_provider: "ollama" };
         if (key === "bindings") return { ask_ai: { id: "ask_ai" } };
         return undefined;

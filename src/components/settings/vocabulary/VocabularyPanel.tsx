@@ -3,7 +3,15 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { Plus, Trash2, Upload, Download, Search, BookA, Tag } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Upload,
+  Download,
+  Search,
+  BookA,
+  Tag,
+} from "lucide-react";
 
 import { SettingsGroup } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
@@ -75,9 +83,7 @@ export const VocabularyPanel: React.FC = () => {
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) return entries;
     const query = searchQuery.toLowerCase();
-    return entries.filter((entry) =>
-      entry.term.toLowerCase().includes(query),
-    );
+    return entries.filter((entry) => entry.term.toLowerCase().includes(query));
   }, [entries, searchQuery]);
 
   const handleAddTerm = useCallback(async () => {

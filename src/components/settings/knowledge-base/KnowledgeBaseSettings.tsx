@@ -233,7 +233,9 @@ const RetrievalSettings: React.FC = () => {
   );
 };
 
-const DocumentBrowser: React.FC<{ refreshToken: number }> = ({ refreshToken }) => {
+const DocumentBrowser: React.FC<{ refreshToken: number }> = ({
+  refreshToken,
+}) => {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<StoredDocument[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -443,7 +445,9 @@ const DocumentBrowser: React.FC<{ refreshToken: number }> = ({ refreshToken }) =
   );
 };
 
-const ManualDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
+const ManualDocumentUpload: React.FC<{ onUploaded: () => void }> = ({
+  onUploaded,
+}) => {
   const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -503,7 +507,9 @@ const ManualDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded
   );
 };
 
-const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
+const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({
+  onUploaded,
+}) => {
   const { t } = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
 
@@ -512,7 +518,10 @@ const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }
       multiple: true,
       filters: [
         {
-          name: t("settings.knowledgeBase.upload.fileTypes", "Text and PDF files"),
+          name: t(
+            "settings.knowledgeBase.upload.fileTypes",
+            "Text and PDF files",
+          ),
           extensions: ["txt", "md", "markdown", "pdf"],
         },
       ],
@@ -526,7 +535,9 @@ const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }
     setIsUploading(true);
     try {
       await Promise.all(
-        paths.map((path) => invoke<number>("rag_add_document_from_file", { path })),
+        paths.map((path) =>
+          invoke<number>("rag_add_document_from_file", { path }),
+        ),
       );
       onUploaded();
     } catch (error) {
@@ -537,7 +548,9 @@ const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }
   };
 
   return (
-    <SettingsGroup title={t("settings.knowledgeBase.upload.filesTitle", "Import Files")}>
+    <SettingsGroup
+      title={t("settings.knowledgeBase.upload.filesTitle", "Import Files")}
+    >
       <div className="flex justify-end">
         <Button
           onClick={handleSelectFiles}
@@ -548,7 +561,10 @@ const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }
           <Upload className="h-4 w-4 mr-2" />
           {isUploading
             ? t("settings.knowledgeBase.upload.uploading", "Uploading...")
-            : t("settings.knowledgeBase.upload.selectFiles", "Select .txt/.md/.pdf files")}
+            : t(
+                "settings.knowledgeBase.upload.selectFiles",
+                "Select .txt/.md/.pdf files",
+              )}
         </Button>
       </div>
     </SettingsGroup>

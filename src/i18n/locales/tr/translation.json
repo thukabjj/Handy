@@ -22,7 +22,8 @@
     "askAi": "Yapay Zekaya Sor",
     "knowledgeBase": "Bilgi Tabanı",
     "batchImport": "Toplu İçe Aktarma",
-    "vocabulary": "Kelime Hazinesi"
+    "vocabulary": "Kelime Hazinesi",
+    "suggestions": "Suggestions"
   },
   "onboarding": {
     "subtitle": "Başlamak için bir transkripsiyon modeli seçin",
@@ -102,7 +103,9 @@
       },
       "accessibility": {
         "title": "Erişilebilirlik Erişimi",
-        "description": "Transkribe edilen metni uygulamalarınıza yazabilmek için gereklidir."
+        "description": "Transkribe edilen metni uygulamalarınıza yazabilmek için gereklidir.",
+        "hint": "Look for \"Handy\" or \"handy\" in the list and toggle it on. If you don't see it, click the button below to open Settings manually and add it with the + button.",
+        "openSettings": "Open Accessibility Settings"
       },
       "grant": "İzin Ver",
       "granted": "Verildi",
@@ -503,6 +506,317 @@
           "details": "Handy, hızlı ve yerel konuşmadan metne dönüştürme için Whisper.cpp kullanır. Georgi Gerganov ve katkıda bulunanların harika çalışmaları için teşekkür ederiz."
         }
       }
+    },
+    "activeListening": {
+      "general": {
+        "title": "General"
+      },
+      "enable": {
+        "title": "Enable Active Listening",
+        "description": "Continuously transcribe audio and generate AI insights"
+      },
+      "disabledNotice": "Enable Active Listening to configure its settings.",
+      "llm": {
+        "title": "AI Provider",
+        "centralizedNotice": "AI provider is configured centrally in Settings > Advanced Features > AI Config. This section uses the shared configuration.",
+        "mode": {
+          "title": "Mode",
+          "description": "Choose where AI runs: local on-device or cloud providers",
+          "local": "Local",
+          "cloud": "Cloud"
+        },
+        "provider": {
+          "title": "Cloud Provider",
+          "description": "Choose the cloud provider when running in Cloud mode",
+          "openRouter": "OpenRouter",
+          "openAi": "OpenAI",
+          "groq": "Groq",
+          "together": "Together AI",
+          "fireworks": "Fireworks AI",
+          "custom": "Custom endpoint (OpenAI-compatible)"
+        },
+        "runtime": {
+          "title": "Local Runtime",
+          "description": "Choose local inference runtime",
+          "ollama": "Ollama",
+          "localOpenAi": "OpenAI-compatible local server (vLLM/TGI)"
+        },
+        "apiKey": {
+          "title": "API Key",
+          "description": "Your API key for the selected provider",
+          "descriptionLocal": "Optional API key for local OpenAI-compatible server"
+        },
+        "model": {
+          "title": "Model",
+          "description": "Select or type a model name for AI processing",
+          "placeholder": "Select a model",
+          "inputPlaceholder": "e.g. google/gemini-2.0-flash-001",
+          "openSourceHint": "OpenRouter list is sorted to show open-source and free models first.",
+          "tucanoHint": "Tip: run Tucano2 locally via vLLM/TGI and select it here.",
+          "tucanoPresetsTitle": "Tucano2 Presets",
+          "tucanoPresetsDescription": "Quick-select a Tucano2 model served by your local vLLM/TGI runtime",
+          "tucanoPresetsPlaceholder": "Select Tucano2 preset..."
+        },
+        "baseUrl": {
+          "title": "Base URL",
+          "description": "The base URL of your OpenAI-compatible API"
+        }
+      },
+      "ollama": {
+        "title": "Ollama Settings",
+        "connectionStatus": {
+          "checking": "Checking connection...",
+          "connected": "Connected to Ollama",
+          "disconnected": "Ollama not connected"
+        },
+        "refreshConnection": "Refresh connection",
+        "baseUrl": {
+          "title": "Ollama URL",
+          "description": "The base URL of your Ollama server"
+        },
+        "model": {
+          "title": "Ollama Model",
+          "description": "Select the Ollama model to use",
+          "placeholder": "Select a model",
+          "placeholderNoModels": "No models available",
+          "refresh": "Refresh models"
+        }
+      },
+      "segments": {
+        "title": "Segments",
+        "duration": {
+          "title": "Segment Duration",
+          "description": "Length of each audio segment before transcription",
+          "seconds": "{{count}} seconds"
+        }
+      },
+      "prompts": {
+        "title": "Prompts",
+        "selectedPrompt": {
+          "title": "Active Prompt",
+          "description": "Choose or create a prompt template for AI insights"
+        },
+        "categories": {
+          "meeting_coach": "Meeting Coach",
+          "note_taking": "Note Taking",
+          "custom": "Custom"
+        },
+        "createNew": "New Prompt",
+        "createPrompt": "Create",
+        "updatePrompt": "Update",
+        "deletePrompt": "Delete",
+        "cancel": "Cancel",
+        "promptLabel": "Name",
+        "promptLabelPlaceholder": "Enter a name for this prompt",
+        "promptTemplate": "Template",
+        "promptTemplatePlaceholder": "Enter the prompt template...",
+        "promptTip": "Use <code>{{transcription}}</code>, <code>{{previous_context}}</code>, and <code>{{session_topic}}</code> as template variables.",
+        "noPrompts": "No prompts available",
+        "selectPrompt": "Select a prompt",
+        "selectToEdit": "Select a prompt to edit.",
+        "createFirst": "Create your first prompt to get started."
+      },
+      "audioSource": {
+        "title": "Audio Source",
+        "description": "Choose which audio stream Active Listening should analyze",
+        "type": {
+          "title": "Source Type",
+          "microphone": "Microphone only",
+          "microphoneDescription": "Capture only your microphone input",
+          "systemAudio": "System audio only",
+          "systemAudioDescription": "Capture only audio playing from your system",
+          "mixed": "Microphone + system audio",
+          "mixedDescription": "Capture both microphone and system audio"
+        },
+        "loopback": {
+          "notAvailable": "System audio capture is not available on this device.",
+          "macosNote": "On macOS, use a loopback/virtual audio device to capture system audio.",
+          "permissionRequired": "Allow audio capture permissions, then reopen Handy if system audio is still unavailable."
+        },
+        "mixRatio": {
+          "title": "Mix Ratio",
+          "description": "Balance microphone and system audio in mixed mode",
+          "microphoneLabel": "Microphone",
+          "systemLabel": "System"
+        }
+      },
+      "screenVision": {
+        "title": "Screen Vision",
+        "enable": "Enable Screen Vision",
+        "enableDescription": "Periodically capture your screen and analyze visual context with a vision model.",
+        "provider": "Vision Provider",
+        "apiKey": "API Key",
+        "baseUrl": "Base URL",
+        "model": "Vision Model",
+        "interval": "Interval (s)",
+        "duration": "Duration (s)",
+        "maxSnapshots": "Max Snapshots",
+        "prompt": "Vision Prompt",
+        "permissionRequired": "Screen Recording permission is required on macOS before Screen Vision can capture snapshots.",
+        "requestPermission": "Request permission",
+        "openSettings": "Open Screen Recording settings",
+        "testOnce": "Test once",
+        "start": "Start timed session",
+        "stop": "Stop",
+        "status": "Status",
+        "snapshots": "snapshots",
+        "latestAnalysis": "Latest Analysis"
+      }
+    },
+    "askAi": {
+      "general": {
+        "title": "General"
+      },
+      "enable": {
+        "title": "Enable Ask AI",
+        "description": "Multi-turn voice conversations with your LLM"
+      },
+      "disabledNotice": "Enable Ask AI to configure its settings.",
+      "llm": {
+        "title": "AI Provider",
+        "sharedConfigNotice": "AI provider is configured centrally in Settings > Advanced Features > AI Config.",
+        "noModelConfigured": "No model configured. Please set one in Active Listening settings.",
+        "mode": {
+          "title": "Mode",
+          "local": "Local",
+          "cloud": "Cloud"
+        },
+        "provider": {
+          "title": "Provider",
+          "description": "Choose the AI provider for conversations",
+          "local": "Ollama (Local)",
+          "localOpenAi": "OpenAI-compatible Local Server",
+          "openRouter": "OpenRouter",
+          "openAi": "OpenAI",
+          "groq": "Groq",
+          "together": "Together AI",
+          "fireworks": "Fireworks AI",
+          "custom": "Custom endpoint (OpenAI-compatible)"
+        },
+        "apiKey": {
+          "title": "API Key",
+          "description": "Your API key for the selected provider"
+        },
+        "model": {
+          "title": "Model",
+          "description": "Select or type a model name for AI conversations",
+          "placeholder": "Select a model",
+          "inputPlaceholder": "e.g. google/gemini-2.0-flash-001"
+        },
+        "modelOverride": {
+          "title": "Model Override",
+          "description": "Optional. Leave empty to use the centralized default model."
+        },
+        "baseUrl": {
+          "title": "Base URL",
+          "description": "The base URL of your OpenAI-compatible API"
+        }
+      },
+      "ollama": {
+        "title": "Ollama Settings",
+        "connectionStatus": {
+          "checking": "Checking connection...",
+          "connected": "Connected to Ollama",
+          "disconnected": "Ollama not connected"
+        },
+        "refreshConnection": "Refresh connection",
+        "baseUrl": {
+          "title": "Ollama URL",
+          "description": "The base URL of your Ollama server"
+        },
+        "model": {
+          "title": "Ollama Model",
+          "description": "Select the Ollama model to use",
+          "placeholder": "Select a model",
+          "placeholderNoModels": "No models available",
+          "refresh": "Refresh models"
+        }
+      },
+      "systemPrompt": {
+        "sectionTitle": "System Prompt",
+        "title": "Custom System Prompt",
+        "description": "Override the default system prompt for AI conversations",
+        "placeholder": "Enter a custom system prompt..."
+      }
+    },
+    "wakeWord": {
+      "title": "Wake Word",
+      "enable": {
+        "title": "Enable Wake Word",
+        "description": "Say a wake phrase to trigger actions hands-free"
+      },
+      "hint": "Hint: speak the phrase naturally and keep background noise low for better wake accuracy.",
+      "phrase": {
+        "title": "Wake Phrase",
+        "description": "The phrase to listen for (e.g. \"Hey Handy\")"
+      },
+      "action": {
+        "title": "Trigger Action",
+        "description": "What to do when the wake phrase is detected",
+        "startActiveListening": "Start Active Listening",
+        "startRecording": "Start Recording",
+        "none": "None (disabled)"
+      },
+      "cooldown": {
+        "title": "Cooldown",
+        "description": "Minimum time between detections to prevent repeated triggers",
+        "seconds": "{{count}} seconds"
+      },
+      "voiceAuth": {
+        "title": "Recognize only my voice",
+        "description": "Require owner voice verification before wake actions run",
+        "profileReady": "Owner voice profile enrolled.",
+        "profileMissing": "No owner voice profile enrolled yet. Use wake enrollment commands to create one."
+      }
+    },
+    "suggestions": {
+      "title": "Suggestions",
+      "loading": "Loading suggestions settings...",
+      "behavior": "Behavior",
+      "enable": {
+        "title": "Enable Suggestions",
+        "description": "Generate real-time suggestions during Active Listening."
+      },
+      "rag": {
+        "title": "Use Knowledge Base (RAG)",
+        "description": "Include context retrieved from indexed documents."
+      },
+      "llm": {
+        "title": "Use LLM Suggestions",
+        "description": "Generate contextual talking points from the active model."
+      },
+      "autoDismiss": {
+        "title": "Auto-dismiss on copy",
+        "description": "Hide suggestion cards automatically when copied."
+      },
+      "max": {
+        "title": "Maximum suggestions",
+        "description": "Maximum number of suggestions shown at once."
+      },
+      "confidence": {
+        "title": "Minimum confidence",
+        "description": "Hide suggestions below this confidence threshold."
+      },
+      "duration": {
+        "title": "Display duration",
+        "description": "Seconds to keep a suggestion visible (0 = until dismissed)."
+      },
+      "quickResponses": "Quick Responses",
+      "delete": "Delete",
+      "add": {
+        "title": "Add quick response",
+        "name": "Name",
+        "category": "Category",
+        "triggers": "Trigger phrases (comma-separated)",
+        "response": "Suggested response template",
+        "button": "Add"
+      },
+      "live": {
+        "title": "Live Suggestions Feed",
+        "clear": "Clear",
+        "empty": "No suggestions received yet. Start Active Listening and speak to generate suggestions.",
+        "session": "Session"
+      }
     }
   },
   "footer": {
@@ -539,13 +853,16 @@
     "off": "Kapalı",
     "yes": "Evet",
     "no": "Hayır",
-    "noOptionsFound": "Seçenek bulunamadı"
+    "noOptionsFound": "Seçenek bulunamadı",
+    "refresh": "Refresh"
   },
   "accessibility": {
     "permissionsRequired": "Erişilebilirlik İzinleri Gerekli",
     "permissionsDescription": "Handy, transkribe edilen metni yazabilmek için erişilebilirlik izinlerine ihtiyaç duyar.",
     "openSettings": "Sistem Ayarlarını Aç",
-    "dismiss": "Yoksay"
+    "dismiss": "Yoksay",
+    "hint": "Look for \"Handy\" or \"handy\" in System Settings > Accessibility and toggle it on.",
+    "openSettingsManually": "Open Settings"
   },
   "errors": {
     "loadDirectory": "Dizin yüklenirken hata oluştu: {{error}}"
@@ -584,7 +901,9 @@
       "step1": "Kayda başlamak için kısayol tuşuna basın",
       "step2": "Mikrofona net konuşun",
       "step3": "Transkripsiyonu bitirmek için tuşu bırakın"
-    }
+    },
+    "noModelSelected": "No model selected",
+    "downloadModel": "Download a Model"
   },
   "labs": {
     "title": "Labs",
@@ -606,7 +925,8 @@
     "postProcessing": {
       "title": "Son İşlem",
       "description": "LLM destekli metin temizleme ve biçimlendirme"
-    }
+    },
+    "comingSoon": "Coming Soon"
   },
   "unifiedSettings": {
     "output": {
@@ -630,6 +950,27 @@
     "advanced": {
       "title": "Gelişmiş",
       "description": "Geliştirici seçenekleri ve gelişmiş yapılandırma"
+    },
+    "features": {
+      "title": "Advanced Features",
+      "description": "Access optional modules without extra sidebar items",
+      "configure": "Configure",
+      "aiConfig": {
+        "title": "AI Config",
+        "description": "Configure provider and default model once for all assistant features"
+      },
+      "knowledgeBase": {
+        "title": "Knowledge Base",
+        "description": "Manage indexed documents and retrieval settings"
+      },
+      "batchProcessing": {
+        "title": "Batch Processing",
+        "description": "Queue and transcribe multiple audio files"
+      },
+      "suggestions": {
+        "title": "Suggestions",
+        "description": "Configure real-time coaching suggestions"
+      }
     }
   },
   "historyEmpty": {
@@ -640,5 +981,130 @@
   "overlay": {
     "transcribing": "Transkribe ediliyor...",
     "processing": "İşleniyor..."
+  },
+  "soundDetection": {
+    "title": "Sound Detection",
+    "enabled": "Enable Sound Detection",
+    "enabledDescription": "Detect important environmental sounds while Handy is running.",
+    "stubNotice": "Beta feature: labels and confidence may vary depending on your environment.",
+    "threshold": "Detection Threshold",
+    "thresholdDescription": "Minimum confidence required before showing a sound alert.",
+    "categories": "Sound Categories",
+    "categoriesDescription": "Choose which environmental sounds should trigger alerts.",
+    "notification": "Desktop Notifications",
+    "notificationDescription": "Show notifications when selected sounds are detected.",
+    "confidence": "Confidence: {{value}}%",
+    "category": {
+      "doorbell": "Doorbell",
+      "alarm": "Alarm",
+      "phone_ring": "Phone Ring",
+      "dog_bark": "Dog Bark",
+      "baby_cry": "Baby Cry",
+      "knocking": "Knocking",
+      "siren": "Siren",
+      "applause": "Applause"
+    }
+  },
+  "diagnostics": {
+    "title": "Observability",
+    "description": "Structured diagnostics across backend, overlay, wake pipeline, and provider requests. Use the data mode carefully because sensitive text can be captured locally.",
+    "actions": {
+      "exportBundle": "Export bundle",
+      "pauseLive": "Pause live",
+      "resumeLive": "Resume live"
+    },
+    "latestBundle": "Latest bundle:",
+    "stats": {
+      "buffered": "Buffered",
+      "errors": "Errors",
+      "warnings": "Warnings",
+      "dropped": "Dropped"
+    },
+    "settings": {
+      "mode": "Mode",
+      "bufferSize": "Buffer size",
+      "liveStream": "Live stream"
+    },
+    "mode": {
+      "metadata_only": {
+        "label": "Metadata only",
+        "description": "Safe default. Content fields are redacted."
+      },
+      "sensitive_text": {
+        "label": "Sensitive text",
+        "description": "Includes transcripts and prompts in the diagnostics stream."
+      },
+      "developer": {
+        "label": "Developer",
+        "description": "Maximum local diagnostics detail."
+      }
+    },
+    "filters": {
+      "component": {
+        "all": "All components"
+      },
+      "level": {
+        "all": "All levels",
+        "trace": "Trace",
+        "debug": "Debug",
+        "info": "Info",
+        "warn": "Warn",
+        "error": "Error"
+      }
+    },
+    "components": {
+      "title": "Components",
+      "lastEvent": "Last event",
+      "total_one": "{{count}} total",
+      "total_other": "{{count}} total",
+      "errorsWarnings": "{{errors}} errors, {{warnings}} warnings",
+      "empty": "No telemetry captured yet."
+    },
+    "events": {
+      "title": "Event stream",
+      "visibleBuffered": "{{visible}} visible / {{buffered}} buffered",
+      "durationMs": "{{duration}} ms",
+      "trace": "trace: {{traceId}}",
+      "session": "session: {{sessionId}}",
+      "emptyFiltered": "No events match the current filters."
+    }
+  },
+  "presentationMode": {
+    "title": "Presentation Mode",
+    "description": "Open a dedicated live overlay for meetings and live notes",
+    "open": "Open Presentation Mode"
+  },
+  "sharedAi": {
+    "mode": {
+      "title": "Mode",
+      "description": "Choose where AI runs for all assistant features"
+    },
+    "runtime": {
+      "title": "Local Runtime"
+    },
+    "model": {
+      "title": "Default Model",
+      "description": "Default model reused across assistant features unless overridden per feature"
+    }
+  },
+  "batchProcessing": {
+    "title": "Batch Processing",
+    "description": "Select multiple audio files and transcribe them in a queue",
+    "audioFiles": "Audio files",
+    "selectFiles": "Select Files",
+    "start": "Start",
+    "cancel": "Cancel",
+    "clearCompleted": "Clear Completed",
+    "removeItem": "Remove item",
+    "empty": "No files in queue yet. Add files to begin batch transcription.",
+    "stats": "{{completed}} / {{total}} completed, {{failed}} failed",
+    "status": {
+      "queued": "Queued",
+      "decoding": "Decoding",
+      "transcribing": "Transcribing",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    }
   }
 }

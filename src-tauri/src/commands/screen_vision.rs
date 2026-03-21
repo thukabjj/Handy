@@ -21,7 +21,7 @@ pub struct ScreenVisionSnapshotResult {
     pub analysis: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
 pub struct ScreenVisionStatus {
     pub running: bool,
     pub session_id: Option<String>,
@@ -30,20 +30,6 @@ pub struct ScreenVisionStatus {
     pub snapshots_processed: u32,
     pub last_result: Option<ScreenVisionSnapshotResult>,
     pub last_error: Option<String>,
-}
-
-impl Default for ScreenVisionStatus {
-    fn default() -> Self {
-        Self {
-            running: false,
-            session_id: None,
-            started_at_ms: None,
-            expires_at_ms: None,
-            snapshots_processed: 0,
-            last_result: None,
-            last_error: None,
-        }
-    }
 }
 
 struct ScreenVisionRuntime {
@@ -58,7 +44,10 @@ static SCREEN_VISION_RUNTIME: Lazy<Arc<Mutex<ScreenVisionRuntime>>> = Lazy::new(
     }))
 });
 
-fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> Result<String, String> {
+fn cloud_base_url(
+    provider: LlmProvider,
+    custom_base_url: Option<&String>,
+) -> Result<String, String> {
     match provider {
         LlmProvider::Custom => custom_base_url
             .map(|value| value.trim().to_string())
@@ -466,7 +455,10 @@ async fn run_session_loop(
                     .level(TelemetryLevel::Error)
                     .message("Screen vision session snapshot failed")
                     .session_id(runtime.status.session_id.clone().unwrap_or_default())
-                    .attr("error", runtime.status.last_error.clone().unwrap_or_default())
+                    .attr(
+                        "error",
+                        runtime.status.last_error.clone().unwrap_or_default(),
+                    )
                     .emit();
             }
         }

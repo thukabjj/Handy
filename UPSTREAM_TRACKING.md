@@ -6,13 +6,13 @@ This document tracks synchronization between this fork and [cjpais/Handy](https:
 
 ## Sync Status
 
-| Property | Value |
-|----------|-------|
-| **Last Synced** | 2026-03-01 |
-| **Upstream Repo** | https://github.com/cjpais/Handy |
+| Property                 | Value                                      |
+| ------------------------ | ------------------------------------------ |
+| **Last Synced**          | 2026-03-01                                 |
+| **Upstream Repo**        | https://github.com/cjpais/Handy            |
 | **Last Upstream Commit** | `998449d2adad4729df2c47f920399c846698ced0` |
-| **Upstream Version** | v0.7.9 |
-| **Fork Branch** | `main` |
+| **Upstream Version**     | v0.7.9                                     |
+| **Fork Branch**          | `main`                                     |
 
 ---
 
@@ -63,7 +63,7 @@ This document tracks synchronization between this fork and [cjpais/Handy](https:
 - [#924](https://github.com/cjpais/Handy/issues/924) Kubuntu crash
 - [#880](https://github.com/cjpais/Handy/issues/880) Ubuntu 24.04 crash
 - [#831](https://github.com/cjpais/Handy/issues/831) Segfault on Mint
-- [#806](https://github.com/cjpais/Handy/issues/806) Pop!_OS mic issue
+- [#806](https://github.com/cjpais/Handy/issues/806) Pop!\_OS mic issue
 - [#867](https://github.com/cjpais/Handy/issues/867) CUDA out of memory
 
 ### Input/Keyboard
@@ -107,16 +107,16 @@ This document tracks synchronization between this fork and [cjpais/Handy](https:
 
 These features exist only in this fork:
 
-| Feature | Backend | Frontend | Lines |
-|---------|---------|----------|-------|
-| **Active Listening** | `managers/active_listening.rs` | `settings/active-listening/` | ~1,367 |
-| **Ask AI** | `managers/ask_ai.rs`, `ask_ai_history.rs` | `settings/ask-ai/` | ~1,128 |
-| **RAG Knowledge Base** | `managers/rag.rs` | `settings/knowledge-base/` | ~590 |
-| **Suggestion Engine** | `managers/suggestion_engine.rs` | `settings/suggestions/` | ~539 |
-| **Ollama Client** | `ollama_client.rs` | - | ~533 |
-| **Audio Loopback** | `audio_toolkit/audio/loopback.rs` | - | ~200 |
-| **Audio Mixer** | `audio_toolkit/audio/mixer.rs` | - | ~150 |
-| **Speaker Diarization** | `audio_toolkit/diarization/` | - | ~300 |
+| Feature                 | Backend                                   | Frontend                     | Lines  |
+| ----------------------- | ----------------------------------------- | ---------------------------- | ------ |
+| **Active Listening**    | `managers/active_listening.rs`            | `settings/active-listening/` | ~1,367 |
+| **Ask AI**              | `managers/ask_ai.rs`, `ask_ai_history.rs` | `settings/ask-ai/`           | ~1,128 |
+| **RAG Knowledge Base**  | `managers/rag.rs`                         | `settings/knowledge-base/`   | ~590   |
+| **Suggestion Engine**   | `managers/suggestion_engine.rs`           | `settings/suggestions/`      | ~539   |
+| **Ollama Client**       | `ollama_client.rs`                        | -                            | ~533   |
+| **Audio Loopback**      | `audio_toolkit/audio/loopback.rs`         | -                            | ~200   |
+| **Audio Mixer**         | `audio_toolkit/audio/mixer.rs`            | -                            | ~150   |
+| **Speaker Diarization** | `audio_toolkit/diarization/`              | -                            | ~300   |
 
 ---
 
@@ -124,11 +124,11 @@ These features exist only in this fork:
 
 These upstream PRs may conflict with fork features:
 
-| PR | Feature | Conflict | Resolution |
-|----|---------|----------|------------|
+| PR                                               | Feature            | Conflict         | Resolution                                   |
+| ------------------------------------------------ | ------------------ | ---------------- | -------------------------------------------- |
 | [#832](https://github.com/cjpais/Handy/pull/832) | Live transcription | Active Listening | Compare implementations, may deprecate local |
-| [#618](https://github.com/cjpais/Handy/pull/618) | Wake-word | Active Listening | Could complement Ollama-based listening |
-| [#509](https://github.com/cjpais/Handy/pull/509) | Local API server | Ask AI / RAG | Could share LLM infrastructure |
+| [#618](https://github.com/cjpais/Handy/pull/618) | Wake-word          | Active Listening | Could complement Ollama-based listening      |
+| [#509](https://github.com/cjpais/Handy/pull/509) | Local API server   | Ask AI / RAG     | Could share LLM infrastructure               |
 
 ---
 
@@ -158,13 +158,13 @@ git push origin main
 
 ### Conflict Resolution
 
-| Area | Priority |
-|------|----------|
-| Core transcription (`audio_toolkit/`, `managers/transcription.rs`) | Upstream |
-| Settings structure (`settings/mod.rs`) | Merge carefully |
-| UI components (`src/components/`) | Upstream, re-add local features |
-| `lib.rs` manager init | Re-add local managers |
-| Dependencies (`Cargo.toml`, `package.json`) | Upstream, keep local-only |
+| Area                                                               | Priority                        |
+| ------------------------------------------------------------------ | ------------------------------- |
+| Core transcription (`audio_toolkit/`, `managers/transcription.rs`) | Upstream                        |
+| Settings structure (`settings/mod.rs`)                             | Merge carefully                 |
+| UI components (`src/components/`)                                  | Upstream, re-add local features |
+| `lib.rs` manager init                                              | Re-add local managers           |
+| Dependencies (`Cargo.toml`, `package.json`)                        | Upstream, keep local-only       |
 
 ---
 
@@ -180,4 +180,4 @@ git push origin main
 
 ---
 
-*Last updated: 2026-03-01*
+_Last updated: 2026-03-01_

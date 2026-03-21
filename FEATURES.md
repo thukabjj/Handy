@@ -32,6 +32,7 @@ This document describes all features available in Handy, including both upstream
 **Description:** Convert spoken audio to text using local AI models.
 
 **How It Works:**
+
 1. Press global shortcut (or use push-to-talk)
 2. Speak into your microphone
 3. Voice Activity Detection (VAD) filters silence
@@ -40,25 +41,25 @@ This document describes all features available in Handy, including both upstream
 
 **Supported Models:**
 
-| Model | Size | Speed | Accuracy | Languages |
-|-------|------|-------|----------|-----------|
-| **Whisper Tiny** | ~75MB | Fastest | Good | 99 |
-| **Whisper Base** | ~142MB | Fast | Better | 99 |
-| **Whisper Small** | ~466MB | Medium | Good | 99 |
-| **Whisper Medium** | ~1.5GB | Slow | Great | 99 |
-| **Whisper Large** | ~2.9GB | Slowest | Best | 99 |
-| **Parakeet** | ~120MB | Fast | Good | English |
-| **Moonshine** | ~600MB | Medium | Good | English |
-| **SenseVoice** | ~1GB | Medium | Good | Multi |
+| Model              | Size   | Speed   | Accuracy | Languages |
+| ------------------ | ------ | ------- | -------- | --------- |
+| **Whisper Tiny**   | ~75MB  | Fastest | Good     | 99        |
+| **Whisper Base**   | ~142MB | Fast    | Better   | 99        |
+| **Whisper Small**  | ~466MB | Medium  | Good     | 99        |
+| **Whisper Medium** | ~1.5GB | Slow    | Great    | 99        |
+| **Whisper Large**  | ~2.9GB | Slowest | Best     | 99        |
+| **Parakeet**       | ~120MB | Fast    | Good     | English   |
+| **Moonshine**      | ~600MB | Medium  | Good     | English   |
+| **SenseVoice**     | ~1GB   | Medium  | Good     | Multi     |
 
 **Settings:**
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Model | Which transcription model to use | Whisper Base |
-| Language | Auto-detect or specify language | Auto |
-| VAD Threshold | Silence detection sensitivity | 0.5 |
-| Output Mode | Clipboard, paste, or both | Both |
+| Setting       | Description                      | Default      |
+| ------------- | -------------------------------- | ------------ |
+| Model         | Which transcription model to use | Whisper Base |
+| Language      | Auto-detect or specify language  | Auto         |
+| VAD Threshold | Silence detection sensitivity    | 0.5          |
+| Output Mode   | Clipboard, paste, or both        | Both         |
 
 ---
 
@@ -67,6 +68,7 @@ This document describes all features available in Handy, including both upstream
 **Description:** Download and manage local transcription models.
 
 **Features:**
+
 - One-click model downloads
 - Download progress tracking
 - Model size and speed indicators
@@ -85,13 +87,14 @@ This document describes all features available in Handy, including both upstream
 
 **Supported Providers:**
 
-| Provider | Local | API Key Required |
-|----------|-------|-----------------|
-| **Ollama** | Yes | No |
-| **OpenAI** | No | Yes |
-| **Anthropic** | No | Yes |
+| Provider      | Local | API Key Required |
+| ------------- | ----- | ---------------- |
+| **Ollama**    | Yes   | No               |
+| **OpenAI**    | No    | Yes              |
+| **Anthropic** | No    | Yes              |
 
 **Processing Options:**
+
 - Grammar and spelling correction
 - Punctuation improvement
 - Formatting (markdown, lists)
@@ -115,16 +118,19 @@ Settings > Post-Processing
 **Description:** Multiple ways to trigger recording.
 
 **Push-to-Talk Mode:**
+
 - Hold shortcut key to record
 - Release to stop and transcribe
 - Best for: Quick voice notes, commands
 
 **Auto Mode (Press to Start):**
+
 - Press shortcut to start recording
 - Voice Activity Detection automatically stops when you're done speaking
 - Best for: Longer dictation, hands-free use
 
 **Global Shortcut:**
+
 - Default: `Cmd+Shift+Space` (macOS), `Ctrl+Shift+Space` (Windows/Linux)
 - Fully customizable
 - Works in any application
@@ -136,6 +142,7 @@ Settings > Post-Processing
 **Description:** View and manage past transcriptions.
 
 **Features:**
+
 - Searchable transcription history
 - Timestamp and duration tracking
 - Copy previous transcriptions
@@ -157,6 +164,7 @@ These features are unique to this fork and require [Ollama](https://ollama.ai) f
 **Description:** Continuous background transcription with AI-generated insights.
 
 **Use Cases:**
+
 - Meeting notes and summaries
 - Interview transcription
 - Lecture capture
@@ -195,6 +203,7 @@ These features are unique to this fork and require [Ollama](https://ollama.ai) f
 ```
 
 **Features:**
+
 - Microphone input capture
 - System audio loopback (hear both sides of calls)
 - Audio mixing for combined capture
@@ -205,13 +214,13 @@ These features are unique to this fork and require [Ollama](https://ollama.ai) f
 
 **Settings:**
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Ollama Model | LLM for insights | llama3.2 |
-| Insight Interval | Time between insights | 5 minutes |
-| Buffer Size | Transcript buffer length | 10 minutes |
-| Include System Audio | Capture system sounds | On |
-| Insight Prompt | Custom prompt for analysis | Default |
+| Setting              | Description                | Default    |
+| -------------------- | -------------------------- | ---------- |
+| Ollama Model         | LLM for insights           | llama3.2   |
+| Insight Interval     | Time between insights      | 5 minutes  |
+| Buffer Size          | Transcript buffer length   | 10 minutes |
+| Include System Audio | Capture system sounds      | On         |
+| Insight Prompt       | Custom prompt for analysis | Default    |
 
 **Location:** Settings > Active Listening
 
@@ -226,6 +235,7 @@ These features are unique to this fork and require [Ollama](https://ollama.ai) f
 **Description:** Multi-turn voice conversations with local LLM.
 
 **Use Cases:**
+
 - Hands-free AI assistant
 - Voice-controlled coding help
 - Quick questions while working
@@ -242,6 +252,7 @@ User speaks → Transcription → Ollama LLM → Response displayed
 ```
 
 **Features:**
+
 - Natural conversation flow
 - Conversation history
 - Context retention within sessions
@@ -251,17 +262,18 @@ User speaks → Transcription → Ollama LLM → Response displayed
 
 **Settings:**
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Ollama Model | LLM for responses | llama3.2 |
-| System Prompt | Personality/behavior | Helpful assistant |
-| Enable RAG | Use knowledge base | Off |
-| Conversation Memory | Messages to retain | 10 |
-| Auto-clear on Close | Clear history on exit | Off |
+| Setting             | Description           | Default           |
+| ------------------- | --------------------- | ----------------- |
+| Ollama Model        | LLM for responses     | llama3.2          |
+| System Prompt       | Personality/behavior  | Helpful assistant |
+| Enable RAG          | Use knowledge base    | Off               |
+| Conversation Memory | Messages to retain    | 10                |
+| Auto-clear on Close | Clear history on exit | Off               |
 
 **Location:** Settings > Ask AI
 
 **Backend:**
+
 - `src-tauri/src/managers/ask_ai.rs`
 - `src-tauri/src/managers/ask_ai_history.rs`
 
@@ -274,6 +286,7 @@ User speaks → Transcription → Ollama LLM → Response displayed
 **Description:** Retrieval-Augmented Generation for context-aware AI responses.
 
 **Use Cases:**
+
 - Personal knowledge base queries
 - Documentation search
 - Project-specific context
@@ -314,6 +327,7 @@ User speaks → Transcription → Ollama LLM → Response displayed
 ```
 
 **Features:**
+
 - Document import (txt, md, pdf)
 - Automatic chunking and embedding
 - Fast vector similarity search
@@ -323,12 +337,12 @@ User speaks → Transcription → Ollama LLM → Response displayed
 
 **Settings:**
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Chunk Size | Text segment size | 500 tokens |
-| Overlap | Chunk overlap | 50 tokens |
-| Top K | Results to retrieve | 5 |
-| Similarity Threshold | Minimum relevance | 0.7 |
+| Setting              | Description         | Default    |
+| -------------------- | ------------------- | ---------- |
+| Chunk Size           | Text segment size   | 500 tokens |
+| Overlap              | Chunk overlap       | 50 tokens  |
+| Top K                | Results to retrieve | 5          |
+| Similarity Threshold | Minimum relevance   | 0.7        |
 
 **Location:** Settings > Knowledge Base
 
@@ -343,6 +357,7 @@ User speaks → Transcription → Ollama LLM → Response displayed
 **Description:** Context-aware quick responses and suggestions.
 
 **Use Cases:**
+
 - Quick replies in messaging apps
 - Email response suggestions
 - Meeting follow-up actions
@@ -365,6 +380,7 @@ Context Input → Ollama Analysis → Suggestions Generated → Display
 ```
 
 **Features:**
+
 - Automatic suggestion generation
 - Context from multiple sources
 - Quick-paste suggestions
@@ -373,12 +389,12 @@ Context Input → Ollama Analysis → Suggestions Generated → Display
 
 **Settings:**
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Enable Suggestions | Turn on/off | Off |
-| Suggestion Count | Number to show | 3 |
-| Context Sources | What to analyze | Transcription |
-| Custom Prompt | Suggestion style | Default |
+| Setting            | Description      | Default       |
+| ------------------ | ---------------- | ------------- |
+| Enable Suggestions | Turn on/off      | Off           |
+| Suggestion Count   | Number to show   | 3             |
+| Context Sources    | What to analyze  | Transcription |
+| Custom Prompt      | Suggestion style | Default       |
 
 **Location:** Settings > Suggestions
 
@@ -395,12 +411,14 @@ Context Input → Ollama Analysis → Suggestions Generated → Display
 **Description:** Add custom words and corrections for better transcription accuracy.
 
 **Use Cases:**
+
 - Technical jargon
 - Names and proper nouns
 - Acronyms
 - Domain-specific vocabulary
 
 **How It Works:**
+
 - Add word pairs: (misheard, correct)
 - Applied as post-processing step
 - Supports regex patterns
@@ -414,6 +432,7 @@ Context Input → Ollama Analysis → Suggestions Generated → Display
 **Description:** Choose specific input/output devices.
 
 **Features:**
+
 - List all available audio devices
 - Select preferred microphone
 - Select output for playback
@@ -431,6 +450,7 @@ Context Input → Ollama Analysis → Suggestions Generated → Display
 **Access:** `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux)
 
 **Features:**
+
 - Real-time audio level visualization
 - VAD trigger visualization
 - Model loading status
@@ -447,11 +467,13 @@ Fork-exclusive features (Active Listening, Ask AI, RAG, Suggestions) require Oll
 ### Installation
 
 **macOS:**
+
 ```bash
 brew install ollama
 ```
 
 **Linux:**
+
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
 ```
@@ -475,13 +497,13 @@ ollama pull llama3.2:1b
 
 ### Recommended Models
 
-| Model | Size | Use Case |
-|-------|------|----------|
-| `llama3.2` | 2GB | General purpose (default) |
-| `llama3.2:1b` | 1GB | Faster, lower resource |
-| `mistral` | 4GB | Better reasoning |
-| `codellama` | 4GB | Code-focused |
-| `phi3` | 2GB | Efficient alternative |
+| Model         | Size | Use Case                  |
+| ------------- | ---- | ------------------------- |
+| `llama3.2`    | 2GB  | General purpose (default) |
+| `llama3.2:1b` | 1GB  | Faster, lower resource    |
+| `mistral`     | 4GB  | Better reasoning          |
+| `codellama`   | 4GB  | Code-focused              |
+| `phi3`        | 2GB  | Efficient alternative     |
 
 ### Configuration in Handy
 
@@ -493,6 +515,7 @@ ollama pull llama3.2:1b
 ### Troubleshooting
 
 **"Ollama not connected":**
+
 ```bash
 # Check if Ollama is running
 curl http://localhost:11434/api/tags
@@ -502,6 +525,7 @@ ollama serve
 ```
 
 **"Model not found":**
+
 ```bash
 # List available models
 ollama list
@@ -511,6 +535,7 @@ ollama pull <model-name>
 ```
 
 **Slow performance:**
+
 - Use smaller model (`llama3.2:1b`)
 - Ensure GPU is being utilized
 - Check system resources
@@ -519,19 +544,19 @@ ollama pull <model-name>
 
 ## Feature Comparison
 
-| Feature | Upstream | This Fork |
-|---------|----------|-----------|
-| Speech-to-Text | Yes | Yes |
-| Multiple Models | Yes | Yes |
-| Post-Processing | Yes | Yes |
-| History | Yes | Yes |
-| Custom Words | Yes | Yes |
-| **Active Listening** | No | Yes |
-| **Ask AI** | No | Yes |
-| **RAG Knowledge Base** | No | Yes |
-| **Suggestion Engine** | No | Yes |
-| **System Audio Loopback** | No | Yes |
-| **Audio Mixer** | No | Yes |
+| Feature                   | Upstream | This Fork |
+| ------------------------- | -------- | --------- |
+| Speech-to-Text            | Yes      | Yes       |
+| Multiple Models           | Yes      | Yes       |
+| Post-Processing           | Yes      | Yes       |
+| History                   | Yes      | Yes       |
+| Custom Words              | Yes      | Yes       |
+| **Active Listening**      | No       | Yes       |
+| **Ask AI**                | No       | Yes       |
+| **RAG Knowledge Base**    | No       | Yes       |
+| **Suggestion Engine**     | No       | Yes       |
+| **System Audio Loopback** | No       | Yes       |
+| **Audio Mixer**           | No       | Yes       |
 
 ---
 
@@ -544,4 +569,4 @@ ollama pull <model-name>
 
 ---
 
-*Last updated: 2026-03-01*
+_Last updated: 2026-03-01_

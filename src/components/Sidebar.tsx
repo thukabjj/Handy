@@ -1,12 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  History,
-  Info,
-  Mic,
-  Settings,
-  Bug,
-} from "lucide-react";
+import { History, Info, Mic, Settings, Bug } from "lucide-react";
 import type { AppSettings } from "@/bindings";
 import HandyTextLogo from "./icons/HandyTextLogo";
 import { useSettings } from "../hooks/useSettings";
@@ -93,9 +87,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
-          const badge = ("badge" in section
-            ? section.badge
-            : undefined) as SectionConfig["badge"] | undefined;
+          const badge = ("badge" in section ? section.badge : undefined) as
+            | SectionConfig["badge"]
+            | undefined;
           const label = String(t(section.labelKey));
 
           return (
@@ -110,10 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Icon width={24} height={24} className="shrink-0" />
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <p
-                  className="text-sm font-medium truncate"
-                  title={label}
-                >
+                <p className="text-sm font-medium truncate" title={label}>
                   {label}
                 </p>
                 {badge && (

@@ -24,12 +24,14 @@ bun run dev:e2e
 ```
 
 **How it works:**
+
 - `e2e/vite.config.e2e.ts` aliases 16 Tauri imports to browser-compatible mocks
 - `e2e/browser-mocks/` contains mock implementations for all Tauri APIs
 - `e2e/browser-mocks/mock-state.ts` provides centralized state with `window.__E2E_MOCK__` API
 - Zero production code changes — all mocking happens at build time
 
 **What it tests:**
+
 - Full React frontend rendering and routing
 - Sidebar navigation and section filtering
 - Settings toggles and state management
@@ -40,11 +42,12 @@ bun run dev:e2e
 - i18n translations
 
 **Mock state control (via browser console or Playwright evaluate):**
+
 ```javascript
-window.__E2E_MOCK__.getState()                          // Get current state
-window.__E2E_MOCK__.reset()                              // Reset to defaults
-window.__E2E_MOCK__.updateSettings({ push_to_talk: true }) // Patch settings
-window.__E2E_MOCK__.update({ hasAnyModels: false })      // Patch any state
+window.__E2E_MOCK__.getState(); // Get current state
+window.__E2E_MOCK__.reset(); // Reset to defaults
+window.__E2E_MOCK__.updateSettings({ push_to_talk: true }); // Patch settings
+window.__E2E_MOCK__.update({ hasAnyModels: false }); // Patch any state
 ```
 
 See `e2e/scenarios/` for step-by-step test guides.
@@ -65,6 +68,7 @@ bun run test:coverage
 ```
 
 **Coverage includes:**
+
 - UI components (Button, Dropdown, ToggleSwitch, Slider, Input, Skeleton)
 - Settings store (Zustand state management)
 - All Tauri API calls are mocked in `src/test/setup.ts`
@@ -80,6 +84,7 @@ cd src-tauri && cargo test
 ```
 
 **Coverage includes:**
+
 - Settings management
 - Active listening configuration
 - Text processing (custom words)
@@ -165,7 +170,9 @@ e2e/
 ## CI/CD Recommendations
 
 ### For macOS CI
+
 Use unit tests only:
+
 ```yaml
 - name: Run tests
   run: |
@@ -174,7 +181,9 @@ Use unit tests only:
 ```
 
 ### For Linux CI
+
 Full E2E testing available:
+
 ```yaml
 - name: Install tauri-driver
   run: cargo install tauri-driver
@@ -191,12 +200,12 @@ Full E2E testing available:
 
 ## Test Coverage Summary
 
-| Type | Tests | Platform |
-|------|-------|----------|
-| Frontend Unit (Vitest) | 151 | All |
-| Backend Unit (Rust) | 72 | All |
-| Browser E2E (Playwright MCP) | 8 scenarios | All |
-| E2E (WebdriverIO) | ~30 | Linux/Windows |
+| Type                         | Tests       | Platform      |
+| ---------------------------- | ----------- | ------------- |
+| Frontend Unit (Vitest)       | 151         | All           |
+| Backend Unit (Rust)          | 72          | All           |
+| Browser E2E (Playwright MCP) | 8 scenarios | All           |
+| E2E (WebdriverIO)            | ~30         | Linux/Windows |
 
 **Total: 223+ automated tests + 8 interactive scenarios**
 

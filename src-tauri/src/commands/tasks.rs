@@ -90,7 +90,22 @@ pub async fn export_action_items(
         "json" => {
             serde_json::to_string_pretty(&items).map_err(|e| format!("Failed to serialize: {}", e))
         }
-        "markdown" | _ => {
+        "markdown" => {
+            let mut md = String::from("# Action Items\n\n");
+            for item in &items {
+                let checkbox = if item.completed { "x" } else { " " };
+                md.push_str(&format!("- [{}] {}", checkbox, item.task));
+                if let Some(ref assignee) = item.assignee {
+                    md.push_str(&format!(" (@{})", assignee));
+                }
+                if let Some(ref deadline) = item.deadline {
+                    md.push_str(&format!(" [{}]", deadline));
+                }
+                md.push_str(&format!(" ({})\n", item.priority));
+            }
+            Ok(md)
+        }
+        _ => {
             let mut md = String::from("# Action Items\n\n");
             for item in &items {
                 let checkbox = if item.completed { "x" } else { " " };

@@ -178,12 +178,20 @@ pub fn run_wake_calibration_session(app: AppHandle) -> WakeCalibrationResult {
         0.75
     };
     let speaker = if settings.wake_word.voice_auth_enabled {
-        if target_far <= 0.1 { 0.88 } else { 0.84 }
+        if target_far <= 0.1 {
+            0.88
+        } else {
+            0.84
+        }
     } else {
         settings.wake_word.speaker_threshold
     };
     let spoof = if settings.wake_word.voice_auth_enabled {
-        if target_far <= 0.1 { 0.62 } else { 0.55 }
+        if target_far <= 0.1 {
+            0.62
+        } else {
+            0.55
+        }
     } else {
         settings.wake_word.spoof_threshold
     };

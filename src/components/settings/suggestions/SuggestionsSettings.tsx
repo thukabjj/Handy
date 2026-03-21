@@ -2,7 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2, Plus } from "lucide-react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { commands, type QuickResponse, type SuggestionsSettings as SuggestionsConfig } from "@/bindings";
+import {
+  commands,
+  type QuickResponse,
+  type SuggestionsSettings as SuggestionsConfig,
+} from "@/bindings";
 import { SettingsGroup, ToggleSwitch, Slider } from "@/components/ui";
 import { SettingContainer } from "@/components/ui/SettingContainer";
 import { Button } from "@/components/ui/Button";
@@ -10,9 +14,19 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 
 type LiveSuggestion =
-  | { type: "quick_response"; text?: string; confidence?: number; category?: string }
+  | {
+      type: "quick_response";
+      text?: string;
+      confidence?: number;
+      category?: string;
+    }
   | { type: "data_point"; fact?: string; source?: string; relevance?: number }
-  | { type: "talking_point"; point?: string; rationale?: string; confidence?: number }
+  | {
+      type: "talking_point";
+      point?: string;
+      rationale?: string;
+      confidence?: number;
+    }
   | { type: "warning"; message?: string; severity?: string };
 
 interface SuggestionsEventPayload {
@@ -72,12 +86,16 @@ export const SuggestionsSettings: React.FC = () => {
           llm_suggestions_enabled:
             result.data.llm_suggestions_enabled ??
             defaultSuggestions.llm_suggestions_enabled,
-          max_suggestions: result.data.max_suggestions ?? defaultSuggestions.max_suggestions,
-          min_confidence: result.data.min_confidence ?? defaultSuggestions.min_confidence,
+          max_suggestions:
+            result.data.max_suggestions ?? defaultSuggestions.max_suggestions,
+          min_confidence:
+            result.data.min_confidence ?? defaultSuggestions.min_confidence,
           auto_dismiss_on_copy:
-            result.data.auto_dismiss_on_copy ?? defaultSuggestions.auto_dismiss_on_copy,
+            result.data.auto_dismiss_on_copy ??
+            defaultSuggestions.auto_dismiss_on_copy,
           display_duration_seconds:
-            result.data.display_duration_seconds ?? defaultSuggestions.display_duration_seconds,
+            result.data.display_duration_seconds ??
+            defaultSuggestions.display_duration_seconds,
           quick_responses: result.data.quick_responses ?? [],
         });
       }
@@ -93,9 +111,12 @@ export const SuggestionsSettings: React.FC = () => {
   useEffect(() => {
     let unlisten: UnlistenFn | null = null;
     const setup = async () => {
-      unlisten = await listen<SuggestionsEventPayload>("suggestions", (event) => {
-        setLiveEvents((prev) => [event.payload, ...prev].slice(0, 20));
-      });
+      unlisten = await listen<SuggestionsEventPayload>(
+        "suggestions",
+        (event) => {
+          setLiveEvents((prev) => [event.payload, ...prev].slice(0, 20));
+        },
+      );
     };
     setup();
 
@@ -184,7 +205,10 @@ export const SuggestionsSettings: React.FC = () => {
       <div className="max-w-3xl w-full mx-auto space-y-6">
         <SettingsGroup title={t("settings.suggestions.title", "Suggestions")}>
           <div className="p-4 text-sm text-mid-gray">
-            {t("settings.suggestions.loading", "Loading suggestions settings...")}
+            {t(
+              "settings.suggestions.loading",
+              "Loading suggestions settings...",
+            )}
           </div>
         </SettingsGroup>
       </div>
@@ -210,7 +234,10 @@ export const SuggestionsSettings: React.FC = () => {
         <>
           <SettingsGroup title={t("settings.suggestions.behavior", "Behavior")}>
             <ToggleSwitch
-              label={t("settings.suggestions.rag.title", "Use Knowledge Base (RAG)")}
+              label={t(
+                "settings.suggestions.rag.title",
+                "Use Knowledge Base (RAG)",
+              )}
               description={t(
                 "settings.suggestions.rag.description",
                 "Include context retrieved from indexed documents.",
@@ -230,7 +257,10 @@ export const SuggestionsSettings: React.FC = () => {
               grouped={true}
             />
             <ToggleSwitch
-              label={t("settings.suggestions.autoDismiss.title", "Auto-dismiss on copy")}
+              label={t(
+                "settings.suggestions.autoDismiss.title",
+                "Auto-dismiss on copy",
+              )}
               description={t(
                 "settings.suggestions.autoDismiss.description",
                 "Hide suggestion cards automatically when copied.",
@@ -254,7 +284,10 @@ export const SuggestionsSettings: React.FC = () => {
               formatValue={(v) => `${Math.round(v)}`}
             />
             <Slider
-              label={t("settings.suggestions.confidence.title", "Minimum confidence")}
+              label={t(
+                "settings.suggestions.confidence.title",
+                "Minimum confidence",
+              )}
               description={t(
                 "settings.suggestions.confidence.description",
                 "Hide suggestions below this confidence threshold.",
@@ -268,7 +301,10 @@ export const SuggestionsSettings: React.FC = () => {
               formatValue={(v) => `${Math.round(v * 100)}%`}
             />
             <Slider
-              label={t("settings.suggestions.duration.title", "Display duration")}
+              label={t(
+                "settings.suggestions.duration.title",
+                "Display duration",
+              )}
               description={t(
                 "settings.suggestions.duration.description",
                 "Seconds to keep a suggestion visible (0 = until dismissed).",
@@ -283,7 +319,9 @@ export const SuggestionsSettings: React.FC = () => {
             />
           </SettingsGroup>
 
-          <SettingsGroup title={t("settings.suggestions.quickResponses", "Quick Responses")}>
+          <SettingsGroup
+            title={t("settings.suggestions.quickResponses", "Quick Responses")}
+          >
             <div className="space-y-3">
               {quickResponses.map((item) => (
                 <div
@@ -292,7 +330,9 @@ export const SuggestionsSettings: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-text">{item.name}</p>
+                      <p className="text-sm font-medium text-text">
+                        {item.name}
+                      </p>
                       <p className="text-xs text-mid-gray">{item.category}</p>
                       <p className="text-xs text-mid-gray mt-1">
                         {item.trigger_phrases.join(", ")}
@@ -317,14 +357,19 @@ export const SuggestionsSettings: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <p className="text-sm text-text/85 mt-2">{item.response_template}</p>
+                  <p className="text-sm text-text/85 mt-2">
+                    {item.response_template}
+                  </p>
                 </div>
               ))}
             </div>
 
             <div className="mt-4 border-t border-mid-gray/20 pt-4">
               <SettingContainer
-                title={t("settings.suggestions.add.title", "Add quick response")}
+                title={t(
+                  "settings.suggestions.add.title",
+                  "Add quick response",
+                )}
                 layout="stacked"
                 grouped={true}
               >
@@ -337,7 +382,10 @@ export const SuggestionsSettings: React.FC = () => {
                   <Input
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    placeholder={t("settings.suggestions.add.category", "Category")}
+                    placeholder={t(
+                      "settings.suggestions.add.category",
+                      "Category",
+                    )}
                   />
                   <Input
                     value={triggers}
@@ -357,7 +405,11 @@ export const SuggestionsSettings: React.FC = () => {
                     )}
                   />
                   <div className="flex justify-end">
-                    <Button onClick={addQuickResponse} variant="primary" size="sm">
+                    <Button
+                      onClick={addQuickResponse}
+                      variant="primary"
+                      size="sm"
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       {t("settings.suggestions.add.button", "Add")}
                     </Button>
@@ -367,7 +419,12 @@ export const SuggestionsSettings: React.FC = () => {
             </div>
           </SettingsGroup>
 
-          <SettingsGroup title={t("settings.suggestions.live.title", "Live Suggestions Feed")}>
+          <SettingsGroup
+            title={t(
+              "settings.suggestions.live.title",
+              "Live Suggestions Feed",
+            )}
+          >
             <div className="flex justify-end">
               <Button
                 variant="ghost"
@@ -393,9 +450,12 @@ export const SuggestionsSettings: React.FC = () => {
                   >
                     <div className="flex items-center justify-between gap-2 text-xs text-mid-gray">
                       <span>
-                        {t("settings.suggestions.live.session", "Session")}: {evt.session_id}
+                        {t("settings.suggestions.live.session", "Session")}:{" "}
+                        {evt.session_id}
                       </span>
-                      <span>{new Date(evt.timestamp).toLocaleTimeString()}</span>
+                      <span>
+                        {new Date(evt.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
                     <div className="mt-2 space-y-2">
                       {evt.suggestions.map((suggestion, suggestionIdx) => (
@@ -407,16 +467,24 @@ export const SuggestionsSettings: React.FC = () => {
                             {suggestion.type.replace("_", " ")}
                           </p>
                           {"text" in suggestion && suggestion.text && (
-                            <p className="text-sm text-text">{suggestion.text}</p>
+                            <p className="text-sm text-text">
+                              {suggestion.text}
+                            </p>
                           )}
                           {"point" in suggestion && suggestion.point && (
-                            <p className="text-sm text-text">{suggestion.point}</p>
+                            <p className="text-sm text-text">
+                              {suggestion.point}
+                            </p>
                           )}
                           {"fact" in suggestion && suggestion.fact && (
-                            <p className="text-sm text-text">{suggestion.fact}</p>
+                            <p className="text-sm text-text">
+                              {suggestion.fact}
+                            </p>
                           )}
                           {"message" in suggestion && suggestion.message && (
-                            <p className="text-sm text-text">{suggestion.message}</p>
+                            <p className="text-sm text-text">
+                              {suggestion.message}
+                            </p>
                           )}
                         </div>
                       ))}

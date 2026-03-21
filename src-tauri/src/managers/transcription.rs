@@ -560,6 +560,7 @@ impl TranscriptionManager {
                                 Some(normalized)
                             };
 
+                            #[allow(clippy::needless_update)]
                             let params = WhisperInferenceParams {
                                 language: whisper_language,
                                 translate: settings.translate_to_english,
@@ -571,6 +572,7 @@ impl TranscriptionManager {
                                 .map_err(|e| anyhow::anyhow!("Whisper transcription failed: {}", e))
                         }
                         LoadedEngine::Parakeet(parakeet_engine) => {
+                            #[allow(clippy::needless_update)]
                             let params = ParakeetInferenceParams {
                                 timestamp_granularity: TimestampGranularity::Segment,
                                 ..Default::default()

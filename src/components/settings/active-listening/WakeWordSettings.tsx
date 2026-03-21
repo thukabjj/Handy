@@ -26,12 +26,14 @@ export const WakeWordSettings: React.FC = () => {
   const phrase = wakeWord?.wake_phrase ?? "Hey Handy";
   const action = wakeWord?.trigger_action ?? "start_active_listening";
   const cooldown = wakeWord?.cooldown_seconds ?? 5;
-  const kwsThreshold = wakeWord?.kws_threshold ?? wakeWord?.detection_threshold ?? 0.8;
+  const kwsThreshold =
+    wakeWord?.kws_threshold ?? wakeWord?.detection_threshold ?? 0.8;
   const spoofThreshold = wakeWord?.spoof_threshold ?? 0.55;
   const vadEnabled = wakeWord?.vad_enabled ?? true;
   const targetFar = wakeWord?.target_far_per_hour ?? 0.1;
   const voiceAuthEnabled = wakeWord?.voice_auth_enabled ?? false;
-  const [profileStatus, setProfileStatus] = useState<WakeVoiceProfileStatus | null>(null);
+  const [profileStatus, setProfileStatus] =
+    useState<WakeVoiceProfileStatus | null>(null);
 
   useEffect(() => {
     const loadStatus = async () => {
@@ -170,7 +172,10 @@ export const WakeWordSettings: React.FC = () => {
           </SettingContainer>
 
           <SettingContainer
-            title={t("settings.wakeWord.voiceAuth.title", "Recognize only my voice")}
+            title={t(
+              "settings.wakeWord.voiceAuth.title",
+              "Recognize only my voice",
+            )}
             description={t(
               "settings.wakeWord.voiceAuth.description",
               "Require an enrolled owner voice profile before wake actions run.",
@@ -212,11 +217,26 @@ export const WakeWordSettings: React.FC = () => {
             <Dropdown
               selectedValue={cooldown.toString()}
               options={[
-                { value: "2", label: t("settings.wakeWord.cooldown.seconds", { count: 2 }) },
-                { value: "5", label: t("settings.wakeWord.cooldown.seconds", { count: 5 }) },
-                { value: "10", label: t("settings.wakeWord.cooldown.seconds", { count: 10 }) },
-                { value: "15", label: t("settings.wakeWord.cooldown.seconds", { count: 15 }) },
-                { value: "30", label: t("settings.wakeWord.cooldown.seconds", { count: 30 }) },
+                {
+                  value: "2",
+                  label: t("settings.wakeWord.cooldown.seconds", { count: 2 }),
+                },
+                {
+                  value: "5",
+                  label: t("settings.wakeWord.cooldown.seconds", { count: 5 }),
+                },
+                {
+                  value: "10",
+                  label: t("settings.wakeWord.cooldown.seconds", { count: 10 }),
+                },
+                {
+                  value: "15",
+                  label: t("settings.wakeWord.cooldown.seconds", { count: 15 }),
+                },
+                {
+                  value: "30",
+                  label: t("settings.wakeWord.cooldown.seconds", { count: 30 }),
+                },
               ]}
               onSelect={handleCooldownChange}
             />
@@ -256,7 +276,10 @@ export const WakeWordSettings: React.FC = () => {
 
           {voiceAuthEnabled && (
             <SettingContainer
-              title={t("settings.wakeWord.spoofThreshold.title", "Anti-Spoof Threshold")}
+              title={t(
+                "settings.wakeWord.spoofThreshold.title",
+                "Anti-Spoof Threshold",
+              )}
               description={t(
                 "settings.wakeWord.spoofThreshold.description",
                 "Reject suspicious synthetic/replayed voice audio below this score.",
@@ -297,7 +320,11 @@ export const WakeWordSettings: React.FC = () => {
                 onBlur={(e) => handleFarChange(e.target.value)}
                 className="min-w-[120px]"
               />
-              <Button variant="secondary" size="sm" onClick={handleAutoCalibrate}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleAutoCalibrate}
+              >
                 {t("settings.wakeWord.calibration.run", "Auto-calibrate")}
               </Button>
             </div>

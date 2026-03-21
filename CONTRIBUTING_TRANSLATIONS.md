@@ -155,7 +155,7 @@ Some languages have complex plural rules. For now, use a general form that works
 ## Currently Supported Languages
 
 | Language   | Code | Direction | Status            |
-|------------|------|-----------|-------------------|
+| ---------- | ---- | --------- | ----------------- |
 | Arabic     | `ar` | RTL       | Complete          |
 | Chinese    | `zh` | LTR       | Complete          |
 | Czech      | `cs` | LTR       | Complete          |

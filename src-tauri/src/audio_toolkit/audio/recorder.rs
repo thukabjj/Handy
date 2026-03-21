@@ -22,13 +22,15 @@ enum Cmd {
     Shutdown,
 }
 
+type SampleCallback = Arc<dyn Fn(&[f32]) + Send + Sync + 'static>;
+
 pub struct AudioRecorder {
     device: Option<Device>,
     cmd_tx: Option<mpsc::Sender<Cmd>>,
     worker_handle: Option<std::thread::JoinHandle<()>>,
     vad: Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
-    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
+    sample_cb: Option<SampleCallback>,
 }
 
 impl AudioRecorder {
@@ -277,7 +279,7 @@ fn run_consumer(
     sample_rx: mpsc::Receiver<Vec<f32>>,
     cmd_rx: mpsc::Receiver<Cmd>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
-    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
+    sample_cb: Option<SampleCallback>,
 ) {
     let mut frame_resampler = FrameResampler::new(
         in_sample_rate as usize,
@@ -304,7 +306,7 @@ fn run_consumer(
         recording: bool,
         vad: &Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
         out_buf: &mut Vec<f32>,
-        sample_cb: &Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
+        sample_cb: &Option<SampleCallback>,
     ) {
         if !recording {
             return;
@@ -325,12 +327,7 @@ fn run_consumer(
         }
     }
 
-    loop {
-        let raw = match sample_rx.recv() {
-            Ok(s) => s,
-            Err(_) => break, // stream closed
-        };
-
+    while let Ok(raw) = sample_rx.recv() {
         // ---------- spectrum processing ---------------------------------- //
         if let Some(buckets) = visualizer.feed(&raw) {
             if let Some(cb) = &level_cb {

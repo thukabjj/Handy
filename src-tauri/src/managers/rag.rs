@@ -244,16 +244,15 @@ impl RagManager {
                 .ollama_client
                 .generate_embeddings(&model, chunk)
                 .await
-                .map_err(|e| {
+                .inspect_err(|e| {
                     TelemetryEventBuilder::new("rag", "index_document_failed")
                         .level(TelemetryLevel::Error)
                         .message("Failed to generate document embedding")
                         .attr("document_id", document_id)
                         .attr("chunk_index", index)
                         .status("embedding_failed")
-                        .attr("error", &e)
+                        .attr("error", e)
                         .emit();
-                    e
                 })?;
 
             // Store embedding
@@ -318,7 +317,7 @@ impl RagManager {
 
             // Try to break at sentence or word boundary
             let chunk = if end < chars.len() {
-                if let Some(pos) = chunk.rfind(|c| c == '.' || c == '!' || c == '?') {
+                if let Some(pos) = chunk.rfind(['.', '!', '?']) {
                     chunk[..=pos].to_string()
                 } else if let Some(pos) = chunk.rfind(' ') {
                     chunk[..pos].to_string()
@@ -334,7 +333,7 @@ impl RagManager {
             }
 
             // Move start position with overlap
-            start = start + chunk.len().saturating_sub(overlap);
+            start += chunk.len().saturating_sub(overlap);
             if start >= chars.len() {
                 break;
             }
@@ -366,14 +365,13 @@ impl RagManager {
             .ollama_client
             .generate_embeddings(&model, query)
             .await
-            .map_err(|e| {
+            .inspect_err(|e| {
                 TelemetryEventBuilder::new("rag", "search_failed")
                     .level(TelemetryLevel::Error)
                     .message("Failed to generate search embedding")
                     .status("embedding_failed")
-                    .attr("error", &e)
+                    .attr("error", e)
                     .emit();
-                e
             })?;
 
         // Search for similar embeddings

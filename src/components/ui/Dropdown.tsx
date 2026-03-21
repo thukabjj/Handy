@@ -187,7 +187,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
           break;
       }
     },
-    [disabled, isOpen, focusedIndex, enabledOptions, handleSelect, openDropdown],
+    [
+      disabled,
+      isOpen,
+      focusedIndex,
+      enabledOptions,
+      handleSelect,
+      openDropdown,
+    ],
   );
 
   // Scroll focused option into view
@@ -249,7 +256,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
           className="absolute top-full left-0 right-0 mt-1 bg-background border border-mid-gray/80 rounded shadow-lg z-50 max-h-60 overflow-y-auto"
         >
           {flatOptions.length === 0 ? (
-            <div className="px-2 py-1 text-sm text-mid-gray" role="option" aria-disabled="true">
+            <div
+              className="px-2 py-1 text-sm text-mid-gray"
+              role="option"
+              aria-disabled="true"
+            >
               {t("common.noOptionsFound")}
             </div>
           ) : isGroupedOptions(options) ? (

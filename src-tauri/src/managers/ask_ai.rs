@@ -23,7 +23,10 @@ use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> Result<String, String> {
+fn cloud_base_url(
+    provider: LlmProvider,
+    custom_base_url: Option<&String>,
+) -> Result<String, String> {
     match provider {
         LlmProvider::Custom => custom_base_url
             .map(|value| value.trim().to_string())
@@ -100,10 +103,11 @@ mod provider_tests {
 const MAX_CONTEXT_TURNS: usize = 10;
 
 /// State of the Ask AI session
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum AskAiState {
     /// No active session
+    #[default]
     Idle,
     /// Recording the user's question
     Recording,
@@ -117,12 +121,6 @@ pub enum AskAiState {
     ConversationActive,
     /// Error occurred
     Error,
-}
-
-impl Default for AskAiState {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 /// A single turn in a conversation (question + response pair)
@@ -763,9 +761,7 @@ impl AskAiManagerHandle {
                         return;
                     }
                 };
-                client
-                    .generate_stream(&active_model, prompt, tx)
-                    .await
+                client.generate_stream(&active_model, prompt, tx).await
             }
             _ => {
                 let base_url = match cloud_base_url(

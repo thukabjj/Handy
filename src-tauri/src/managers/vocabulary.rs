@@ -2,7 +2,7 @@ use log::{debug, info};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct VocabularyEntry {
@@ -19,7 +19,7 @@ pub struct VocabularyManager {
 }
 
 impl VocabularyManager {
-    pub fn new(app_data_dir: &PathBuf) -> Result<Self, String> {
+    pub fn new(app_data_dir: &Path) -> Result<Self, String> {
         let db_path = app_data_dir.join("vocabulary.db");
         let manager = Self { db_path };
         manager.initialize_db()?;

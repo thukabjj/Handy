@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock, Trash2, Download, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import {
+  Clock,
+  Trash2,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+} from "lucide-react";
 import { commands, HistoryEntry } from "@/bindings";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { SettingsGroup } from "@/components/ui";
@@ -215,7 +222,7 @@ export const SessionViewer: React.FC = () => {
       if (result.status === "ok") {
         // Filter to only show entries with post-processed text (Active Listening insights)
         const activeListeningEntries = result.data.filter(
-          (e) => e.post_processed_text && e.post_processed_text.length > 0
+          (e) => e.post_processed_text && e.post_processed_text.length > 0,
         );
         setEntries(activeListeningEntries);
       } else {
@@ -292,7 +299,7 @@ export const SessionViewer: React.FC = () => {
           <p className="text-mid-gray">
             {t(
               "sessionViewer.empty",
-              "No Active Listening sessions yet. Start a session to see your insights here."
+              "No Active Listening sessions yet. Start a session to see your insights here.",
             )}
           </p>
         </div>
@@ -304,7 +311,10 @@ export const SessionViewer: React.FC = () => {
     <SettingsGroup title={t("sessionViewer.title", "Session History")}>
       <div className="space-y-3">
         <p className="text-sm text-mid-gray">
-          {t("sessionViewer.description", "View and export your past Active Listening sessions and AI-generated insights.")}
+          {t(
+            "sessionViewer.description",
+            "View and export your past Active Listening sessions and AI-generated insights.",
+          )}
         </p>
         {groupedSessions.map((group) => (
           <SessionGroup

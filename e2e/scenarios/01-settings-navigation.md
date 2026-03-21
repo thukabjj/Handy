@@ -22,6 +22,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Sidebar shows sections: General, Advanced, Batch Import, Vocabulary, History, About
 - General section is active/selected by default
 - Main content shows General settings
@@ -34,6 +35,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - History section content is displayed
 - History sidebar item appears active/selected
 
@@ -45,6 +47,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Advanced settings content is displayed
 - Advanced sidebar item appears active/selected
 
@@ -56,6 +59,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - About section content is displayed
 - Version info shown (v0.8.0)
 
@@ -67,6 +71,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Batch Import content is displayed
 
 ### 7. Click "Vocabulary" in sidebar
@@ -77,6 +82,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Vocabulary content is displayed
 
 ## Expected Results

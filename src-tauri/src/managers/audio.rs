@@ -8,8 +8,8 @@ use log::{debug, error, info, warn};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use tauri::Manager;
 use std::time::SystemTime;
+use tauri::Manager;
 
 /// Helper macro to safely acquire a mutex lock and return early on failure
 macro_rules! safe_lock {

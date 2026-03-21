@@ -21,7 +21,8 @@ export const CentralAiConfigSettings: React.FC = () => {
 
   const activeListening = getSetting("active_listening");
   const provider: LlmProvider = activeListening?.llm_provider ?? "ollama";
-  const ollamaBaseUrl = activeListening?.ollama_base_url ?? "http://localhost:11434";
+  const ollamaBaseUrl =
+    activeListening?.ollama_base_url ?? "http://localhost:11434";
   const ollamaModel = activeListening?.ollama_model ?? "";
   const llmModel = activeListening?.llm_model ?? "";
   const llmApiKey = activeListening?.llm_api_key ?? "";
@@ -126,8 +127,14 @@ export const CentralAiConfigSettings: React.FC = () => {
           <Dropdown
             selectedValue={mode}
             options={[
-              { value: "local", label: t("settings.activeListening.llm.mode.local") },
-              { value: "cloud", label: t("settings.activeListening.llm.mode.cloud") },
+              {
+                value: "local",
+                label: t("settings.activeListening.llm.mode.local"),
+              },
+              {
+                value: "cloud",
+                label: t("settings.activeListening.llm.mode.cloud"),
+              },
             ]}
             onSelect={async (value) => {
               if (!value) return;
@@ -152,7 +159,9 @@ export const CentralAiConfigSettings: React.FC = () => {
           >
             <div data-testid="shared-ai-runtime">
               <Dropdown
-                selectedValue={provider === "local_open_ai" ? "local_open_ai" : "ollama"}
+                selectedValue={
+                  provider === "local_open_ai" ? "local_open_ai" : "ollama"
+                }
                 options={[
                   {
                     value: "ollama",
@@ -160,12 +169,16 @@ export const CentralAiConfigSettings: React.FC = () => {
                   },
                   {
                     value: "local_open_ai",
-                    label: t("settings.activeListening.llm.runtime.localOpenAi"),
+                    label: t(
+                      "settings.activeListening.llm.runtime.localOpenAi",
+                    ),
                   },
                 ]}
                 onSelect={async (value) => {
                   if (!value) return;
-                  await commands.changeActiveListeningLlmProvider(value as LlmProvider);
+                  await commands.changeActiveListeningLlmProvider(
+                    value as LlmProvider,
+                  );
                   await refreshSettings();
                   setModelOptions([]);
                   if (value === "ollama") {
@@ -192,7 +205,9 @@ export const CentralAiConfigSettings: React.FC = () => {
                     value={ollamaBaseUrlDraft}
                     onChange={(e) => setOllamaBaseUrlDraft(e.target.value)}
                     onBlur={async () => {
-                      await commands.changeOllamaBaseUrlSetting(ollamaBaseUrlDraft);
+                      await commands.changeOllamaBaseUrlSetting(
+                        ollamaBaseUrlDraft,
+                      );
                       await refreshSettings();
                       await fetchOllamaModels();
                     }}
@@ -207,7 +222,10 @@ export const CentralAiConfigSettings: React.FC = () => {
                 layout="horizontal"
                 grouped={true}
               >
-                <div className="flex items-center gap-2" data-testid="shared-ai-ollama-model">
+                <div
+                  className="flex items-center gap-2"
+                  data-testid="shared-ai-ollama-model"
+                >
                   <Dropdown
                     selectedValue={ollamaModel || null}
                     options={modelOptions.map((m) => ({ value: m, label: m }))}
@@ -216,17 +234,23 @@ export const CentralAiConfigSettings: React.FC = () => {
                       await commands.changeOllamaModelSetting(newModel);
                       await refreshSettings();
                     }}
-                    placeholder={t("settings.activeListening.ollama.model.placeholder")}
+                    placeholder={t(
+                      "settings.activeListening.ollama.model.placeholder",
+                    )}
                     disabled={isFetchingModels}
                     className="min-w-[250px]"
                   />
                   <ResetButton
                     onClick={fetchOllamaModels}
                     disabled={isFetchingModels}
-                    ariaLabel={t("settings.activeListening.ollama.model.refresh")}
+                    ariaLabel={t(
+                      "settings.activeListening.ollama.model.refresh",
+                    )}
                     className="flex h-10 w-10 items-center justify-center"
                   >
-                    <RefreshCcw className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`} />
+                    <RefreshCcw
+                      className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+                    />
                   </ResetButton>
                 </div>
               </SettingContainer>
@@ -243,7 +267,9 @@ export const CentralAiConfigSettings: React.FC = () => {
                   value={llmBaseUrlDraft}
                   onChange={(e) => setLlmBaseUrlDraft(e.target.value)}
                   onBlur={async () => {
-                    await commands.changeActiveListeningLlmBaseUrl(llmBaseUrlDraft);
+                    await commands.changeActiveListeningLlmBaseUrl(
+                      llmBaseUrlDraft,
+                    );
                     await refreshSettings();
                   }}
                   placeholder="http://127.0.0.1:8000/v1"
@@ -261,7 +287,9 @@ export const CentralAiConfigSettings: React.FC = () => {
                   value={llmApiKeyDraft}
                   onChange={(e) => setLlmApiKeyDraft(e.target.value)}
                   onBlur={async () => {
-                    await commands.changeActiveListeningLlmApiKey(llmApiKeyDraft);
+                    await commands.changeActiveListeningLlmApiKey(
+                      llmApiKeyDraft,
+                    );
                     await refreshSettings();
                     await fetchLocalOpenAiModels();
                   }}
@@ -288,13 +316,18 @@ export const CentralAiConfigSettings: React.FC = () => {
                 options={[
                   {
                     value: "open_router",
-                    label: t("settings.activeListening.llm.provider.openRouter"),
+                    label: t(
+                      "settings.activeListening.llm.provider.openRouter",
+                    ),
                   },
                   {
                     value: "open_ai",
                     label: t("settings.activeListening.llm.provider.openAi"),
                   },
-                  { value: "groq", label: t("settings.activeListening.llm.provider.groq") },
+                  {
+                    value: "groq",
+                    label: t("settings.activeListening.llm.provider.groq"),
+                  },
                   {
                     value: "together",
                     label: t("settings.activeListening.llm.provider.together"),
@@ -312,7 +345,9 @@ export const CentralAiConfigSettings: React.FC = () => {
                   if (!value) return;
                   const selected = value as CloudProviderId;
                   await commands.changeActiveListeningLlmProvider(
-                    selected === "custom" ? "custom" : (selected as LlmProvider),
+                    selected === "custom"
+                      ? "custom"
+                      : (selected as LlmProvider),
                   );
                   await refreshSettings();
                   setModelOptions([]);
@@ -337,7 +372,9 @@ export const CentralAiConfigSettings: React.FC = () => {
                   value={llmBaseUrlDraft}
                   onChange={(e) => setLlmBaseUrlDraft(e.target.value)}
                   onBlur={async () => {
-                    await commands.changeActiveListeningLlmBaseUrl(llmBaseUrlDraft);
+                    await commands.changeActiveListeningLlmBaseUrl(
+                      llmBaseUrlDraft,
+                    );
                     await refreshSettings();
                   }}
                   placeholder="https://api.example.com/v1"
@@ -381,11 +418,16 @@ export const CentralAiConfigSettings: React.FC = () => {
         layout="horizontal"
         grouped={true}
       >
-        <div className="flex items-center gap-2" data-testid="shared-ai-default-model">
+        <div
+          className="flex items-center gap-2"
+          data-testid="shared-ai-default-model"
+        >
           {modelOptions.length > 0 ? (
             <Dropdown
               selectedValue={
-                mode === "local" && provider === "ollama" ? ollamaModel || null : llmModel || null
+                mode === "local" && provider === "ollama"
+                  ? ollamaModel || null
+                  : llmModel || null
               }
               options={modelOptions.map((m) => ({ value: m, label: m }))}
               onSelect={async (newModel) => {
@@ -402,7 +444,11 @@ export const CentralAiConfigSettings: React.FC = () => {
             />
           ) : (
             <Input
-              value={mode === "local" && provider === "ollama" ? ollamaModel : llmModelDraft}
+              value={
+                mode === "local" && provider === "ollama"
+                  ? ollamaModel
+                  : llmModelDraft
+              }
               onChange={(e) =>
                 mode === "local" && provider === "ollama"
                   ? commands.changeOllamaModelSetting(e.target.value)
@@ -414,17 +460,26 @@ export const CentralAiConfigSettings: React.FC = () => {
                 }
                 await refreshSettings();
               }}
-              placeholder={t("settings.activeListening.llm.model.inputPlaceholder")}
+              placeholder={t(
+                "settings.activeListening.llm.model.inputPlaceholder",
+              )}
               className="min-w-[250px]"
             />
           )}
           <ResetButton
             onClick={refreshModelOptionsForCurrentProvider}
-            disabled={isFetchingModels || (mode === "cloud" && !llmApiKeyDraft.trim())}
-            ariaLabel={t("settings.activeListening.llm.model.refresh", "Refresh models")}
+            disabled={
+              isFetchingModels || (mode === "cloud" && !llmApiKeyDraft.trim())
+            }
+            ariaLabel={t(
+              "settings.activeListening.llm.model.refresh",
+              "Refresh models",
+            )}
             className="flex h-10 w-10 items-center justify-center"
           >
-            <RefreshCcw className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`} />
+            <RefreshCcw
+              className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+            />
           </ResetButton>
         </div>
       </SettingContainer>

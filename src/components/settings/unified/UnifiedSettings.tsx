@@ -319,7 +319,9 @@ export const UnifiedSettings: React.FC<UnifiedSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings?.knowledge_base?.enabled ?? false}
-                    onChange={(e) => handleKnowledgeBaseToggle(e.target.checked)}
+                    onChange={(e) =>
+                      handleKnowledgeBaseToggle(e.target.checked)
+                    }
                     className="rounded border-mid-gray/40"
                   />
                   {t("common.enabled", "Enabled")}
@@ -354,7 +356,10 @@ export const UnifiedSettings: React.FC<UnifiedSettingsProps> = ({
                 <Database className="h-4 w-4 text-mid-gray" />
                 <div>
                   <p className="text-sm font-medium">
-                    {t("settings.activeListening.general.title", "Active Listening")}
+                    {t(
+                      "settings.activeListening.general.title",
+                      "Active Listening",
+                    )}
                   </p>
                   <p className="text-xs text-mid-gray">
                     {t(
@@ -369,7 +374,9 @@ export const UnifiedSettings: React.FC<UnifiedSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings?.active_listening?.enabled ?? false}
-                    onChange={(e) => handleActiveListeningToggle(e.target.checked)}
+                    onChange={(e) =>
+                      handleActiveListeningToggle(e.target.checked)
+                    }
                     className="rounded border-mid-gray/40"
                   />
                   {t("common.enabled", "Enabled")}

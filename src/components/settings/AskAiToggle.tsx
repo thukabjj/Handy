@@ -33,5 +33,5 @@ export const AskAiToggle: React.FC<AskAiToggleProps> = React.memo(
         grouped={grouped}
       />
     );
-  }
+  },
 );

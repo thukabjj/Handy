@@ -20,4 +20,3 @@ export const HintRow: React.FC<HintRowProps> = ({ text, grouped = true }) => {
     </div>
   );
 };
-

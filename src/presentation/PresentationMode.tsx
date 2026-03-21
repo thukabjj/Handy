@@ -144,8 +144,7 @@ const PresentationMode: React.FC = () => {
             } else {
               updated[lastStreamingIdx] = {
                 ...updated[lastStreamingIdx],
-                insight:
-                  updated[lastStreamingIdx].insight + payload.chunk,
+                insight: updated[lastStreamingIdx].insight + payload.chunk,
               };
             }
             return updated;
@@ -179,7 +178,10 @@ const PresentationMode: React.FC = () => {
         </div>
         <div className="presentation-topbar-right">
           <span className="presentation-hint">
-            {t("presentationMode.controls", "Esc: close | +/-: font size | I: toggle insights")}
+            {t(
+              "presentationMode.controls",
+              "Esc: close | +/-: font size | I: toggle insights",
+            )}
           </span>
           <button
             className="presentation-close-btn"
@@ -198,7 +200,10 @@ const PresentationMode: React.FC = () => {
             <p style={{ fontSize: `${fontSize}px` }}>
               {isActive
                 ? t("presentationMode.listening", "Listening for speech...")
-                : t("presentationMode.waiting", "Start Active Listening to begin")}
+                : t(
+                    "presentationMode.waiting",
+                    "Start Active Listening to begin",
+                  )}
             </p>
           </div>
         ) : (

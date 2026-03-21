@@ -45,6 +45,7 @@ pub fn add_text_replacement(
 /// Update an existing text replacement.
 #[tauri::command]
 #[specta::specta]
+#[allow(clippy::too_many_arguments)]
 pub fn update_text_replacement(
     app: AppHandle,
     id: String,

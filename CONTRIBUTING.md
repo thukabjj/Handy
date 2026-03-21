@@ -36,27 +36,30 @@ make dev
 
 ## Prerequisites
 
-| Tool | Version | Installation |
-|------|---------|--------------|
-| **Rust** | Latest stable | [rustup.rs](https://rustup.rs/) |
-| **Bun** | Latest | [bun.sh](https://bun.sh/) |
-| **CMake** | 3.5+ | `brew install cmake` (macOS) |
-| **Platform tools** | - | See [BUILD.md](BUILD.md) |
+| Tool               | Version       | Installation                    |
+| ------------------ | ------------- | ------------------------------- |
+| **Rust**           | Latest stable | [rustup.rs](https://rustup.rs/) |
+| **Bun**            | Latest        | [bun.sh](https://bun.sh/)       |
+| **CMake**          | 3.5+          | `brew install cmake` (macOS)    |
+| **Platform tools** | -             | See [BUILD.md](BUILD.md)        |
 
 ### Platform-Specific Requirements
 
 **macOS:**
+
 ```bash
 xcode-select --install  # Xcode Command Line Tools
 ```
 
 **Linux (Debian/Ubuntu):**
+
 ```bash
 sudo apt install build-essential pkg-config libssl-dev libasound2-dev \
   libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
 ```
 
 **Windows:**
+
 - Visual Studio Build Tools with C++ workload
 - WebView2 Runtime
 
@@ -438,7 +441,7 @@ export const MyFeatureToggle: React.FC = React.memo(() => {
     async (value: boolean) => {
       await updateSetting("myFeature.enabled", value);
     },
-    [updateSetting]
+    [updateSetting],
   );
 
   return (
@@ -630,13 +633,13 @@ export function useMyFeature(): UseMyFeatureReturn {
       unlisteners.push(
         await listen("my-feature-enabled", () => {
           setState((prev) => ({ ...prev, enabled: true }));
-        })
+        }),
       );
 
       unlisteners.push(
         await listen("my-feature-disabled", () => {
           setState((prev) => ({ ...prev, enabled: false }));
-        })
+        }),
       );
 
       unlisteners.push(
@@ -645,7 +648,7 @@ export function useMyFeature(): UseMyFeatureReturn {
             ...prev,
             data: [...prev.data, event.payload],
           }));
-        })
+        }),
       );
     };
 
@@ -750,7 +753,7 @@ export const useMyFeatureStore = create<MyFeatureState>()(
     clearError: () => {
       set({ error: null });
     },
-  }))
+  })),
 );
 
 // Selector hooks for performance
@@ -968,15 +971,15 @@ mod tests {
 
 Use conventional commits for clear history:
 
-| Prefix | Use Case | Example |
-|--------|----------|---------|
-| `feat:` | New features | `feat: add voice command support` |
-| `fix:` | Bug fixes | `fix: resolve audio device selection issue` |
-| `docs:` | Documentation | `docs: update contributing guide` |
-| `refactor:` | Code refactoring | `refactor: simplify manager initialization` |
-| `test:` | Test additions/changes | `test: add unit tests for AudioManager` |
-| `chore:` | Maintenance | `chore: update dependencies` |
-| `perf:` | Performance | `perf: optimize transcription pipeline` |
+| Prefix      | Use Case               | Example                                     |
+| ----------- | ---------------------- | ------------------------------------------- |
+| `feat:`     | New features           | `feat: add voice command support`           |
+| `fix:`      | Bug fixes              | `fix: resolve audio device selection issue` |
+| `docs:`     | Documentation          | `docs: update contributing guide`           |
+| `refactor:` | Code refactoring       | `refactor: simplify manager initialization` |
+| `test:`     | Test additions/changes | `test: add unit tests for AudioManager`     |
+| `chore:`    | Maintenance            | `chore: update dependencies`                |
+| `perf:`     | Performance            | `perf: optimize transcription pipeline`     |
 
 **Examples:**
 
@@ -1064,13 +1067,13 @@ git push origin main
 
 ### Conflict Resolution
 
-| Area | Priority |
-|------|----------|
-| Core transcription | Accept upstream |
-| Settings structure | Merge carefully |
-| UI components | Accept upstream, re-add local features |
-| `lib.rs` | Re-add local manager initializations |
-| Dependencies | Prefer upstream, keep local-only deps |
+| Area               | Priority                               |
+| ------------------ | -------------------------------------- |
+| Core transcription | Accept upstream                        |
+| Settings structure | Merge carefully                        |
+| UI components      | Accept upstream, re-add local features |
+| `lib.rs`           | Re-add local manager initializations   |
+| Dependencies       | Prefer upstream, keep local-only deps  |
 
 See [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) for PR status and sync history.
 

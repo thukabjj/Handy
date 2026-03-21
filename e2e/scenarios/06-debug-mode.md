@@ -17,6 +17,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Sidebar shows: General, Advanced, Batch Import, Vocabulary, History, About
 - "Debug" is NOT in the sidebar
 
@@ -28,6 +29,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - "Debug" section now appears in the sidebar
 - Sidebar shows: General, Advanced, Batch Import, Vocabulary, History, **Debug**, About
 
@@ -39,6 +41,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Debug content area is displayed
 - Shows debug-related settings or information
 
@@ -50,6 +53,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - "Debug" section is removed from sidebar
 - App navigates back to a default section (e.g., General)
 
@@ -60,6 +64,7 @@ browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().settings.debu
 ```
 
 **Verify:**
+
 - Returns `false` after toggling off
 
 ## Expected Results

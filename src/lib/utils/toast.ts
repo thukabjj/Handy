@@ -33,7 +33,7 @@ export interface ErrorToastOptions {
  */
 export const showErrorToast = (
   message: string,
-  options?: ErrorToastOptions
+  options?: ErrorToastOptions,
 ) => {
   toast.error(message, {
     duration: options?.duration ?? 5000,

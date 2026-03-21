@@ -36,22 +36,19 @@ export const SoundAlert: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen<SoundDetectedPayload>(
-      "sound-detected",
-      (event) => {
-        const id = ++alertIdCounter;
-        const alert: AlertItem = {
-          id,
-          category: event.payload.category,
-          confidence: event.payload.confidence,
-        };
+    const unlisten = listen<SoundDetectedPayload>("sound-detected", (event) => {
+      const id = ++alertIdCounter;
+      const alert: AlertItem = {
+        id,
+        category: event.payload.category,
+        confidence: event.payload.confidence,
+      };
 
-        setAlerts((prev) => [...prev, alert]);
+      setAlerts((prev) => [...prev, alert]);
 
-        // Auto-dismiss after 3 seconds
-        setTimeout(() => dismissAlert(id), 3000);
-      },
-    );
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => dismissAlert(id), 3000);
+    });
 
     return () => {
       unlisten.then((fn) => fn());
@@ -75,7 +72,9 @@ export const SoundAlert: React.FC = () => {
               {alert.category.replace("_", " ")}
             </div>
             <div className="text-xs text-neutral-400">
-              {t("soundDetection.confidence", { value: Math.round(alert.confidence * 100) })}
+              {t("soundDetection.confidence", {
+                value: Math.round(alert.confidence * 100),
+              })}
             </div>
           </div>
         </div>

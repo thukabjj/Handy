@@ -47,7 +47,10 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({ entryId }) => {
       setIsOpen(false);
 
       try {
-        const filenameResult = await commands.getExportFilename(entryId, format);
+        const filenameResult = await commands.getExportFilename(
+          entryId,
+          format,
+        );
         if (filenameResult.status !== "ok") return;
 
         const filePath = await save({

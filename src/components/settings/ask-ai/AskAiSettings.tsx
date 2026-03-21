@@ -2,13 +2,20 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "@/bindings";
 
-import { SettingContainer, SettingsGroup, ToggleSwitch, Textarea } from "@/components/ui";
+import {
+  SettingContainer,
+  SettingsGroup,
+  ToggleSwitch,
+  Textarea,
+} from "@/components/ui";
 import { Input } from "../../ui/Input";
 import { useSettings } from "../../../hooks/useSettings";
 import { ShortcutInput as HandyShortcut } from "../ShortcutInput";
 import { ConversationHistory } from "./ConversationHistory";
 
-const DisabledNotice: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+const DisabledNotice: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <div className="p-4 bg-mid-gray/5 rounded-lg border border-mid-gray/20">
     <p className="text-sm text-mid-gray">{children}</p>
   </div>
@@ -22,7 +29,9 @@ const AskAiModelOverrideSettings: React.FC = () => {
   const activeListening = getSetting("active_listening");
   const provider = activeListening?.llm_provider ?? "ollama";
   const overrideModel =
-    provider === "ollama" ? askAi?.ollama_model ?? "" : askAi?.llm_model ?? "";
+    provider === "ollama"
+      ? (askAi?.ollama_model ?? "")
+      : (askAi?.llm_model ?? "");
 
   return (
     <>

@@ -230,7 +230,7 @@ pub fn change_active_listening_llm_provider(
     provider: LlmProvider,
 ) -> Result<(), String> {
     let mut settings = get_settings(&app);
-    settings.active_listening.llm_provider = provider.clone();
+    settings.active_listening.llm_provider = provider;
     sync_shared_ai_settings(&mut settings);
     write_settings(&app, settings);
     debug!("Active listening LLM provider: {:?}", provider);
