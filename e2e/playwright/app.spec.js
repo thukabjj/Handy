@@ -52,9 +52,9 @@ test.describe('Navigation', () => {
       // We're in the main app
       await expect(nav).toBeVisible();
 
-      // Check for sidebar sections
-      const generalText = nav.locator('text=General');
-      await expect(generalText).toBeVisible();
+      // Check for multiple sidebar sections without assuming exact labels.
+      const sectionCount = await nav.locator('div.cursor-pointer').count();
+      expect(sectionCount).toBeGreaterThanOrEqual(5);
     } else {
       // We might be in onboarding - that's also valid
       test.info().annotations.push({
@@ -71,15 +71,15 @@ test.describe('Navigation', () => {
     const navExists = await nav.isVisible().catch(() => false);
 
     if (navExists) {
-      // Click on Advanced
-      const advanced = nav.locator('text=Advanced');
-      if (await advanced.isVisible()) {
-        await advanced.click();
+      // Click on Settings
+      const settings = nav.locator('text=Settings');
+      if (await settings.isVisible()) {
+        await settings.click();
         await page.waitForTimeout(300);
 
-        // The Advanced section should now be active
+        // The Settings section should now be active
         const activeSection = nav.locator('.bg-logo-primary\\/80');
-        await expect(activeSection).toContainText('Advanced');
+        await expect(activeSection).toContainText('Settings');
       }
 
       // Click on History
@@ -96,10 +96,6 @@ test.describe('Navigation', () => {
         await page.waitForTimeout(300);
       }
 
-      // Return to General
-      const general = nav.locator('text=General');
-      await general.click();
-      await page.waitForTimeout(300);
     }
   });
 });
@@ -115,6 +111,12 @@ test.describe('Settings UI', () => {
     const navExists = await nav.isVisible().catch(() => false);
 
     if (navExists) {
+      const settings = nav.locator('text=Settings');
+      if (await settings.isVisible()) {
+        await settings.click();
+        await page.waitForTimeout(300);
+      }
+
       // Look for toggle switches (checkboxes styled as toggles)
       const toggles = page.locator('input[type="checkbox"]');
       const count = await toggles.count();
@@ -127,9 +129,12 @@ test.describe('Settings UI', () => {
 
         // Try to interact with the first toggle
         const firstToggle = toggles.first();
+        const firstToggleLabel = page
+          .locator('label:has(input[type="checkbox"])')
+          .first();
         const initialState = await firstToggle.isChecked();
 
-        await firstToggle.click();
+        await firstToggleLabel.click();
         await page.waitForTimeout(200);
 
         // Toggle should have changed
@@ -137,7 +142,7 @@ test.describe('Settings UI', () => {
         expect(newState).toBe(!initialState);
 
         // Toggle back
-        await firstToggle.click();
+        await firstToggleLabel.click();
       }
     }
   });

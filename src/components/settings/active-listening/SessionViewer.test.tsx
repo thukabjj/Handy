@@ -17,6 +17,7 @@ const createMockEntry = (overrides: Partial<{
   transcription_text: string;
   post_processed_text: string | null;
   post_process_prompt: string | null;
+  post_process_requested: boolean;
 }> = {}) => ({
   id: 1,
   file_name: 'recording.wav',
@@ -26,6 +27,7 @@ const createMockEntry = (overrides: Partial<{
   transcription_text: 'Test transcription',
   post_processed_text: null,
   post_process_prompt: null,
+  post_process_requested: false,
   ...overrides,
 });
 
@@ -66,7 +68,7 @@ describe('SessionViewer', () => {
     it('shows empty message when no sessions exist', async () => {
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: [],
+        data: { entries: [], has_more: false },
       });
 
       render(<SessionViewer />);
@@ -79,13 +81,16 @@ describe('SessionViewer', () => {
     it('shows empty state when entries have no post-processed text', async () => {
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: [
+        data: {
+          entries: [
           createMockEntry({
             id: 1,
             transcription_text: 'Test transcription',
             post_processed_text: null,
           }),
-        ],
+          ],
+          has_more: false,
+        },
       });
 
       render(<SessionViewer />);
@@ -115,7 +120,7 @@ describe('SessionViewer', () => {
     it('displays entries with post-processed text', async () => {
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: mockEntries,
+        data: { entries: mockEntries, has_more: false },
       });
 
       render(<SessionViewer />);
@@ -133,7 +138,7 @@ describe('SessionViewer', () => {
       const user = userEvent.setup();
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: mockEntries,
+        data: { entries: mockEntries, has_more: false },
       });
 
       render(<SessionViewer />);
@@ -143,10 +148,12 @@ describe('SessionViewer', () => {
       });
 
       // Click on an entry to expand it
-      const entryButton = screen.getByText(/First transcription/).closest('button');
-      if (entryButton) {
-        await user.click(entryButton);
-      }
+      const entryButton = screen
+        .getByText(/First transcription/)
+        .closest('[role="button"]');
+
+      expect(entryButton).not.toBeNull();
+      await user.click(entryButton as HTMLElement);
 
       // Should now show the AI insight
       await waitFor(() => {
@@ -158,7 +165,7 @@ describe('SessionViewer', () => {
       const user = userEvent.setup();
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: mockEntries,
+        data: { entries: mockEntries, has_more: false },
       });
       mockCommands.deleteHistoryEntry.mockResolvedValueOnce({
         status: 'ok',
@@ -172,10 +179,12 @@ describe('SessionViewer', () => {
       });
 
       // Expand the entry first
-      const entryButton = screen.getByText(/First transcription/).closest('button');
-      if (entryButton) {
-        await user.click(entryButton);
-      }
+      const entryButton = screen
+        .getByText(/First transcription/)
+        .closest('[role="button"]');
+
+      expect(entryButton).not.toBeNull();
+      await user.click(entryButton as HTMLElement);
 
       // Find and click the delete button
       await waitFor(() => {
@@ -196,7 +205,8 @@ describe('SessionViewer', () => {
 
       mockCommands.getHistoryEntries.mockResolvedValueOnce({
         status: 'ok',
-        data: [
+        data: {
+          entries: [
           createMockEntry({
             id: 1,
             timestamp: today,
@@ -209,7 +219,9 @@ describe('SessionViewer', () => {
             transcription_text: 'Yesterday entry',
             post_processed_text: 'Yesterday insight',
           }),
-        ],
+          ],
+          has_more: false,
+        },
       });
 
       render(<SessionViewer />);

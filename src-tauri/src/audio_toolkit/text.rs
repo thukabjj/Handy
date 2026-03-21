@@ -27,68 +27,116 @@ pub fn apply_custom_words(text: &str, custom_words: &[String], threshold: f64) -
 
     let words: Vec<&str> = text.split_whitespace().collect();
     let mut corrected_words = Vec::new();
+    let mut index = 0;
 
-    for word in words {
+    while index < words.len() {
+        let word = words[index];
         let cleaned_word = word
             .trim_matches(|c: char| !c.is_alphabetic())
             .to_lowercase();
 
         if cleaned_word.is_empty() {
             corrected_words.push(word.to_string());
+            index += 1;
             continue;
         }
 
-        // Skip extremely long words to avoid performance issues
+        if cleaned_word.chars().count() < 2 {
+            corrected_words.push(word.to_string());
+            index += 1;
+            continue;
+        }
+
         if cleaned_word.len() > 50 {
             corrected_words.push(word.to_string());
+            index += 1;
             continue;
         }
 
-        let mut best_match: Option<&String> = None;
-        let mut best_score = f64::MAX;
+        let mut best_single_match: Option<&String> = None;
+        let mut best_single_score = f64::MAX;
+        let mut best_double_match: Option<&String> = None;
+        let mut best_double_score = f64::MAX;
 
         for (i, custom_word_lower) in custom_words_lower.iter().enumerate() {
-            // Skip if lengths are too different (optimization)
             let len_diff = (cleaned_word.len() as i32 - custom_word_lower.len() as i32).abs();
-            if len_diff > 5 {
-                continue;
+            if len_diff <= 5 {
+                let levenshtein_dist = levenshtein(&cleaned_word, custom_word_lower);
+                let max_len = cleaned_word.len().max(custom_word_lower.len()) as f64;
+                let levenshtein_score = if max_len > 0.0 {
+                    levenshtein_dist as f64 / max_len
+                } else {
+                    1.0
+                };
+
+                let phonetic_match = soundex(&cleaned_word, custom_word_lower);
+                let combined_score = if phonetic_match {
+                    levenshtein_score * 0.3
+                } else {
+                    levenshtein_score
+                };
+
+                if combined_score < threshold && combined_score < best_single_score {
+                    best_single_match = Some(&custom_words[i]);
+                    best_single_score = combined_score;
+                }
             }
 
-            // Calculate Levenshtein distance (normalized by length)
-            let levenshtein_dist = levenshtein(&cleaned_word, custom_word_lower);
-            let max_len = cleaned_word.len().max(custom_word_lower.len()) as f64;
-            let levenshtein_score = if max_len > 0.0 {
-                levenshtein_dist as f64 / max_len
-            } else {
-                1.0
-            };
+            if let Some(next_word) = words.get(index + 1) {
+                let next_cleaned = next_word
+                    .trim_matches(|c: char| !c.is_alphabetic())
+                    .to_lowercase();
 
-            // Calculate phonetic similarity using Soundex
-            let phonetic_match = soundex(&cleaned_word, custom_word_lower);
+                if !next_cleaned.is_empty() && next_cleaned.chars().count() <= 2 {
+                    let joined = format!("{}{}", cleaned_word, next_cleaned);
+                    let joined_len_diff =
+                        (joined.len() as i32 - custom_word_lower.len() as i32).abs();
 
-            // Combine scores: favor phonetic matches, but also consider string similarity
-            let combined_score = if phonetic_match {
-                levenshtein_score * 0.3 // Give significant boost to phonetic matches
-            } else {
-                levenshtein_score
-            };
+                    if joined_len_diff <= 5 {
+                        let levenshtein_dist = levenshtein(&joined, custom_word_lower);
+                        let max_len = joined.len().max(custom_word_lower.len()) as f64;
+                        let levenshtein_score = if max_len > 0.0 {
+                            levenshtein_dist as f64 / max_len
+                        } else {
+                            1.0
+                        };
 
-            // Accept if the score is good enough (configurable threshold)
-            if combined_score < threshold && combined_score < best_score {
-                best_match = Some(&custom_words[i]);
-                best_score = combined_score;
+                        let phonetic_match = soundex(&joined, custom_word_lower);
+                        let combined_score = if phonetic_match {
+                            levenshtein_score * 0.3
+                        } else {
+                            levenshtein_score
+                        };
+
+                        if combined_score < threshold && combined_score < best_double_score {
+                            best_double_match = Some(&custom_words[i]);
+                            best_double_score = combined_score;
+                        }
+                    }
+                }
             }
         }
 
-        if let Some(replacement) = best_match {
-            // Preserve the original case pattern as much as possible
-            let corrected = preserve_case_pattern(word, replacement);
+        let (best_match, consumed_words) = if let Some(replacement) = best_double_match {
+            (Some(replacement), 2)
+        } else {
+            (best_single_match, 1)
+        };
 
-            // Preserve punctuation from original word
-            let (prefix, suffix) = extract_punctuation(word);
+        if let Some(replacement) = best_match {
+            let corrected = preserve_case_pattern(word, replacement);
+            let (prefix, _) = extract_punctuation(word);
+            let suffix = if consumed_words == 2 {
+                extract_punctuation(words[index + 1]).1
+            } else {
+                extract_punctuation(word).1
+            };
+
             corrected_words.push(format!("{}{}{}", prefix, corrected, suffix));
+            index += consumed_words;
         } else {
             corrected_words.push(word.to_string());
+            index += 1;
         }
     }
 

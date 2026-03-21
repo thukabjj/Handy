@@ -333,6 +333,7 @@ mod tests {
             transcription_text: "Hello world this is a test transcription with enough words to make multiple subtitle segments for testing purposes".to_string(),
             post_processed_text: None,
             post_process_prompt: None,
+            post_process_requested: false,
         }
     }
 
@@ -346,6 +347,7 @@ mod tests {
             transcription_text: "hello world".to_string(),
             post_processed_text: Some("Hello, World!".to_string()),
             post_process_prompt: Some("Fix grammar".to_string()),
+            post_process_requested: true,
         }
     }
 

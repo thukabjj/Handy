@@ -4,8 +4,9 @@ use crate::helpers::clamshell;
 use crate::settings::{get_settings, AppSettings};
 use crate::utils;
 use log::{debug, error, info, warn};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tauri::Manager;
 
 /// Helper macro to safely acquire a mutex lock and return early on failure
@@ -38,6 +39,7 @@ macro_rules! safe_lock_err {
             .map_err(|e| anyhow::anyhow!("Mutex poisoned: {}", e))?
     };
 }
+const STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
 fn set_mute(mute: bool) {
     // Expected behavior:
@@ -196,6 +198,7 @@ pub struct AudioRecordingManager {
 
     /// Callback for forwarding audio samples in active listening mode
     active_listening_callback: Arc<Mutex<Option<ActiveListeningCallback>>>,
+    close_generation: Arc<AtomicU64>,
 }
 
 impl AudioRecordingManager {
@@ -219,6 +222,7 @@ impl AudioRecordingManager {
             is_recording: Arc::new(Mutex::new(false)),
             did_mute: Arc::new(Mutex::new(false)),
             active_listening_callback: Arc::new(Mutex::new(None)),
+            close_generation: Arc::new(AtomicU64::new(0)),
         };
 
         // Always-on?  Open immediately.
@@ -256,6 +260,30 @@ impl AudioRecordingManager {
                 None
             }
         }
+    }
+
+    fn schedule_lazy_close(&self) {
+        let gen = self.close_generation.fetch_add(1, Ordering::SeqCst) + 1;
+        let app = self.app_handle.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(STREAM_IDLE_TIMEOUT);
+            let rm = app.state::<Arc<AudioRecordingManager>>();
+            // Hold state lock across the check AND close to serialize against
+            // try_start_recording, preventing a race where the stream is closed
+            // under an active recording.
+            let state = rm.state.lock().unwrap();
+            if rm.close_generation.load(Ordering::SeqCst) == gen
+                && matches!(*state, RecordingState::Idle)
+            {
+                // stop_microphone_stream does not acquire the state lock,
+                // so holding it here is safe (no deadlock).
+                info!(
+                    "Closing idle microphone stream after {:?}",
+                    STREAM_IDLE_TIMEOUT
+                );
+                rm.stop_microphone_stream();
+            }
+        });
     }
 
     /* ---------- microphone life-cycle -------------------------------------- */
@@ -398,11 +426,12 @@ impl AudioRecordingManager {
                 };
                 if is_idle {
                     drop(mode_guard);
+                    self.close_generation.fetch_add(1, Ordering::SeqCst);
                     self.stop_microphone_stream();
                 }
             }
             (MicrophoneMode::OnDemand, MicrophoneMode::AlwaysOn) => {
-                drop(mode_guard);
+                self.close_generation.fetch_add(1, Ordering::SeqCst);
                 self.start_microphone_stream()?;
             }
             _ => {}
@@ -414,50 +443,70 @@ impl AudioRecordingManager {
 
     /* ---------- recording --------------------------------------------------- */
 
-    pub fn try_start_recording(&self, binding_id: &str) -> bool {
-        let mut state = safe_lock!(self.state, false);
+    pub fn try_start_recording(&self, binding_id: &str) -> Result<(), String> {
+        let is_idle = match self.state.lock() {
+            Ok(state) => matches!(*state, RecordingState::Idle),
+            Err(e) => {
+                let msg = format!("Failed to lock state: {}", e);
+                error!("{}", msg);
+                return Err(msg);
+            }
+        };
 
-        if let RecordingState::Idle = *state {
+        if is_idle {
             // Ensure microphone is open in on-demand mode
             let is_on_demand = match self.mode.lock() {
                 Ok(mode) => matches!(*mode, MicrophoneMode::OnDemand),
-                Err(_) => false,
+                Err(e) => {
+                    let msg = format!("Failed to lock mode: {}", e);
+                    error!("{}", msg);
+                    return Err(msg);
+                }
             };
+
             if is_on_demand {
+                // Cancel any pending lazy close
+                self.close_generation.fetch_add(1, Ordering::SeqCst);
                 if let Err(e) = self.start_microphone_stream() {
-                    error!("Failed to open microphone stream: {e}");
-                    return false;
+                    let msg = format!("{e}");
+                    error!("Failed to open microphone stream: {msg}");
+                    return Err(msg);
                 }
             }
 
-            if let Ok(recorder_guard) = self.recorder.lock() {
-                if let Some(rec) = recorder_guard.as_ref() {
-                    if rec.start().is_ok() {
-                        if let Ok(mut is_rec) = self.is_recording.lock() {
-                            *is_rec = true;
-                        }
+            let recorder_guard = match self.recorder.lock() {
+                Ok(guard) => guard,
+                Err(e) => {
+                    let msg = format!("Failed to lock recorder: {}", e);
+                    error!("{}", msg);
+                    return Err(msg);
+                }
+            };
+
+            if let Some(rec) = recorder_guard.as_ref() {
+                if rec.start().is_ok() {
+                    if let Ok(mut is_recording) = self.is_recording.lock() {
+                        *is_recording = true;
+                    }
+                    if let Ok(mut state) = self.state.lock() {
                         *state = RecordingState::Recording {
                             binding_id: binding_id.to_string(),
                         };
-                        debug!("Recording started for binding {binding_id}");
-                        return true;
                     }
+                    debug!("Recording started for binding {binding_id}");
+                    return Ok(());
                 }
             }
-            error!("Recorder not available");
-            false
+            Err("Recorder not available".to_string())
         } else {
-            false
+            Err("Already recording".to_string())
         }
     }
 
     pub fn update_selected_device(&self) -> Result<(), anyhow::Error> {
         // If currently open, restart the microphone stream to use the new device
-        let is_open = match self.is_open.lock() {
-            Ok(guard) => *guard,
-            Err(e) => return Err(anyhow::anyhow!("Failed to check is_open: {}", e)),
-        };
-        if is_open {
+        if *safe_lock_err!(self.is_open) {
+            self.close_generation.fetch_add(1, Ordering::SeqCst);
             self.stop_microphone_stream();
             self.start_microphone_stream()?;
         }
@@ -474,18 +523,28 @@ impl AudioRecordingManager {
                 *state = RecordingState::Idle;
                 drop(state);
 
+                // Optionally keep recording for a bit longer to capture trailing audio
+                let settings = get_settings(&self.app_handle);
+                if settings.extra_recording_buffer_ms > 0 {
+                    debug!(
+                        "Extra recording buffer: sleeping {}ms before stopping",
+                        settings.extra_recording_buffer_ms
+                    );
+                    std::thread::sleep(Duration::from_millis(settings.extra_recording_buffer_ms));
+                }
+
                 let samples = if let Ok(recorder_guard) = self.recorder.lock() {
                     if let Some(rec) = recorder_guard.as_ref() {
-                        match rec.stop() {
-                            Ok(buf) => buf,
-                            Err(e) => {
-                                error!("stop() failed: {e}");
-                                Vec::new()
-                            }
+                    match rec.stop() {
+                        Ok(buf) => buf,
+                        Err(e) => {
+                            error!("stop() failed: {e}");
+                            Vec::new()
                         }
-                    } else {
-                        error!("Recorder not available");
-                        Vec::new()
+                    }
+                } else {
+                    error!("Recorder not available");
+                    Vec::new()
                     }
                 } else {
                     error!("Failed to lock recorder");
@@ -496,13 +555,17 @@ impl AudioRecordingManager {
                     *is_rec = false;
                 }
 
-                // In on-demand mode turn the mic off again
+                // In on-demand mode, close the mic (lazily if the setting is enabled)
                 let is_on_demand = match self.mode.lock() {
                     Ok(mode) => matches!(*mode, MicrophoneMode::OnDemand),
                     Err(_) => false,
                 };
                 if is_on_demand {
-                    self.stop_microphone_stream();
+                    if get_settings(&self.app_handle).lazy_stream_close {
+                        self.schedule_lazy_close();
+                    } else {
+                        self.stop_microphone_stream();
+                    }
                 }
 
                 // Pad if very short
@@ -544,13 +607,17 @@ impl AudioRecordingManager {
                 *is_rec = false;
             }
 
-            // In on-demand mode turn the mic off again
+            // In on-demand mode, close the mic (lazily if the setting is enabled)
             let is_on_demand = match self.mode.lock() {
                 Ok(mode) => matches!(*mode, MicrophoneMode::OnDemand),
                 Err(_) => false,
             };
             if is_on_demand {
-                self.stop_microphone_stream();
+                if get_settings(&self.app_handle).lazy_stream_close {
+                    self.schedule_lazy_close();
+                } else {
+                    self.stop_microphone_stream();
+                }
             }
         }
     }

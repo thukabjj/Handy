@@ -40,36 +40,53 @@ See [FEATURES.md](FEATURES.md) for detailed documentation.
 
 ### Installation
 
-**Option 1: Download Release**
-
-Download from [releases page](https://github.com/cjpais/Handy/releases) or [handy.computer](https://handy.computer)
-
-**Option 2: Homebrew (macOS)**
-
-```bash
-brew install --cask handy
-```
-
-**Option 3: Build from Source**
-
-```bash
-git clone git@github.com:thukabjj/Handy.git
-cd Handy
-make install
-make dev
-```
-
-See [BUILD.md](BUILD.md) for platform-specific requirements.
-
-### First Run
-
-1. Launch Handy
-2. Grant microphone and accessibility permissions
-3. Download a transcription model (Whisper Base recommended)
-4. Configure your keyboard shortcut
+1. Download the latest release from the [releases page](https://github.com/cjpais/Handy/releases) or the [website](https://handy.computer)
+   - **macOS**: Also available via [Homebrew cask](https://formulae.brew.sh/cask/handy): `brew install --cask handy`
+   - **Windows**: Also available via [winget](https://github.com/microsoft/winget-pkgs): `winget install cjpais.Handy` \
+     **Note:** The Homebrew cask and winget package are not maintained by the Handy developers.
+2. Install the application
+3. Launch Handy and grant necessary system permissions (microphone, accessibility)
+4. Configure your preferred keyboard shortcuts in Settings
 5. Start transcribing!
 
-### Ollama Setup (For AI Features)
+### Development Setup
+
+For detailed build instructions including platform-specific requirements, see [BUILD.md](BUILD.md).
+
+## Integrations
+
+<a href="https://www.raycast.com/mattiacolombomc/handy" title="Install Handy Raycast Extension"><img src="https://www.raycast.com/mattiacolombomc/handy/install_button@2x.png?v=1.1" height="64" style="height: 64px;" alt="Install handy Raycast Extension" /></a>
+
+Control Handy from [Raycast](https://www.raycast.com) — start/stop recording, browse transcript history, manage dictionary, switch models and languages.
+
+[Source](https://github.com/mattiacolombomc/raycast-handy) · by [@mattiacolombomc](https://github.com/mattiacolombomc)
+
+## Architecture
+
+Handy is built as a Tauri application combining:
+
+- **Frontend**: React + TypeScript with Tailwind CSS for the settings UI
+- **Backend**: Rust for system integration, audio processing, and ML inference
+- **Core Libraries**:
+  - `whisper-rs`: Local speech recognition with Whisper models
+  - `transcription-rs`: CPU-optimized speech recognition with Parakeet models
+  - `cpal`: Cross-platform audio I/O
+  - `vad-rs`: Voice Activity Detection
+  - `rdev`: Global keyboard shortcuts and system events
+  - `rubato`: Audio resampling
+
+### Debug Mode
+
+Handy includes an advanced debug mode for development and troubleshooting. Access it by pressing:
+
+- **macOS**: `Cmd+Shift+D`
+- **Windows/Linux**: `Ctrl+Shift+D`
+
+### CLI Parameters
+
+Handy supports command-line flags for controlling a running instance and customizing startup behavior. These work on all platforms (macOS, Windows, Linux).
+
+**Remote control flags** (sent to an already-running instance via the single-instance plugin):
 
 ```bash
 # Install Ollama

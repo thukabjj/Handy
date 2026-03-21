@@ -4,6 +4,7 @@
     "checkUpdates": "Buscar actualizaciones...",
     "copyLastTranscript": "Copiar la última transcripción",
     "unloadModel": "Descargar modelo",
+    "model": "Modelo",
     "quit": "Salir",
     "cancel": "Cancelar"
   },
@@ -87,6 +88,14 @@
       "gigaam-v3-e2e-ctc": {
         "name": "GigaAM v3",
         "description": "Reconocimiento de voz en ruso. Rápido y preciso."
+      },
+      "canary-180m-flash": {
+        "name": "Canary 180M Flash",
+        "description": "Muy rápido. Inglés, alemán, español, francés. Soporta traducción."
+      },
+      "canary-1b-v2": {
+        "name": "Canary 1B v2",
+        "description": "Multilingüe preciso. 25 idiomas europeos. Soporta traducción."
       }
     },
     "errors": {
@@ -119,6 +128,8 @@
     "active": "Activo",
     "switching": "Cambiando...",
     "noModelsAvailable": "No hay modelos disponibles",
+    "verifying": "Verificando {{modelName}}...",
+    "verifyingGeneric": "Verificando...",
     "extracting": "Extrayendo {{modelName}}...",
     "extractingMultiple": "Extrayendo {{count}} modelos...",
     "extractingGeneric": "Extrayendo...",
@@ -244,6 +255,20 @@
         "label": "Funciones Experimentales",
         "description": "Habilitar funciones experimentales que aún están en desarrollo."
       },
+      "lazyStreamClose": {
+        "label": "Mantener micrófono abierto entre transcripciones",
+        "description": "Mantiene el flujo del micrófono abierto durante 30 segundos después de detener la grabación, reduciendo la latencia en transcripciones consecutivas. Puede degradar la calidad del audio Bluetooth mientras está activo."
+      },
+      "acceleration": {
+        "whisper": {
+          "title": "Aceleración de Whisper",
+          "description": "Aceleración por hardware para modelos Whisper. Auto usa GPU si está disponible (Metal en macOS, Vulkan en Windows/Linux)."
+        },
+        "ort": {
+          "title": "Aceleración de ONNX",
+          "description": "Aceleración por hardware para modelos ONNX (Parakeet, Canary, Moonshine, etc.). DirectML en Windows es experimental. Los modelos pueden fallar al transcribir."
+        }
+      },
       "startHidden": {
         "label": "Iniciar Oculto",
         "description": "Lanzar en la bandeja del sistema sin abrir la ventana."
@@ -320,7 +345,7 @@
           "min10": "Después de 10 minutos",
           "min15": "Después de 15 minutos",
           "hour1": "Después de 1 hora",
-          "sec5": "Después de 5 segundos (Depuración)"
+          "sec15": "Después de 15 segundos (Depuración)"
         }
       },
       "customWords": {
@@ -473,6 +498,10 @@
       "pasteDelay": {
         "title": "Retraso de pegado",
         "description": "Retraso antes de enviar la pulsación de tecla de pegar (en milisegundos). Aumente si se está pegando texto incorrecto."
+      },
+      "recordingBuffer": {
+        "title": "Búfer de grabación adicional",
+        "description": "Tiempo adicional (en milisegundos) para seguir grabando después de soltar la tecla, para capturar el audio restante. 0 = sin búfer adicional."
       }
     },
     "about": {
@@ -548,7 +577,17 @@
     "dismiss": "Descartar"
   },
   "errors": {
-    "loadDirectory": "Error al cargar el directorio: {{error}}"
+    "loadDirectory": "Error al cargar el directorio: {{error}}",
+    "micPermissionDeniedTitle": "Acceso al micrófono denegado",
+    "micPermissionDenied": {
+      "generic": "El sistema operativo denegó el acceso al micrófono. Por favor, conceda el permiso del micrófono en la configuración del sistema.",
+      "windows": "Active el acceso al micrófono en Configuración → Privacidad y seguridad → Micrófono (incluido el acceso de aplicaciones de escritorio).",
+      "macos": "Conceda el acceso al micrófono en Ajustes del Sistema → Privacidad y seguridad → Micrófono.",
+      "linux": "Conceda el acceso al micrófono en la configuración de sonido o privacidad de su sistema."
+    },
+    "recordingFailed": "Error al iniciar la grabación: {{error}}",
+    "modelLoadFailed": "Error al cargar el modelo: {{model}}",
+    "modelLoadFailedUnknown": "modelo desconocido"
   },
   "appLanguage": {
     "title": "Idioma de la aplicación",

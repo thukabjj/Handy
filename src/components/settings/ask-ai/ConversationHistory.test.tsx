@@ -173,10 +173,10 @@ describe('ConversationHistory', () => {
       // Click on the first conversation to expand it
       const conversationButton = screen
         .getByText('First Conversation')
-        .closest('button');
-      if (conversationButton) {
-        await user.click(conversationButton);
-      }
+        .closest('[role="button"]');
+
+      expect(conversationButton).not.toBeNull();
+      await user.click(conversationButton as HTMLElement);
 
       // Should now show the question and answer
       await waitFor(() => {

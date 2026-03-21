@@ -8,7 +8,8 @@ pub mod utils;
 pub mod vad;
 
 pub use audio::{
-    list_input_devices, list_output_devices, save_wav_file, AudioRecorder, CpalDeviceInfo,
+    is_microphone_access_denied, list_input_devices, list_output_devices, save_wav_file,
+    AudioRecorder, CpalDeviceInfo,
 };
 pub use diarization::{
     create_shared_diarizer, DiarizationConfig, EnergyBasedDiarizer, SharedDiarizer, SpeakerChange,

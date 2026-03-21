@@ -175,7 +175,7 @@ test.describe('Active Listening Feature Toggle', () => {
     const navExists = await nav.isVisible().catch(() => false);
 
     if (navExists) {
-      await nav.locator('text=General').click();
+      await nav.locator('text=Settings').click();
       await page.waitForTimeout(300);
 
       const main = page.locator('main[role="main"]');

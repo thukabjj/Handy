@@ -141,7 +141,7 @@ pub enum ModelUnloadTimeout {
     Min10,
     Min15,
     Hour1,
-    Sec5, // Debug mode only
+    Sec15, // Debug mode only
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -189,18 +189,16 @@ pub enum KeyboardImplementation {
 
 impl Default for KeyboardImplementation {
     fn default() -> Self {
-        // Default to HandyKeys only on macOS where it's well-tested.
-        // Windows and Linux use Tauri by default (handy-keys not sufficiently tested yet).
-        #[cfg(target_os = "macos")]
-        return KeyboardImplementation::HandyKeys;
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(target_os = "linux")]
         return KeyboardImplementation::Tauri;
+        #[cfg(not(target_os = "linux"))]
+        return KeyboardImplementation::HandyKeys;
     }
 }
 
 impl Default for ModelUnloadTimeout {
     fn default() -> Self {
-        ModelUnloadTimeout::Never
+        ModelUnloadTimeout::Min5
     }
 }
 
@@ -236,7 +234,7 @@ impl ModelUnloadTimeout {
             ModelUnloadTimeout::Min10 => Some(10),
             ModelUnloadTimeout::Min15 => Some(15),
             ModelUnloadTimeout::Hour1 => Some(60),
-            ModelUnloadTimeout::Sec5 => Some(0), // Special case for debug - handled separately
+            ModelUnloadTimeout::Sec15 => Some(0), // Special case for debug - handled separately
         }
     }
 
@@ -244,7 +242,7 @@ impl ModelUnloadTimeout {
         match self {
             ModelUnloadTimeout::Never => None,
             ModelUnloadTimeout::Immediately => Some(0), // Special case for immediate unloading
-            ModelUnloadTimeout::Sec5 => Some(5),
+            ModelUnloadTimeout::Sec15 => Some(15),
             _ => self.to_minutes().map(|m| m * 60),
         }
     }
@@ -290,6 +288,37 @@ pub enum TypingTool {
 impl Default for TypingTool {
     fn default() -> Self {
         TypingTool::Auto
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum WhisperAcceleratorSetting {
+    Auto,
+    Cpu,
+    Gpu,
+}
+
+impl Default for WhisperAcceleratorSetting {
+    fn default() -> Self {
+        WhisperAcceleratorSetting::Auto
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum OrtAcceleratorSetting {
+    Auto,
+    Cpu,
+    Cuda,
+    #[serde(rename = "directml")]
+    DirectMl,
+    Rocm,
+}
+
+impl Default for OrtAcceleratorSetting {
+    fn default() -> Self {
+        OrtAcceleratorSetting::Auto
     }
 }
 
@@ -371,6 +400,8 @@ pub struct AppSettings {
     #[serde(default)]
     pub experimental_enabled: bool,
     #[serde(default)]
+    pub lazy_stream_close: bool,
+    #[serde(default)]
     pub keyboard_implementation: KeyboardImplementation,
     #[serde(default = "default_show_tray_icon")]
     pub show_tray_icon: bool,
@@ -414,6 +445,12 @@ pub struct AppSettings {
     /// Hide overlay from screen capture/sharing
     #[serde(default = "default_private_overlay")]
     pub private_overlay: bool,
+    #[serde(default)]
+    pub whisper_accelerator: WhisperAcceleratorSetting,
+    #[serde(default)]
+    pub ort_accelerator: OrtAcceleratorSetting,
+    #[serde(default)]
+    pub extra_recording_buffer_ms: u64,
 }
 
 fn default_private_overlay() -> bool {
@@ -758,7 +795,7 @@ pub fn get_default_settings() -> AppSettings {
         debug_mode: false,
         log_level: default_log_level(),
         custom_words: Vec::new(),
-        model_unload_timeout: ModelUnloadTimeout::Never,
+        model_unload_timeout: ModelUnloadTimeout::default(),
         word_correction_threshold: default_word_correction_threshold(),
         history_limit: default_history_limit(),
         recording_retention_period: default_recording_retention_period(),
@@ -777,6 +814,7 @@ pub fn get_default_settings() -> AppSettings {
         append_trailing_space: false,
         app_language: default_app_language(),
         experimental_enabled: false,
+        lazy_stream_close: false,
         keyboard_implementation: KeyboardImplementation::default(),
         show_tray_icon: default_show_tray_icon(),
         paste_delay_ms: default_paste_delay_ms(),
@@ -794,6 +832,9 @@ pub fn get_default_settings() -> AppSettings {
         sound_detection: SoundDetectionSettings::default(),
         suggestions: SuggestionsSettings::default(),
         private_overlay: default_private_overlay(),
+        whisper_accelerator: WhisperAcceleratorSetting::default(),
+        ort_accelerator: OrtAcceleratorSetting::default(),
+        extra_recording_buffer_ms: 0,
     }
 }
 

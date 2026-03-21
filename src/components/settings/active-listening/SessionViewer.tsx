@@ -211,11 +211,11 @@ export const SessionViewer: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await commands.getHistoryEntries();
+      const result = await commands.getHistoryEntries(null, null);
       if (result.status === "ok") {
         // Filter to only show entries with post-processed text (Active Listening insights)
-        const activeListeningEntries = result.data.filter(
-          (e) => e.post_processed_text && e.post_processed_text.length > 0
+        const activeListeningEntries = result.data.entries.filter(
+          (e) => e.post_processed_text && e.post_processed_text.length > 0,
         );
         setEntries(activeListeningEntries);
       } else {

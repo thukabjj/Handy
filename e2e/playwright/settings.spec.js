@@ -18,8 +18,8 @@ test.describe('Settings Pages', () => {
       const navExists = await nav.isVisible().catch(() => false);
 
       if (navExists) {
-        // Click on General
-        await nav.locator('text=General').click();
+        // Click on Settings
+        await nav.locator('text=Settings').click();
         await page.waitForTimeout(300);
 
         // Main content should be visible
@@ -33,7 +33,7 @@ test.describe('Settings Pages', () => {
       const navExists = await nav.isVisible().catch(() => false);
 
       if (navExists) {
-        await nav.locator('text=General').click();
+        await nav.locator('text=Settings').click();
         await page.waitForTimeout(300);
 
         // Look for various control types
@@ -200,7 +200,7 @@ test.describe('Settings Interactions', () => {
     const navExists = await nav.isVisible().catch(() => false);
 
     if (navExists) {
-      await nav.locator('text=General').click();
+      await nav.locator('text=Settings').click();
       await page.waitForTimeout(300);
 
       const main = page.locator('main[role="main"]');
@@ -209,10 +209,11 @@ test.describe('Settings Interactions', () => {
 
       if (count > 0) {
         const toggle = toggles.first();
+        const toggleLabel = main.locator('label:has(input[type="checkbox"])').first();
         const initialState = await toggle.isChecked();
 
         // Toggle the setting
-        await toggle.click();
+        await toggleLabel.click();
         await page.waitForTimeout(500);
 
         // Verify it changed
@@ -220,12 +221,12 @@ test.describe('Settings Interactions', () => {
         expect(newState).toBe(!initialState);
 
         // Navigate away and back
-        const advanced = nav.locator('text=Advanced');
-        if (await advanced.isVisible()) {
-          await advanced.click();
+        const history = nav.locator('text=History');
+        if (await history.isVisible()) {
+          await history.click();
           await page.waitForTimeout(300);
 
-          await nav.locator('text=General').click();
+          await nav.locator('text=Settings').click();
           await page.waitForTimeout(300);
 
           // Check if state persisted
@@ -234,7 +235,7 @@ test.describe('Settings Interactions', () => {
         }
 
         // Toggle back to original
-        await toggle.click();
+        await toggleLabel.click();
       }
     }
   });

@@ -1,7 +1,7 @@
 {
   "name": "handy-app",
   "private": true,
-  "version": "0.7.9",
+  "version": "0.7.12",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -25,7 +25,11 @@
     "e2e:headed": "playwright test --config=e2e/playwright.config.js --headed",
     "e2e:wdio": "wdio run e2e/wdio.conf.js",
     "e2e:build": "cd src-tauri && cargo build --release",
-    "dev:e2e": "vite --config e2e/vite.config.e2e.ts"
+    "dev:e2e": "vite --config e2e/vite.config.e2e.ts",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui",
+    "check:translations": "bun scripts/check-translations.ts",
+    "postinstall": "bun scripts/check-nix-deps.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
