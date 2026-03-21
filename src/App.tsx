@@ -12,14 +12,30 @@ import Footer from "./components/footer";
 import Onboarding, { AccessibilityOnboarding } from "./components/onboarding";
 import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
 import SettingsSearch from "./components/settings/SettingsSearch";
+import { UnifiedSettings } from "./components/settings";
+import type { SettingsNavigationTarget } from "./components/settings/unified/navigation";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
+import { recordFrontendTelemetryEvent } from "@/lib/telemetry";
 
 type OnboardingStep = "accessibility" | "model" | "done";
 
-const renderSettingsContent = (section: SidebarSection) => {
+const renderSettingsContent = (
+  section: SidebarSection,
+  settingsNavigationTarget: SettingsNavigationTarget | null,
+  onSettingsNavigationTargetApplied: () => void,
+) => {
+  if (section === "settings") {
+    return (
+      <UnifiedSettings
+        navigationTarget={settingsNavigationTarget}
+        onNavigationTargetApplied={onSettingsNavigationTargetApplied}
+      />
+    );
+  }
+
   const ActiveComponent =
     SECTIONS_CONFIG[section]?.component || SECTIONS_CONFIG.home.component;
   return <ActiveComponent />;
@@ -35,6 +51,8 @@ function App() {
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [currentSection, setCurrentSection] =
     useState<SidebarSection>("home");
+  const [settingsNavigationTarget, setSettingsNavigationTarget] =
+    useState<SettingsNavigationTarget | null>(null);
   const { settings, updateSetting } = useSettings();
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
@@ -47,7 +65,25 @@ function App() {
 
   useEffect(() => {
     checkOnboardingStatus();
+    void recordFrontendTelemetryEvent({
+      component: "app",
+      action: "main_window_mounted",
+      message: "Main application window mounted",
+    });
   }, []);
+
+  useEffect(() => {
+    if (onboardingStep !== "done") {
+      return;
+    }
+
+    void recordFrontendTelemetryEvent({
+      component: "app",
+      action: "section_changed",
+      message: "User navigated to a settings section",
+      attributes: [{ key: "section", value: currentSection }],
+    });
+  }, [currentSection, onboardingStep]);
 
   // Initialize RTL direction when language changes
   useEffect(() => {
@@ -142,6 +178,16 @@ function App() {
     setOnboardingStep("done");
   };
 
+  const handleSectionChange = (section: SidebarSection) => {
+    setCurrentSection(section);
+    setSettingsNavigationTarget(null);
+  };
+
+  const handleSearchNavigate = (target: SettingsNavigationTarget) => {
+    setCurrentSection(target.section);
+    setSettingsNavigationTarget(target.section === "settings" ? target : null);
+  };
+
   // Still checking onboarding status
   if (onboardingStep === null) {
     return null;
@@ -175,21 +221,25 @@ function App() {
           },
         }}
       />
-      <SettingsSearch onNavigate={setCurrentSection} />
+      <SettingsSearch onNavigate={handleSearchNavigate} />
       {/* Main content area that takes remaining space */}
       <div className="flex-1 flex overflow-hidden">
         <nav aria-label="Settings navigation">
           <Sidebar
             activeSection={currentSection}
-            onSectionChange={setCurrentSection}
+            onSectionChange={handleSectionChange}
           />
         </nav>
         {/* Scrollable content area */}
         <main className="flex-1 flex flex-col overflow-hidden" role="main">
           <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col items-center p-4 gap-4">
+            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col items-center gap-4 px-4 pb-12 pt-4">
               <AccessibilityPermissions />
-              {renderSettingsContent(currentSection)}
+              {renderSettingsContent(
+                currentSection,
+                settingsNavigationTarget,
+                () => setSettingsNavigationTarget(null),
+              )}
             </div>
           </div>
         </main>

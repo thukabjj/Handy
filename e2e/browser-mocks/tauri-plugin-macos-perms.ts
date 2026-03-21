@@ -39,3 +39,14 @@ export async function requestScreenCapturePermission(): Promise<boolean> {
   await delay(10);
   return true;
 }
+
+// Alias names used by current app code.
+export async function checkScreenRecordingPermission(): Promise<boolean> {
+  await delay(10);
+  return true;
+}
+
+export async function requestScreenRecordingPermission(): Promise<boolean> {
+  await delay(10);
+  return true;
+}

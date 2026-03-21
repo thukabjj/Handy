@@ -1,7 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  FlaskConical,
   History,
   Info,
   Mic,
@@ -16,7 +15,6 @@ import {
   DebugSettings,
   AboutSettings,
   HomeSettings,
-  LabsSettings,
   UnifiedSettings,
 } from "./settings";
 
@@ -58,13 +56,6 @@ export const SECTIONS_CONFIG = {
     component: UnifiedSettings,
     enabled: () => true,
   },
-  labs: {
-    labelKey: "sidebar.labs",
-    icon: FlaskConical,
-    component: LabsSettings,
-    enabled: () => true,
-    badge: "beta" as const,
-  },
   about: {
     labelKey: "sidebar.about",
     icon: Info,
@@ -102,7 +93,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
-          const badge = "badge" in section ? section.badge : undefined;
+          const badge = ("badge" in section
+            ? section.badge
+            : undefined) as SectionConfig["badge"] | undefined;
+          const label = String(t(section.labelKey));
 
           return (
             <div
@@ -118,13 +112,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <p
                   className="text-sm font-medium truncate"
-                  title={t(section.labelKey)}
+                  title={label}
                 >
-                  {t(section.labelKey)}
+                  {label}
                 </p>
                 {badge && (
                   <span className="px-1 py-0.5 text-[9px] font-medium bg-purple-500/20 text-purple-400 rounded shrink-0">
-                    {badge}
+                    {String(badge)}
                   </span>
                 )}
               </div>

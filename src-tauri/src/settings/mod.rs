@@ -2,6 +2,8 @@
 pub mod active_listening;
 pub mod ask_ai;
 pub mod knowledge_base;
+pub mod observability;
+pub mod screen_vision;
 pub mod sound_detection;
 pub mod suggestions;
 
@@ -11,6 +13,8 @@ pub use active_listening::{
 };
 pub use ask_ai::AskAiSettings;
 pub use knowledge_base::KnowledgeBaseSettings;
+pub use observability::ObservabilitySettings;
+pub use screen_vision::ScreenVisionSettings;
 pub use sound_detection::SoundDetectionSettings;
 pub use suggestions::{QuickResponse, SuggestionsSettings, WarningSeverity};
 
@@ -405,12 +409,18 @@ pub struct AppSettings {
     /// Knowledge Base (RAG) feature settings
     #[serde(default)]
     pub knowledge_base: KnowledgeBaseSettings,
+    /// Screen Vision feature settings
+    #[serde(default)]
+    pub screen_vision: ScreenVisionSettings,
     /// Sound Detection feature settings
     #[serde(default)]
     pub sound_detection: SoundDetectionSettings,
     /// Suggestions feature settings
     #[serde(default)]
     pub suggestions: SuggestionsSettings,
+    /// Observability and diagnostics settings
+    #[serde(default)]
+    pub observability: ObservabilitySettings,
     /// Hide overlay from screen capture/sharing
     #[serde(default = "default_private_overlay")]
     pub private_overlay: bool,
@@ -791,8 +801,10 @@ pub fn get_default_settings() -> AppSettings {
         active_listening: ActiveListeningSettings::default(),
         ask_ai: AskAiSettings::default(),
         knowledge_base: KnowledgeBaseSettings::default(),
+        screen_vision: ScreenVisionSettings::default(),
         sound_detection: SoundDetectionSettings::default(),
         suggestions: SuggestionsSettings::default(),
+        observability: ObservabilitySettings::default(),
         private_overlay: default_private_overlay(),
     }
 }
@@ -820,6 +832,34 @@ impl AppSettings {
     }
 }
 
+fn summarize_settings_for_log(settings: &AppSettings) -> String {
+    let cloud_model = settings
+        .active_listening
+        .llm_model
+        .clone()
+        .unwrap_or_default();
+    let has_cloud_key = settings
+        .active_listening
+        .llm_api_key
+        .as_ref()
+        .map(|k| !k.trim().is_empty())
+        .unwrap_or(false);
+    let has_voice_profile = settings.wake_word.voice_profile.is_some();
+    format!(
+        "provider={:?} cloud_key={} cloud_model='{}' ollama_model='{}' wake_enabled={} voice_auth={} voice_profile={} ask_ai_enabled={} observability_enabled={} observability_mode={:?}",
+        settings.active_listening.llm_provider,
+        has_cloud_key,
+        cloud_model,
+        settings.active_listening.ollama_model,
+        settings.wake_word.enabled,
+        settings.wake_word.voice_auth_enabled,
+        has_voice_profile,
+        settings.ask_ai.enabled,
+        settings.observability.enabled,
+        settings.observability.data_mode
+    )
+}
+
 pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     // Initialize store
     let store = app
@@ -830,7 +870,10 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         // Parse the entire settings object
         match serde_json::from_value::<AppSettings>(settings_value) {
             Ok(mut settings) => {
-                debug!("Found existing settings: {:?}", settings);
+                debug!(
+                    "Found existing settings: {}",
+                    summarize_settings_for_log(&settings)
+                );
                 let default_settings = get_default_settings();
                 let mut updated = false;
 
@@ -901,6 +944,23 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
         .expect("Failed to initialize store");
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
+
+    crate::telemetry::TelemetryEventBuilder::new("settings", "persisted")
+        .message("Application settings persisted")
+        .attr("debug_mode", settings.debug_mode)
+        .attr("log_level", format!("{:?}", settings.log_level))
+        .attr("wake_enabled", settings.wake_word.enabled)
+        .attr(
+            "llm_provider",
+            format!("{:?}", settings.active_listening.llm_provider),
+        )
+        .attr("ask_ai_enabled", settings.ask_ai.enabled)
+        .attr("observability_enabled", settings.observability.enabled)
+        .attr(
+            "observability_mode",
+            format!("{:?}", settings.observability.data_mode),
+        )
+        .emit();
 }
 
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {

@@ -1,26 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright E2E tests for Handy
+ * Playwright E2E tests for Handy's browser-mock build.
  *
- * IMPORTANT: Tauri apps require the Tauri runtime to function. The frontend
- * cannot run standalone in a browser because it depends on @tauri-apps/api
- * which only works inside the Tauri webview.
- *
- * For E2E testing, you have these options:
- *
- * 1. **tauri-driver (Linux/Windows only)** - Use WebdriverIO + tauri-driver
- *    to test the actual built application. Not supported on macOS.
- *
- * 2. **Component testing with mocks** - The existing Vitest unit tests mock
- *    Tauri APIs and test components in isolation. This is the recommended
- *    approach for testing UI logic.
- *
- * 3. **Manual testing** - Run `bun run tauri dev` and manually test the app.
- *
- * This Playwright config is kept for reference but won't work for Tauri apps
- * that depend on native APIs. Use the WebdriverIO setup (e2e:wdio) on
- * Linux/Windows for true E2E testing.
+ * The production Tauri app still requires the native runtime for full E2E,
+ * but this config intentionally boots the mocked browser-compatible build so
+ * the React app can be validated end to end on any platform.
  */
 export default defineConfig({
   testDir: './playwright',
@@ -31,7 +16,6 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    // Note: This URL won't work for Tauri apps - frontend needs Tauri runtime
     baseURL: 'http://localhost:1420',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -45,9 +29,9 @@ export default defineConfig({
   ],
 
   // Note: The web server only serves the frontend, which will fail without
-  // the Tauri backend. These tests are for reference only.
+  // the Tauri backend unless the browser-compatible E2E Vite config is used.
   webServer: {
-    command: 'bun run dev',
+    command: 'pnpm dev:e2e',
     url: 'http://localhost:1420',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

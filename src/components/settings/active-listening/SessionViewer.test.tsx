@@ -143,7 +143,7 @@ describe('SessionViewer', () => {
       });
 
       // Click on an entry to expand it
-      const entryButton = screen.getByText(/First transcription/).closest('button');
+      const entryButton = screen.getByText(/First transcription/).closest('[role="button"]');
       if (entryButton) {
         await user.click(entryButton);
       }
@@ -172,7 +172,7 @@ describe('SessionViewer', () => {
       });
 
       // Expand the entry first
-      const entryButton = screen.getByText(/First transcription/).closest('button');
+      const entryButton = screen.getByText(/First transcription/).closest('[role="button"]');
       if (entryButton) {
         await user.click(entryButton);
       }

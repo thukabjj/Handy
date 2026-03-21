@@ -1,0 +1,2 @@
+export { SuggestionsSettings } from "./SuggestionsSettings";
+

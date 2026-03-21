@@ -3,6 +3,7 @@
 use crate::managers::ask_ai::{AskAiConversation, AskAiManager, AskAiState};
 use crate::managers::ask_ai_history::AskAiHistoryManager;
 use crate::overlay::{hide_recording_overlay, reset_overlay_size};
+use crate::settings::active_listening::LlmProvider;
 use crate::settings::{get_settings, write_settings};
 use log::debug;
 use std::sync::Arc;
@@ -121,9 +122,13 @@ pub fn change_ask_ai_ollama_base_url_setting(
     base_url: String,
 ) -> Result<(), String> {
     let mut settings = get_settings(&app);
+    settings.active_listening.ollama_base_url = base_url.clone();
     settings.ask_ai.ollama_base_url = base_url.clone();
     write_settings(&app, settings);
-    debug!("Ask AI Ollama base URL changed to: {}", base_url);
+    debug!(
+        "Centralized Ollama base URL updated via Ask AI command: {}",
+        base_url
+    );
     Ok(())
 }
 
@@ -135,6 +140,69 @@ pub fn change_ask_ai_ollama_model_setting(app: AppHandle, model: String) -> Resu
     settings.ask_ai.ollama_model = model.clone();
     write_settings(&app, settings);
     debug!("Ask AI Ollama model changed to: {}", model);
+    Ok(())
+}
+
+// ---- LLM Provider Settings commands ----
+
+/// Change the LLM provider for Ask AI
+#[tauri::command]
+#[specta::specta]
+pub fn change_ask_ai_llm_provider(app: AppHandle, provider: LlmProvider) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.active_listening.llm_provider = provider.clone();
+    settings.ask_ai.llm_provider = provider;
+    write_settings(&app, settings);
+    debug!("Centralized LLM provider updated via Ask AI command");
+    Ok(())
+}
+
+/// Change the LLM API key for Ask AI
+#[tauri::command]
+#[specta::specta]
+pub fn change_ask_ai_llm_api_key(app: AppHandle, api_key: String) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    let normalized = if api_key.is_empty() {
+        None
+    } else {
+        Some(api_key)
+    };
+    settings.active_listening.llm_api_key = normalized.clone();
+    settings.ask_ai.llm_api_key = normalized;
+    write_settings(&app, settings);
+    debug!("Centralized LLM API key updated via Ask AI command");
+    Ok(())
+}
+
+/// Change the LLM model for Ask AI (cloud provider)
+#[tauri::command]
+#[specta::specta]
+pub fn change_ask_ai_llm_model(app: AppHandle, model: String) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.ask_ai.llm_model = if model.is_empty() {
+        None
+    } else {
+        Some(model.clone())
+    };
+    write_settings(&app, settings);
+    debug!("Ask AI LLM model: {}", model);
+    Ok(())
+}
+
+/// Change the custom LLM base URL for Ask AI
+#[tauri::command]
+#[specta::specta]
+pub fn change_ask_ai_llm_base_url(app: AppHandle, base_url: String) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    let normalized = if base_url.is_empty() {
+        None
+    } else {
+        Some(base_url.clone())
+    };
+    settings.active_listening.llm_base_url = normalized.clone();
+    settings.ask_ai.llm_base_url = normalized;
+    write_settings(&app, settings);
+    debug!("Centralized LLM base URL updated via Ask AI command: {}", base_url);
     Ok(())
 }
 

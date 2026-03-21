@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
 import {
   RefreshCcw,
   Database,
@@ -30,7 +32,7 @@ const DisabledNotice: React.FC<{ children: React.ReactNode }> = ({
   </div>
 );
 
-const StatsDisplay: React.FC = () => {
+const StatsDisplay: React.FC<{ refreshToken: number }> = ({ refreshToken }) => {
   const { t } = useTranslation();
   const [stats, setStats] = useState<RagStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +53,7 @@ const StatsDisplay: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+  }, [fetchStats, refreshToken]);
 
   return (
     <div className="flex items-center gap-4 p-3 bg-mid-gray/5 rounded-lg border border-mid-gray/20">
@@ -231,7 +233,7 @@ const RetrievalSettings: React.FC = () => {
   );
 };
 
-const DocumentBrowser: React.FC = () => {
+const DocumentBrowser: React.FC<{ refreshToken: number }> = ({ refreshToken }) => {
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<StoredDocument[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -257,7 +259,7 @@ const DocumentBrowser: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, [fetchDocuments]);
+  }, [fetchDocuments, refreshToken]);
 
   const handleDelete = async (documentId: number) => {
     const result = await commands.ragDeleteDocument(documentId);
@@ -441,7 +443,7 @@ const DocumentBrowser: React.FC = () => {
   );
 };
 
-const ManualDocumentUpload: React.FC = () => {
+const ManualDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
   const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -460,6 +462,7 @@ const ManualDocumentUpload: React.FC = () => {
       if (result.status === "ok") {
         setContent("");
         setTitle("");
+        onUploaded();
       }
     } catch (error) {
       console.error("Failed to add document:", error);
@@ -500,9 +503,62 @@ const ManualDocumentUpload: React.FC = () => {
   );
 };
 
+const FileDocumentUpload: React.FC<{ onUploaded: () => void }> = ({ onUploaded }) => {
+  const { t } = useTranslation();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleSelectFiles = async () => {
+    const selected = await open({
+      multiple: true,
+      filters: [
+        {
+          name: t("settings.knowledgeBase.upload.fileTypes", "Text and PDF files"),
+          extensions: ["txt", "md", "markdown", "pdf"],
+        },
+      ],
+    });
+
+    if (!selected) return;
+
+    const paths = Array.isArray(selected) ? selected : [selected];
+    if (paths.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      await Promise.all(
+        paths.map((path) => invoke<number>("rag_add_document_from_file", { path })),
+      );
+      onUploaded();
+    } catch (error) {
+      console.error("Failed to import document files:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <SettingsGroup title={t("settings.knowledgeBase.upload.filesTitle", "Import Files")}>
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSelectFiles}
+          variant="secondary"
+          size="md"
+          disabled={isUploading}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          {isUploading
+            ? t("settings.knowledgeBase.upload.uploading", "Uploading...")
+            : t("settings.knowledgeBase.upload.selectFiles", "Select .txt/.md/.pdf files")}
+        </Button>
+      </div>
+    </SettingsGroup>
+  );
+};
+
 export const KnowledgeBaseSettings: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting, refreshSettings } = useSettings();
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const knowledgeBase = getSetting("knowledge_base");
   const enabled = knowledgeBase?.enabled ?? false;
@@ -530,6 +586,8 @@ export const KnowledgeBaseSettings: React.FC = () => {
     }
   };
 
+  const refreshData = () => setRefreshToken((prev) => prev + 1);
+
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
       <SettingsGroup title={t("settings.knowledgeBase.general.title")}>
@@ -545,7 +603,7 @@ export const KnowledgeBaseSettings: React.FC = () => {
       {enabled && (
         <>
           <SettingsGroup title={t("settings.knowledgeBase.stats.title")}>
-            <StatsDisplay />
+            <StatsDisplay refreshToken={refreshToken} />
           </SettingsGroup>
 
           <SettingsGroup title={t("settings.knowledgeBase.indexing.title")}>
@@ -574,8 +632,9 @@ export const KnowledgeBaseSettings: React.FC = () => {
             <RetrievalSettings />
           </SettingsGroup>
 
-          <DocumentBrowser />
-          <ManualDocumentUpload />
+          <DocumentBrowser refreshToken={refreshToken} />
+          <FileDocumentUpload onUploaded={refreshData} />
+          <ManualDocumentUpload onUploaded={refreshData} />
         </>
       )}
 

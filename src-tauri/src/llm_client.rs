@@ -1,8 +1,12 @@
 use crate::settings::PostProcessProvider;
+use crate::telemetry::{TelemetryEventBuilder, TelemetryLevel};
+use base64::Engine;
 use log::debug;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, REFERER, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::time::Instant;
+use tokio::sync::mpsc;
 
 #[derive(Debug, Serialize)]
 struct ChatMessage {
@@ -118,8 +122,15 @@ pub async fn send_chat_completion_with_schema(
 ) -> Result<Option<String>, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
+    let start = Instant::now();
 
     debug!("Sending chat completion request to: {}", url);
+    TelemetryEventBuilder::new("llm_client", "chat_completion_started")
+        .message("Sending non-streaming chat completion request")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .attr("schema", json_schema.is_some())
+        .emit();
 
     let client = create_client(provider, &api_key)?;
 
@@ -161,7 +172,18 @@ pub async fn send_chat_completion_with_schema(
         .json(&request_body)
         .send()
         .await
-        .map_err(|e| format!("HTTP request failed: {}", e))?;
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "chat_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Non-streaming chat completion request failed")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("transport_error")
+                .attr("error", &e)
+                .emit();
+            format!("HTTP request failed: {}", e)
+        })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -169,6 +191,15 @@ pub async fn send_chat_completion_with_schema(
             .text()
             .await
             .unwrap_or_else(|_| "Failed to read error response".to_string());
+        TelemetryEventBuilder::new("llm_client", "chat_completion_failed")
+            .level(TelemetryLevel::Warn)
+            .message("Non-streaming chat completion returned error status")
+            .attr("provider_id", &provider.id)
+            .attr("model", model)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status(status.as_u16().to_string())
+            .attr("error_length", error_text.len())
+            .emit();
         return Err(format!(
             "API request failed with status {}: {}",
             status, error_text
@@ -178,12 +209,334 @@ pub async fn send_chat_completion_with_schema(
     let completion: ChatCompletionResponse = response
         .json()
         .await
-        .map_err(|e| format!("Failed to parse API response: {}", e))?;
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "chat_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Failed to parse non-streaming chat completion response")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("parse_error")
+                .attr("error", &e)
+                .emit();
+            format!("Failed to parse API response: {}", e)
+        })?;
+
+    TelemetryEventBuilder::new("llm_client", "chat_completion_completed")
+        .message("Non-streaming chat completion completed")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .duration_ms(start.elapsed().as_millis() as u64)
+        .attr("has_content", completion.choices.first().and_then(|choice| choice.message.content.as_ref()).is_some())
+        .emit();
 
     Ok(completion
         .choices
         .first()
         .and_then(|choice| choice.message.content.clone()))
+}
+
+/// Send a vision chat completion request to an OpenAI-compatible API.
+/// The image is sent as a data URI via `image_url`.
+pub async fn send_vision_chat_completion(
+    provider: &PostProcessProvider,
+    api_key: String,
+    model: &str,
+    prompt: String,
+    image_png_bytes: &[u8],
+) -> Result<Option<String>, String> {
+    let base_url = provider.base_url.trim_end_matches('/');
+    let url = format!("{}/chat/completions", base_url);
+    let start = Instant::now();
+    let client = create_client(provider, &api_key)?;
+    let image_data = base64::engine::general_purpose::STANDARD.encode(image_png_bytes);
+    let data_url = format!("data:image/png;base64,{}", image_data);
+
+    TelemetryEventBuilder::new("llm_client", "vision_completion_started")
+        .message("Sending vision chat completion request")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .attr("image_bytes", image_png_bytes.len())
+        .emit();
+
+    let request_body = serde_json::json!({
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    { "type": "text", "text": prompt },
+                    { "type": "image_url", "image_url": { "url": data_url } }
+                ]
+            }
+        ]
+    });
+
+    let response = client
+        .post(&url)
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "vision_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Vision chat completion request failed")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("transport_error")
+                .attr("error", &e)
+                .emit();
+            format!("HTTP request failed: {}", e)
+        })?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read error response".to_string());
+        TelemetryEventBuilder::new("llm_client", "vision_completion_failed")
+            .level(TelemetryLevel::Warn)
+            .message("Vision chat completion returned error status")
+            .attr("provider_id", &provider.id)
+            .attr("model", model)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status(status.as_u16().to_string())
+            .attr("error_length", error_text.len())
+            .emit();
+        return Err(format!(
+            "API request failed with status {}: {}",
+            status, error_text
+        ));
+    }
+
+    let response_json: Value = response
+        .json()
+        .await
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "vision_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Failed to parse vision chat completion response")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("parse_error")
+                .attr("error", &e)
+                .emit();
+            format!("Failed to parse API response: {}", e)
+        })?;
+
+    // Handles both string content and array content formats.
+    if let Some(content) = response_json
+        .get("choices")
+        .and_then(|v| v.as_array())
+        .and_then(|choices| choices.first())
+        .and_then(|c| c.get("message"))
+        .and_then(|m| m.get("content"))
+    {
+        if let Some(text) = content.as_str() {
+            return Ok(Some(text.to_string()));
+        }
+        if let Some(parts) = content.as_array() {
+            let mut merged = String::new();
+            for part in parts {
+                if let Some(text) = part.get("text").and_then(|t| t.as_str()) {
+                    if !merged.is_empty() {
+                        merged.push('\n');
+                    }
+                    merged.push_str(text);
+                }
+            }
+            if !merged.is_empty() {
+                return Ok(Some(merged));
+            }
+        }
+    }
+
+    TelemetryEventBuilder::new("llm_client", "vision_completion_completed")
+        .message("Vision chat completion completed")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .duration_ms(start.elapsed().as_millis() as u64)
+        .emit();
+
+    Ok(None)
+}
+
+/// Streaming chat completion request body
+#[derive(Debug, Serialize)]
+struct StreamChatCompletionRequest {
+    model: String,
+    messages: Vec<ChatMessage>,
+    stream: bool,
+}
+
+/// SSE streaming response chunk
+#[derive(Debug, Deserialize)]
+struct StreamChatChunk {
+    choices: Vec<StreamChatChoice>,
+}
+
+#[derive(Debug, Deserialize)]
+struct StreamChatChoice {
+    delta: StreamChatDelta,
+}
+
+#[derive(Debug, Deserialize)]
+struct StreamChatDelta {
+    content: Option<String>,
+}
+
+/// Stream a chat completion from an OpenAI-compatible API.
+///
+/// Sends each token through `tx` as it arrives (matching `OllamaClient::generate_stream` signature).
+/// Returns the complete accumulated response text.
+pub async fn stream_chat_completion(
+    provider: &PostProcessProvider,
+    api_key: String,
+    model: &str,
+    system_prompt: Option<String>,
+    messages: Vec<(String, String)>, // (role, content) pairs
+    tx: mpsc::Sender<String>,
+) -> Result<String, String> {
+    let base_url = provider.base_url.trim_end_matches('/');
+    let url = format!("{}/chat/completions", base_url);
+    let start = Instant::now();
+
+    debug!(
+        "Starting streaming chat completion to: {} with model: {}",
+        url, model
+    );
+    TelemetryEventBuilder::new("llm_client", "stream_chat_completion_started")
+        .message("Starting streaming chat completion request")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .emit();
+
+    let client = create_client(provider, &api_key)?;
+
+    let mut chat_messages = Vec::new();
+
+    if let Some(system) = system_prompt {
+        chat_messages.push(ChatMessage {
+            role: "system".to_string(),
+            content: system,
+        });
+    }
+
+    for (role, content) in messages {
+        chat_messages.push(ChatMessage { role, content });
+    }
+
+    let request_body = StreamChatCompletionRequest {
+        model: model.to_string(),
+        messages: chat_messages,
+        stream: true,
+    };
+
+    let response = client
+        .post(&url)
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "stream_chat_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Streaming chat completion request failed")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("transport_error")
+                .attr("error", &e)
+                .emit();
+            format!("HTTP request failed: {}", e)
+        })?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Failed to read error response".to_string());
+        TelemetryEventBuilder::new("llm_client", "stream_chat_completion_failed")
+            .level(TelemetryLevel::Warn)
+            .message("Streaming chat completion returned error status")
+            .attr("provider_id", &provider.id)
+            .attr("model", model)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status(status.as_u16().to_string())
+            .attr("error_length", error_text.len())
+            .emit();
+        return Err(format!(
+            "Streaming API request failed with status {}: {}",
+            status, error_text
+        ));
+    }
+
+    use futures_util::StreamExt;
+    let mut stream = response.bytes_stream();
+    let mut full_response = String::new();
+    let mut buffer = String::new();
+
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result.map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "stream_chat_completion_failed")
+                .level(TelemetryLevel::Error)
+                .message("Streaming chat completion stream read failed")
+                .attr("provider_id", &provider.id)
+                .attr("model", model)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("stream_read_error")
+                .attr("error", &e)
+                .emit();
+            format!("Stream read error: {}", e)
+        })?;
+        let text = String::from_utf8_lossy(&chunk);
+        buffer.push_str(&text);
+
+        // Process complete SSE lines from buffer
+        while let Some(newline_pos) = buffer.find('\n') {
+            let line = buffer[..newline_pos].trim().to_string();
+            buffer = buffer[newline_pos + 1..].to_string();
+
+            if line.is_empty() || line.starts_with(':') {
+                continue;
+            }
+
+            if let Some(data) = line.strip_prefix("data: ") {
+                let data = data.trim();
+                if data == "[DONE]" {
+                    break;
+                }
+
+                if let Ok(chunk) = serde_json::from_str::<StreamChatChunk>(data) {
+                    if let Some(choice) = chunk.choices.first() {
+                        if let Some(content) = &choice.delta.content {
+                            if !content.is_empty() {
+                                full_response.push_str(content);
+                                let _ = tx.send(content.clone()).await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    debug!(
+        "Streaming chat completion finished, total length: {}",
+        full_response.len()
+    );
+    TelemetryEventBuilder::new("llm_client", "stream_chat_completion_completed")
+        .message("Streaming chat completion finished")
+        .attr("provider_id", &provider.id)
+        .attr("model", model)
+        .duration_ms(start.elapsed().as_millis() as u64)
+        .attr("response_chars", full_response.len())
+        .emit();
+
+    Ok(full_response)
 }
 
 /// Fetch available models from an OpenAI-compatible API (optionally filtered to free models)
@@ -209,8 +562,13 @@ pub async fn fetch_models(
 ) -> Result<Vec<String>, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/models", base_url);
+    let start = Instant::now();
 
     debug!("Fetching models from: {}", url);
+    TelemetryEventBuilder::new("llm_client", "fetch_models_started")
+        .message("Fetching available models from provider")
+        .attr("provider_id", &provider.id)
+        .emit();
 
     let client = create_client(provider, &api_key)?;
 
@@ -218,7 +576,17 @@ pub async fn fetch_models(
         .get(&url)
         .send()
         .await
-        .map_err(|e| format!("Failed to fetch models: {}", e))?;
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
+                .level(TelemetryLevel::Error)
+                .message("Model list request failed")
+                .attr("provider_id", &provider.id)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("transport_error")
+                .attr("error", &e)
+                .emit();
+            format!("Failed to fetch models: {}", e)
+        })?;
 
     let status = response.status();
     if !status.is_success() {
@@ -226,6 +594,14 @@ pub async fn fetch_models(
             .text()
             .await
             .unwrap_or_else(|_| "Unknown error".to_string());
+        TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
+            .level(TelemetryLevel::Warn)
+            .message("Model list request returned error status")
+            .attr("provider_id", &provider.id)
+            .duration_ms(start.elapsed().as_millis() as u64)
+            .status(status.as_u16().to_string())
+            .attr("error_length", error_text.len())
+            .emit();
         return Err(format!(
             "Model list request failed ({}): {}",
             status, error_text
@@ -235,7 +611,17 @@ pub async fn fetch_models(
     let parsed: serde_json::Value = response
         .json()
         .await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
+        .map_err(|e| {
+            TelemetryEventBuilder::new("llm_client", "fetch_models_failed")
+                .level(TelemetryLevel::Error)
+                .message("Failed to parse model list response")
+                .attr("provider_id", &provider.id)
+                .duration_ms(start.elapsed().as_millis() as u64)
+                .status("parse_error")
+                .attr("error", &e)
+                .emit();
+            format!("Failed to parse response: {}", e)
+        })?;
 
     let mut models = Vec::new();
 
@@ -257,6 +643,13 @@ pub async fn fetch_models(
             }
         }
     }
+
+    TelemetryEventBuilder::new("llm_client", "fetch_models_completed")
+        .message("Fetched provider model list")
+        .attr("provider_id", &provider.id)
+        .duration_ms(start.elapsed().as_millis() as u64)
+        .attr("model_count", models.len())
+        .emit();
 
     Ok(models)
 }

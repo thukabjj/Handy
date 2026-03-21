@@ -11,6 +11,7 @@ import {
 import "./RecordingOverlay.css";
 import { commands, AskAiState, AskAiConversation, ConversationTurn } from "@/bindings";
 import { syncLanguageFromSettings } from "@/i18n";
+import { recordFrontendTelemetryEvent } from "@/lib/telemetry";
 
 type OverlayState =
   | "recording"
@@ -136,6 +137,18 @@ const RecordingOverlay: React.FC = () => {
       }
     };
   }, [state, conversation]);
+
+  useEffect(() => {
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "state_changed",
+      message: "Recording overlay state changed",
+      attributes: [
+        { key: "state", value: state },
+        { key: "visible", value: String(isVisible) },
+      ],
+    });
+  }, [state, isVisible]);
 
   // Handle window drag
   const handleDragStart = useCallback(async (e: React.MouseEvent) => {
@@ -377,18 +390,23 @@ const RecordingOverlay: React.FC = () => {
               break;
             case "transcribing":
               setState("ask-ai-transcribing");
+              setIsVisible(true);
               break;
             case "generating":
               setState("ask-ai-generating");
+              setIsVisible(true);
               break;
             case "complete":
               setState("ask-ai-complete");
+              setIsVisible(true);
               break;
             case "conversation_active":
               setState("ask-ai-complete");
+              setIsVisible(true);
               break;
             case "error":
               setState("ask-ai-error");
+              setIsVisible(true);
               break;
             case "idle":
               // Reset conversation on idle
@@ -487,6 +505,12 @@ const RecordingOverlay: React.FC = () => {
     if (autoDismissRef.current) {
       clearTimeout(autoDismissRef.current);
     }
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "dismissed",
+      message: "Recording overlay dismissed",
+      attributes: [{ key: "state", value: state }],
+    });
     await commands.dismissAskAiSession();
     setIsVisible(false);
     // Reset state after fade out
@@ -503,6 +527,11 @@ const RecordingOverlay: React.FC = () => {
     if (autoDismissRef.current) {
       clearTimeout(autoDismissRef.current);
     }
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "new_conversation",
+      message: "Started a new Ask AI conversation from overlay",
+    });
     await commands.startNewAskAiConversation();
     // Clear current state but keep overlay visible
     setAskAiQuestion("");

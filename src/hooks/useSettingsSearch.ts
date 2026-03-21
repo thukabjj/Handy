@@ -3,14 +3,15 @@ import Fuse from "fuse.js";
 import { useTranslation } from "react-i18next";
 import { SECTIONS_CONFIG, type SidebarSection } from "@/components/Sidebar";
 import { useSettings } from "@/hooks/useSettings";
+import type { SettingsNavigationTarget } from "@/components/settings/unified/navigation";
 
 export interface SearchableItem {
   id: string;
-  section: SidebarSection;
   sectionLabel: string;
   label: string;
   description: string;
   keywords: string[];
+  target: SettingsNavigationTarget;
 }
 
 interface UseSettingsSearchReturn {
@@ -28,163 +29,207 @@ interface UseSettingsSearchReturn {
  * Sections:
  * - home: Quick start, shortcut, language
  * - settings: Audio, output, app settings
- * - labs: Active Listening, Ask AI, Knowledge Base, Post-Processing
+ * - settings: Core + advanced features
  * - history: Transcription history
  * - about: Version, source code
  * - debug: Log level, updates (only visible in debug mode)
  */
 const SEARCHABLE_ENTRIES: Record<
   string,
-  { section: SidebarSection; keyPrefix: string; keywords?: string[] }[]
+  { target: SettingsNavigationTarget; keyPrefix: string; keywords?: string[] }[]
 > = {
   home: [
     {
-      section: "home",
+      target: { section: "home" },
       keyPrefix: "settings.general.shortcut",
       keywords: ["hotkey", "keybind", "keyboard"],
     },
     {
-      section: "home",
+      target: { section: "home" },
       keyPrefix: "settings.general.language",
       keywords: ["locale", "speech recognition"],
     },
     {
-      section: "home",
+      target: { section: "home" },
       keyPrefix: "settings.general.pushToTalk",
       keywords: ["hold", "record"],
     },
   ],
   settings: [
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "audio" },
       keyPrefix: "settings.sound.microphone",
       keywords: ["mic", "input device", "audio input"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "audio" },
       keyPrefix: "settings.sound.audioFeedback",
       keywords: ["sound", "beep", "notification"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "audio" },
       keyPrefix: "settings.sound.outputDevice",
       keywords: ["speaker", "audio output"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "audio" },
       keyPrefix: "settings.sound.volume",
       keywords: ["loudness", "level"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "app" },
       keyPrefix: "settings.advanced.startHidden",
       keywords: ["tray", "minimize", "launch"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "app" },
       keyPrefix: "settings.advanced.autostart",
       keywords: ["login", "boot", "startup"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "app" },
       keyPrefix: "settings.advanced.overlay",
       keywords: ["position", "visual", "feedback"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "output" },
       keyPrefix: "settings.advanced.pasteMethod",
       keywords: ["clipboard", "typing", "insert"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "output" },
       keyPrefix: "settings.advanced.clipboardHandling",
       keywords: ["copy", "paste"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "transcription" },
       keyPrefix: "settings.advanced.translateToEnglish",
       keywords: ["translation", "language"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "app" },
       keyPrefix: "settings.advanced.modelUnload",
       keywords: ["memory", "gpu", "unload"],
     },
     {
-      section: "settings",
+      target: { section: "settings", unifiedSection: "transcription" },
       keyPrefix: "settings.advanced.customWords",
       keywords: ["dictionary", "correction", "spelling", "vocabulary"],
     },
   ],
-  labs: [
+  settingsAdvanced: [
     {
-      section: "labs",
-      keyPrefix: "labs.activeListening",
-      keywords: ["active listening", "ollama", "continuous", "llm"],
-    },
-    {
-      section: "labs",
-      keyPrefix: "labs.askAi",
-      keywords: ["ask ai", "conversation", "voice chat", "llm"],
-    },
-    {
-      section: "labs",
-      keyPrefix: "labs.knowledgeBase",
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "knowledgeBase",
+      },
+      keyPrefix: "unifiedSettings.features.knowledgeBase",
       keywords: ["rag", "documents", "embeddings", "search"],
     },
     {
-      section: "labs",
-      keyPrefix: "labs.postProcessing",
-      keywords: ["post-processing", "cleanup", "formatting", "api"],
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "batchProcessing",
+      },
+      keyPrefix: "unifiedSettings.features.batchProcessing",
+      keywords: ["batch", "queue", "import", "transcription files"],
     },
     {
-      section: "labs",
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "suggestions",
+      },
+      keyPrefix: "unifiedSettings.features.suggestions",
+      keywords: ["coaching", "quick responses", "rag suggestions", "talking points"],
+    },
+    {
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "aiConfig",
+      },
       keyPrefix: "settings.postProcessing.api",
       keywords: ["openai", "provider", "api key", "model"],
     },
     {
-      section: "labs",
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "aiConfig",
+      },
       keyPrefix: "settings.postProcessing.prompts",
       keywords: ["template", "instructions", "refine"],
     },
   ],
+  suggestions: [
+    {
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "suggestions",
+      },
+      keyPrefix: "settings.suggestions.enable",
+      keywords: ["coaching", "quick responses", "rag suggestions", "talking points"],
+    },
+    {
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "suggestions",
+      },
+      keyPrefix: "settings.suggestions.add",
+      keywords: ["templates", "trigger phrases", "response snippets"],
+    },
+  ],
   history: [
     {
-      section: "history",
+      target: { section: "history" },
       keyPrefix: "settings.history",
       keywords: ["transcriptions", "recordings", "export"],
+    },
+    {
+      target: {
+        section: "settings",
+        unifiedSection: "features",
+        featurePanel: "batchProcessing",
+      },
+      keyPrefix: "batchProcessing",
+      keywords: ["batch", "queue", "import", "transcription files"],
     },
   ],
   debug: [
     {
-      section: "debug",
+      target: { section: "debug" },
       keyPrefix: "settings.debug.logLevel",
       keywords: ["verbosity", "logging"],
     },
     {
-      section: "debug",
+      target: { section: "debug" },
       keyPrefix: "settings.debug.updateChecks",
       keywords: ["version", "updates"],
     },
     {
-      section: "debug",
+      target: { section: "debug" },
       keyPrefix: "settings.debug.historyLimit",
       keywords: ["entries", "maximum"],
     },
     {
-      section: "debug",
+      target: { section: "debug" },
       keyPrefix: "settings.debug.recordingRetention",
       keywords: ["auto-delete", "storage", "space"],
     },
   ],
   about: [
     {
-      section: "about",
+      target: { section: "about" },
       keyPrefix: "settings.about.version",
       keywords: ["version", "release"],
     },
     {
-      section: "about",
+      target: { section: "about" },
       keyPrefix: "settings.about.sourceCode",
       keywords: ["github", "contribute"],
     },
@@ -202,7 +247,7 @@ export function useSettingsSearch(): UseSettingsSearchReturn {
 
     for (const [, entries] of Object.entries(SEARCHABLE_ENTRIES)) {
       for (const entry of entries) {
-        const sectionConfig = SECTIONS_CONFIG[entry.section];
+        const sectionConfig = SECTIONS_CONFIG[entry.target.section];
         if (!sectionConfig || !sectionConfig.enabled(settings)) continue;
 
         const label = t(`${entry.keyPrefix}.title`, {
@@ -216,11 +261,11 @@ export function useSettingsSearch(): UseSettingsSearchReturn {
 
         result.push({
           id: entry.keyPrefix,
-          section: entry.section,
           sectionLabel: t(sectionConfig.labelKey),
           label,
           description,
           keywords: entry.keywords ?? [],
+          target: entry.target,
         });
       }
     }

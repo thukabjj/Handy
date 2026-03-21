@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { commands, type BatchItem, type JobStatus } from "@/bindings";
 import {
   FolderInput,
   Play,
@@ -17,25 +17,9 @@ import {
 import { SettingsGroup } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 
-interface BatchItem {
-  id: string;
-  file_name: string;
-  file_path: string;
-  status:
-    | "Queued"
-    | "Decoding"
-    | "Transcribing"
-    | "Completed"
-    | "Failed"
-    | "Cancelled";
-  progress: number;
-  error: string | null;
-  duration_seconds: number | null;
-}
-
 interface BatchItemStatusEvent {
   id: string;
-  status: BatchItem["status"];
+  status: JobStatus;
   progress: number;
   error: string | null;
   duration_seconds: number | null;
@@ -104,6 +88,15 @@ export const BatchProcessingPanel: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    const loadStatus = async () => {
+      const result = await commands.getBatchStatus();
+      if (result.status === "ok") {
+        setItems(result.data.items);
+        setIsProcessing(result.data.is_processing);
+      }
+    };
+    loadStatus();
+
     const unlistenStatus = listen<BatchItemStatusEvent>(
       "batch-item-status",
       (event) => {
@@ -150,10 +143,10 @@ export const BatchProcessingPanel: React.FC = () => {
     if (paths.length === 0) return;
 
     try {
-      const newItems = await invoke<BatchItem[]>("add_to_batch_queue", {
-        paths,
-      });
-      setItems((prev) => [...prev, ...newItems]);
+      const result = await commands.addToBatchQueue(paths);
+      if (result.status === "ok") {
+        setItems(result.data.items);
+      }
     } catch (error) {
       console.error("Failed to add files to batch queue:", error);
     }
@@ -162,7 +155,10 @@ export const BatchProcessingPanel: React.FC = () => {
   const handleStart = useCallback(async () => {
     try {
       setIsProcessing(true);
-      await invoke("start_batch_processing");
+      const result = await commands.startBatchProcessing();
+      if (result.status === "error") {
+        throw new Error(result.error);
+      }
     } catch (error) {
       setIsProcessing(false);
       console.error("Failed to start batch processing:", error);
@@ -171,7 +167,7 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleCancel = useCallback(async () => {
     try {
-      await invoke("cancel_batch_processing");
+      await commands.cancelBatchProcessing();
       setIsProcessing(false);
     } catch (error) {
       console.error("Failed to cancel batch processing:", error);
@@ -180,7 +176,7 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleClearCompleted = useCallback(async () => {
     try {
-      await invoke("clear_completed_batch_items");
+      await commands.clearCompletedBatchItems();
       setItems((prev) =>
         prev.filter(
           (item) => item.status !== "Completed" && item.status !== "Failed" && item.status !== "Cancelled",
@@ -193,7 +189,7 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleRemoveItem = useCallback(async (id: string) => {
     try {
-      await invoke("remove_batch_item", { id });
+      await commands.removeBatchItem(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Failed to remove batch item:", error);

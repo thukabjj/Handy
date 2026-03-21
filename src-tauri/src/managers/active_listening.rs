@@ -4,13 +4,22 @@
 //! Handles the state machine for active listening sessions and coordinates
 //! between audio input, transcription, and insight generation.
 
+use crate::audio_toolkit::constants::WHISPER_SAMPLE_RATE;
 use crate::audio_toolkit::diarization::{create_shared_diarizer, SharedDiarizer};
+use crate::audio_toolkit::sound_detector::SoundDetector;
+use crate::commands::wake_word::sync_wake_word_monitoring;
+use crate::managers::ask_ai::AskAiManager;
+use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
 use crate::managers::rag::{DocMetadata, RagManager};
 use crate::managers::suggestion_engine::{SuggestionContext, SuggestionEngine};
 use crate::managers::transcription::TranscriptionManager;
+use crate::managers::wake_word::{WakeWordAction, WakeWordDetector};
 use crate::ollama_client::{apply_prompt_template, OllamaClient};
+use crate::settings::active_listening::LlmProvider;
 use crate::settings::get_settings;
+use crate::signal_handle;
+use crate::telemetry::{TelemetryEventBuilder, TelemetryLevel};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -20,6 +29,129 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc;
+
+fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> String {
+    match provider {
+        LlmProvider::Custom => custom_base_url
+            .cloned()
+            .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string()),
+        LlmProvider::LocalOpenAi => custom_base_url
+            .cloned()
+            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()),
+        _ => provider
+            .default_base_url()
+            .unwrap_or("https://openrouter.ai/api/v1")
+            .to_string(),
+    }
+}
+
+fn truncate_for_log(text: &str, max_len: usize) -> String {
+    if text.len() <= max_len {
+        return text.to_string();
+    }
+    format!("{}...", &text[..max_len])
+}
+
+fn emit_wake_health_event(app: &AppHandle, payload: serde_json::Value) {
+    if let Err(err) = app.emit("wake-health-changed", payload) {
+        debug!("failed to emit wake-health-changed event: {}", err);
+    }
+}
+
+const WAKE_SESSION_SILENCE_TIMEOUT: Duration = Duration::from_secs(5);
+const WAKE_SESSION_VOICE_RMS_THRESHOLD: f32 = 0.002;
+
+fn extract_wake_query(transcript: &str) -> Option<String> {
+    let normalized = normalize_wake_query_text(transcript);
+    if normalized.is_empty() {
+        return None;
+    }
+
+    let wake_tokens = ["hey", "hi", "ok", "okay", "yo", "handy", "andy", "hendy", "hindi"];
+    let mut tokens: Vec<&str> = normalized.split_whitespace().collect();
+    while let Some(first) = tokens.first().copied() {
+        if wake_tokens.contains(&first) {
+            tokens.remove(0);
+        } else {
+            break;
+        }
+    }
+
+    if tokens.len() < 2 {
+        return None;
+    }
+    Some(tokens.join(" "))
+}
+
+fn normalize_wake_query_text(input: &str) -> String {
+    let mut normalized = String::with_capacity(input.len());
+    let mut last_was_space = false;
+    for ch in input.chars() {
+        if ch.is_alphanumeric() {
+            normalized.extend(ch.to_lowercase());
+            last_was_space = false;
+        } else if !last_was_space {
+            normalized.push(' ');
+            last_was_space = true;
+        }
+    }
+    normalized.trim().to_string()
+}
+
+#[cfg(test)]
+mod provider_tests {
+    use super::*;
+
+    #[test]
+    fn test_cloud_base_url_for_supported_providers() {
+        assert_eq!(
+            cloud_base_url(LlmProvider::LocalOpenAi, None),
+            "http://127.0.0.1:8000/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::OpenRouter, None),
+            "https://openrouter.ai/api/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::OpenAi, None),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Groq, None),
+            "https://api.groq.com/openai/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Together, None),
+            "https://api.together.xyz/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Fireworks, None),
+            "https://api.fireworks.ai/inference/v1"
+        );
+    }
+
+    #[test]
+    fn test_cloud_base_url_for_custom() {
+        assert_eq!(
+            cloud_base_url(
+                LlmProvider::LocalOpenAi,
+                Some(&"http://127.0.0.1:8080/v1".to_string()),
+            ),
+            "http://127.0.0.1:8080/v1"
+        );
+        assert_eq!(
+            cloud_base_url(
+                LlmProvider::Custom,
+                Some(&"https://example.com/v1".to_string()),
+            ),
+            "https://example.com/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Custom, None),
+            "https://openrouter.ai/api/v1"
+        );
+    }
+}
 
 /// State of the active listening session
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -33,6 +165,12 @@ pub enum ActiveListeningState {
     Processing,
     /// Error state
     Error,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ActiveListeningSessionOrigin {
+    Manual,
+    WakeWord,
 }
 
 impl Default for ActiveListeningState {
@@ -169,6 +307,18 @@ pub struct ActiveListeningManager {
 
     /// Current detected speaker ID for the segment being accumulated
     current_segment_speaker: Arc<Mutex<Option<u32>>>,
+
+    /// Wake word detector for triggering actions from transcribed speech
+    wake_word_detector: Arc<Mutex<WakeWordDetector>>,
+
+    /// Tracks whether the current session was started manually or from wake-word flow.
+    session_origin: Arc<Mutex<ActiveListeningSessionOrigin>>,
+
+    /// Timestamp of the last meaningful speech energy seen in the current session.
+    last_voice_activity: Arc<Mutex<Option<Instant>>>,
+
+    /// Prevents duplicate timeout teardown while the wake-started session is being stopped.
+    wake_timeout_pending: Arc<AtomicBool>,
 }
 
 impl ActiveListeningManager {
@@ -177,6 +327,10 @@ impl ActiveListeningManager {
         app_handle: &AppHandle,
         transcription_manager: Arc<TranscriptionManager>,
     ) -> Result<Self, anyhow::Error> {
+        let settings = get_settings(app_handle);
+        let wake_word_detector = Arc::new(Mutex::new(WakeWordDetector::new(
+            settings.wake_word.clone(),
+        )));
         Ok(Self {
             app_handle: app_handle.clone(),
             transcription_manager,
@@ -188,6 +342,10 @@ impl ActiveListeningManager {
             shutdown_signal: Arc::new(AtomicBool::new(false)),
             diarizer: create_shared_diarizer(),
             current_segment_speaker: Arc::new(Mutex::new(None)),
+            wake_word_detector,
+            session_origin: Arc::new(Mutex::new(ActiveListeningSessionOrigin::Manual)),
+            last_voice_activity: Arc::new(Mutex::new(None)),
+            wake_timeout_pending: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -209,6 +367,14 @@ impl ActiveListeningManager {
 
     /// Start a new active listening session
     pub fn start_session(&self, topic: Option<String>) -> Result<String, String> {
+        self.start_session_with_origin(topic, ActiveListeningSessionOrigin::Manual)
+    }
+
+    fn start_session_with_origin(
+        &self,
+        topic: Option<String>,
+        origin: ActiveListeningSessionOrigin,
+    ) -> Result<String, String> {
         let mut state = self.state.lock().unwrap();
 
         if *state != ActiveListeningState::Idle {
@@ -261,6 +427,15 @@ impl ActiveListeningManager {
             let mut speaker = self.current_segment_speaker.lock().unwrap();
             *speaker = None;
         }
+        {
+            let mut session_origin = self.session_origin.lock().unwrap();
+            *session_origin = origin;
+        }
+        {
+            let mut last_voice_activity = self.last_voice_activity.lock().unwrap();
+            *last_voice_activity = Some(Instant::now());
+        }
+        self.wake_timeout_pending.store(false, Ordering::SeqCst);
 
         // Emit session started event
         let _ = self.app_handle.emit(
@@ -276,8 +451,17 @@ impl ActiveListeningManager {
             "Started active listening session: {} with topic: {:?}",
             session_id, topic
         );
+        TelemetryEventBuilder::new("active_listening", "session_started")
+            .message("Active listening session started")
+            .session_id(session_id.clone())
+            .attr("has_topic", topic.is_some())
+            .emit();
 
         Ok(session_id)
+    }
+
+    pub fn start_wake_session(&self) -> Result<String, String> {
+        self.start_session_with_origin(None, ActiveListeningSessionOrigin::WakeWord)
     }
 
     /// Stop the current active listening session
@@ -312,6 +496,15 @@ impl ActiveListeningManager {
             let mut start_time = self.segment_start_time.lock().unwrap();
             *start_time = None;
         }
+        {
+            let mut session_origin = self.session_origin.lock().unwrap();
+            *session_origin = ActiveListeningSessionOrigin::Manual;
+        }
+        {
+            let mut last_voice_activity = self.last_voice_activity.lock().unwrap();
+            *last_voice_activity = None;
+        }
+        self.wake_timeout_pending.store(false, Ordering::SeqCst);
 
         // Emit session ended event
         let _ = self.app_handle.emit(
@@ -329,6 +522,11 @@ impl ActiveListeningManager {
                 s.id,
                 s.insights.len()
             );
+            TelemetryEventBuilder::new("active_listening", "session_stopped")
+                .message("Active listening session stopped")
+                .session_id(s.id.clone())
+                .attr("insight_count", s.insights.len())
+                .emit();
         }
 
         Ok(session)
@@ -341,18 +539,55 @@ impl ActiveListeningManager {
     /// Also runs diarization to track speaker changes.
     pub fn push_audio_samples(&self, samples: &[f32]) {
         let state = self.get_state();
-        if state != ActiveListeningState::Listening {
+        let settings = get_settings(&self.app_handle);
+        let wake_monitoring_idle = state == ActiveListeningState::Idle && settings.wake_word.enabled;
+        let rms = if samples.is_empty() {
+            0.0
+        } else {
+            (samples.iter().map(|s| s * s).sum::<f32>() / samples.len() as f32).sqrt()
+        };
+        let peak = samples
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f32, |a, b| a.max(b));
+        info!(
+            "[wake-pipeline] push_audio_samples state={:?} wake_idle={} len={} rms={:.5} peak={:.5}",
+            state, wake_monitoring_idle, samples.len(), rms, peak
+        );
+        emit_wake_health_event(
+            &self.app_handle,
+            serde_json::json!({
+                "state": format!("{:?}", state),
+                "wake_idle": wake_monitoring_idle,
+                "mic_rms": rms,
+                "mic_peak": peak,
+                "samples": samples.len(),
+                "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+            }),
+        );
+        if state != ActiveListeningState::Listening && !wake_monitoring_idle {
             debug!(
-                "Skipping audio samples push - state is {:?}, not Listening",
+                "Skipping audio samples push - state is {:?}, wake monitoring idle: {}",
                 state
+                ,wake_monitoring_idle
             );
             return;
         }
         debug!("Pushing {} audio samples to segment buffer", samples.len());
 
-        let settings = get_settings(&self.app_handle);
-        let segment_duration_ms =
-            (settings.active_listening.segment_duration_seconds as u64) * 1000;
+        if state == ActiveListeningState::Listening
+            && self.is_wake_started_session()
+            && self.should_timeout_wake_started_session(rms)
+        {
+            self.schedule_wake_session_timeout();
+            return;
+        }
+
+        let segment_duration_ms = if wake_monitoring_idle {
+            1_200
+        } else {
+            (settings.active_listening.segment_duration_seconds as u64) * 1000
+        };
 
         // Update segment start time if this is the first push
         {
@@ -401,8 +636,73 @@ impl ActiveListeningManager {
         };
 
         if should_process {
+            info!(
+                "[wake-pipeline] segment threshold reached, processing (state={:?}, wake_idle={})",
+                state, wake_monitoring_idle
+            );
             self.trigger_segment_processing();
         }
+    }
+
+    fn is_wake_started_session(&self) -> bool {
+        *self.session_origin.lock().unwrap() == ActiveListeningSessionOrigin::WakeWord
+    }
+
+    fn should_timeout_wake_started_session(&self, rms: f32) -> bool {
+        if rms >= WAKE_SESSION_VOICE_RMS_THRESHOLD {
+            let mut last_voice_activity = self.last_voice_activity.lock().unwrap();
+            *last_voice_activity = Some(Instant::now());
+            return false;
+        }
+
+        let last_voice_activity = self.last_voice_activity.lock().unwrap();
+        last_voice_activity
+            .as_ref()
+            .map(|last| last.elapsed() >= WAKE_SESSION_SILENCE_TIMEOUT)
+            .unwrap_or(false)
+    }
+
+    fn schedule_wake_session_timeout(&self) {
+        if self.wake_timeout_pending.swap(true, Ordering::SeqCst) {
+            return;
+        }
+
+        info!(
+            "[wake-pipeline] wake-started listening timed out after {}s without speech",
+            WAKE_SESSION_SILENCE_TIMEOUT.as_secs()
+        );
+        emit_wake_health_event(
+            &self.app_handle,
+            serde_json::json!({
+                "state": "wake_listening_timeout",
+                "timeout_seconds": WAKE_SESSION_SILENCE_TIMEOUT.as_secs(),
+                "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+            }),
+        );
+        TelemetryEventBuilder::new("wake_word", "wake_listening_timeout")
+            .level(TelemetryLevel::Info)
+            .message("Wake-started listening session timed out without speech")
+            .attr("timeout_seconds", WAKE_SESSION_SILENCE_TIMEOUT.as_secs())
+            .emit();
+
+        let app_handle = self.app_handle.clone();
+        tauri::async_runtime::spawn(async move {
+            let audio_manager = app_handle.state::<Arc<AudioRecordingManager>>();
+            let al_manager = app_handle.state::<Arc<ActiveListeningManager>>();
+
+            if let Err(err) = audio_manager.stop_active_listening() {
+                warn!("Failed to stop wake-started listening stream on timeout: {}", err);
+            }
+            if let Err(err) = al_manager.stop_session() {
+                warn!("Failed to stop wake-started listening session on timeout: {}", err);
+            }
+            if let Err(err) = sync_wake_word_monitoring(&app_handle) {
+                warn!(
+                    "Failed to restore passive wake monitoring after wake listening timeout: {}",
+                    err
+                );
+            }
+        });
     }
 
     /// Trigger processing of the current segment
@@ -434,17 +734,29 @@ impl ActiveListeningManager {
             id
         };
 
-        // Capture session info BEFORE spawning async task (so stop_session doesn't clear it first)
-        let (session_id, topic) = {
+        // Capture session info BEFORE spawning async task (so stop_session doesn't clear it first).
+        // When there is no active session, run wake-word monitoring only.
+        let session_info = {
             let session = self.current_session.lock().unwrap();
-            match &*session {
-                Some(s) => (s.id.clone(), s.topic.clone()),
-                None => {
-                    warn!("No active session when triggering segment processing");
-                    return;
-                }
-            }
+            session.as_ref().map(|s| (s.id.clone(), s.topic.clone()))
         };
+
+        if session_info.is_none() {
+            let self_clone = ActiveListeningManagerHandle {
+                app_handle: self.app_handle.clone(),
+                transcription_manager: self.transcription_manager.clone(),
+                state: self.state.clone(),
+                current_session: self.current_session.clone(),
+                context_buffer: self.context_buffer.clone(),
+                shutdown_signal: self.shutdown_signal.clone(),
+                wake_word_detector: self.wake_word_detector.clone(),
+            };
+            tauri::async_runtime::spawn(async move {
+                self_clone.process_wake_word_only(samples).await;
+            });
+            return;
+        }
+        let (session_id, topic) = session_info.expect("checked is_some above");
 
         // Update state
         {
@@ -470,6 +782,7 @@ impl ActiveListeningManager {
             current_session: self.current_session.clone(),
             context_buffer: self.context_buffer.clone(),
             shutdown_signal: self.shutdown_signal.clone(),
+            wake_word_detector: self.wake_word_detector.clone(),
         };
 
         let segment_start_instant = Instant::now();
@@ -533,10 +846,15 @@ impl ActiveListeningManager {
         session: &ActiveListeningSession,
     ) -> Result<MeetingSummary, String> {
         let settings = get_settings(&self.app_handle);
-        let ollama_settings = &settings.active_listening;
+        let al_settings = &settings.active_listening;
 
-        if ollama_settings.ollama_model.is_empty() {
-            return Err("No Ollama model configured".to_string());
+        let active_model = match al_settings.llm_provider {
+            LlmProvider::Ollama => al_settings.ollama_model.clone(),
+            _ => al_settings.llm_model.clone().unwrap_or_default(),
+        };
+
+        if active_model.is_empty() {
+            return Err("No LLM model configured".to_string());
         }
 
         if session.insights.is_empty() {
@@ -592,13 +910,33 @@ Important:
 
         info!("Generating meeting summary for session {}", session.id);
 
-        let client = OllamaClient::new(&ollama_settings.ollama_base_url)
-            .map_err(|e| format!("Failed to create Ollama client: {}", e))?;
-
-        let response = client
-            .generate(&ollama_settings.ollama_model, prompt)
-            .await
-            .map_err(|e| format!("Ollama request failed: {}", e))?;
+        let response = match al_settings.llm_provider {
+            LlmProvider::Ollama => {
+                let client = OllamaClient::new(&al_settings.ollama_base_url)
+                    .map_err(|e| format!("Failed to create Ollama client: {}", e))?;
+                client
+                    .generate(&al_settings.ollama_model, prompt)
+                    .await
+                    .map_err(|e| format!("Ollama request failed: {}", e))?
+            }
+            _ => {
+                let base_url =
+                    cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref());
+                let provider = crate::settings::PostProcessProvider {
+                    id: format!("{:?}", al_settings.llm_provider).to_lowercase(),
+                    label: format!("{:?}", al_settings.llm_provider),
+                    base_url,
+                    allow_base_url_edit: false,
+                    models_endpoint: None,
+                    supports_structured_output: false,
+                };
+                let api_key = al_settings.llm_api_key.clone().unwrap_or_default();
+                crate::llm_client::send_chat_completion(&provider, api_key, &active_model, prompt)
+                    .await
+                    .map_err(|e| format!("LLM request failed: {}", e))?
+                    .unwrap_or_default()
+            }
+        };
 
         // Parse the JSON response
         let summary = Self::parse_summary_response(&response, session, duration_minutes)?;
@@ -721,9 +1059,174 @@ struct ActiveListeningManagerHandle {
     /// Currently set on Drop but can be extended to support request cancellation.
     #[allow(dead_code)]
     shutdown_signal: Arc<AtomicBool>,
+    wake_word_detector: Arc<Mutex<WakeWordDetector>>,
 }
 
 impl ActiveListeningManagerHandle {
+    async fn process_wake_word_only(&self, samples: Vec<f32>) {
+        info!(
+            "[wake-pipeline] passive wake process start: {} samples",
+            samples.len()
+        );
+        let transcription = match self.transcription_manager.transcribe(samples.clone()) {
+            Ok(text) => text,
+            Err(e) => {
+                info!("[wake-pipeline] passive transcription failed: {}", e);
+                return;
+            }
+        };
+
+        if transcription.trim().is_empty() {
+            info!("[wake-pipeline] passive transcription empty; skipping wake detection");
+            return;
+        }
+        info!(
+            "[wake-pipeline] passive transcription='{}'",
+            truncate_for_log(transcription.trim(), 160)
+        );
+
+        let settings = get_settings(&self.app_handle);
+        let mut detector = self.wake_word_detector.lock().unwrap();
+        detector.update_settings(settings.wake_word.clone());
+        let wake_detection = detector.detect(transcription.trim(), Some(&samples));
+        if !wake_detection.detected {
+            info!(
+                "[wake-pipeline] passive wake rejected reason={:?} kws={:.3} speaker={:?} spoof={:?}",
+                wake_detection.rejection_reason,
+                wake_detection.kws_score,
+                wake_detection.speaker_score,
+                wake_detection.spoof_score
+            );
+            emit_wake_health_event(
+                &self.app_handle,
+                serde_json::json!({
+                    "state": "passive_rejected",
+                    "transcription": truncate_for_log(transcription.trim(), 80),
+                    "last_rejection_reason": wake_detection.rejection_reason,
+                    "kws_score": wake_detection.kws_score,
+                    "speaker_score": wake_detection.speaker_score,
+                    "spoof_score": wake_detection.spoof_score,
+                    "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+                }),
+            );
+            TelemetryEventBuilder::new("wake_word", "passive_detection_rejected")
+                .level(TelemetryLevel::Debug)
+                .message("Passive wake detection rejected")
+                .status(
+                    wake_detection
+                        .rejection_reason
+                        .as_ref()
+                        .map(|reason| format!("{:?}", reason))
+                        .unwrap_or_else(|| "unknown".to_string()),
+                )
+                .sensitive_attr("transcription", truncate_for_log(transcription.trim(), 120))
+                .attr("kws_score", format!("{:.3}", wake_detection.kws_score))
+                .emit();
+            return;
+        }
+
+        let action = detector.get_trigger_action();
+        drop(detector);
+        info!(
+            "Wake word detected during passive monitoring. Action: {:?}",
+            action
+        );
+        if let Some(query) = extract_wake_query(transcription.trim()) {
+            info!("[wake-pipeline] dispatching wake query to Ask AI: {}", query);
+            let ask_ai_manager = self.app_handle.state::<Arc<AskAiManager>>();
+            if let Err(err) = ask_ai_manager.process_transcribed_question(query.clone()) {
+                warn!("Failed to process wake query via Ask AI: {}", err);
+                TelemetryEventBuilder::new("wake_word", "wake_query_dispatch_failed")
+                    .level(TelemetryLevel::Warn)
+                    .message("Passive wake query could not be dispatched to Ask AI")
+                    .status("dispatch_failed")
+                    .attr("error", err)
+                    .sensitive_attr("query", query)
+                    .emit();
+            } else {
+                TelemetryEventBuilder::new("wake_word", "wake_query_dispatched")
+                    .message("Passive wake query dispatched to Ask AI")
+                    .sensitive_attr("query", query)
+                    .emit();
+                return;
+            }
+        }
+        TelemetryEventBuilder::new("wake_word", "wake_phrase_detected")
+            .message("Passive wake phrase detected")
+            .status(format!("{:?}", action))
+            .sensitive_attr("transcription", truncate_for_log(transcription.trim(), 120))
+            .attr("kws_score", format!("{:.3}", wake_detection.kws_score))
+            .emit();
+        emit_wake_health_event(
+            &self.app_handle,
+            serde_json::json!({
+                "state": "passive_detected",
+                "transcription": truncate_for_log(transcription.trim(), 80),
+                "phrase_score": wake_detection.phrase_score,
+                "kws_score": wake_detection.kws_score,
+                "speaker_score": wake_detection.speaker_score,
+                "spoof_score": wake_detection.spoof_score,
+                "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+            }),
+        );
+        let _ = self.app_handle.emit(
+            "wake-word-detected",
+            serde_json::json!({
+                "phrase": settings.wake_word.wake_phrase,
+                "action": format!("{:?}", action),
+                "phrase_score": wake_detection.phrase_score,
+                "kws_score": wake_detection.kws_score,
+                "speaker_score": wake_detection.speaker_score,
+                "spoof_score": wake_detection.spoof_score,
+                "rejection_reason": wake_detection.rejection_reason,
+                "passive_monitoring": true,
+            }),
+        );
+        self.execute_wake_word_action(action);
+    }
+
+    fn execute_wake_word_action(&self, action: WakeWordAction) {
+        info!("[wake-pipeline] executing wake action: {:?}", action);
+        match action {
+            WakeWordAction::StartActiveListening => {
+                let state = self.state.lock().unwrap().clone();
+                if state != ActiveListeningState::Idle {
+                    info!(
+                        "[wake-pipeline] skip StartActiveListening action because state={:?}",
+                        state
+                    );
+                    return;
+                }
+                let al_manager = self.app_handle.state::<Arc<ActiveListeningManager>>();
+                let audio_manager = self.app_handle.state::<Arc<AudioRecordingManager>>();
+                if let Err(err) = al_manager.start_wake_session() {
+                    warn!("Failed to start active listening from wake word: {}", err);
+                    return;
+                }
+                let al_manager_clone = al_manager.inner().clone();
+                let callback = Arc::new(move |samples: &[f32]| {
+                    al_manager_clone.push_audio_samples(samples);
+                });
+                if let Err(err) = audio_manager.start_active_listening(callback) {
+                    warn!(
+                        "Failed to start active listening audio stream from wake word: {}",
+                        err
+                    );
+                    let _ = al_manager.stop_session();
+                }
+            }
+            WakeWordAction::StartRecording => {
+                info!("[wake-pipeline] dispatching wake StartRecording signal");
+                signal_handle::send_transcription_input(
+                    &self.app_handle,
+                    "transcribe",
+                    "wake-word",
+                );
+            }
+            WakeWordAction::None => {}
+        }
+    }
+
     /// Process a segment with pre-captured session info.
     /// This version is used by trigger_segment_processing to ensure session info
     /// is captured before the async task starts, preventing race conditions with stop_session.
@@ -753,6 +1256,7 @@ impl ActiveListeningManagerHandle {
 
         // Keep a copy of samples for saving to history
         let samples_for_history = samples.clone();
+        self.detect_and_emit_sounds(&session_id, &samples);
 
         // Step 1: Transcribe the segment
         info!("Transcribing segment with {} samples", samples.len());
@@ -768,8 +1272,102 @@ impl ActiveListeningManagerHandle {
 
         info!("Transcription result: '{}'", transcription.trim());
 
+        // Wake word detection
+        {
+            let settings = get_settings(&self.app_handle);
+            let mut detector = self.wake_word_detector.lock().unwrap();
+            detector.update_settings(settings.wake_word.clone());
+
+            let wake_detection = detector.detect(transcription.trim(), Some(&samples_for_history));
+            if wake_detection.detected {
+                let action = detector.get_trigger_action();
+                info!("Wake word detected! Action: {:?}", action);
+                if let Some(query) = extract_wake_query(transcription.trim()) {
+                    info!("[wake-pipeline] active wake query -> Ask AI: {}", query);
+                    let ask_ai_manager = self.app_handle.state::<Arc<AskAiManager>>();
+                    if let Err(err) = ask_ai_manager.process_transcribed_question(query.clone()) {
+                        warn!("Failed to process active wake query via Ask AI: {}", err);
+                        TelemetryEventBuilder::new("wake_word", "active_wake_query_dispatch_failed")
+                            .level(TelemetryLevel::Warn)
+                            .message("Wake query inside active listening could not be dispatched")
+                            .session_id(session_id.clone())
+                            .status("dispatch_failed")
+                            .attr("error", err)
+                            .sensitive_attr("query", query)
+                            .emit();
+                    } else {
+                        TelemetryEventBuilder::new("wake_word", "active_wake_query_dispatched")
+                            .message("Wake query inside active listening dispatched to Ask AI")
+                            .session_id(session_id.clone())
+                            .sensitive_attr("query", query)
+                            .emit();
+                    }
+                }
+                TelemetryEventBuilder::new("wake_word", "active_wake_phrase_detected")
+                    .message("Wake phrase detected during active listening session")
+                    .session_id(session_id.clone())
+                    .status(format!("{:?}", action))
+                    .sensitive_attr("transcription", truncate_for_log(transcription.trim(), 120))
+                    .attr("kws_score", format!("{:.3}", wake_detection.kws_score))
+                    .emit();
+                emit_wake_health_event(
+                    &self.app_handle,
+                    serde_json::json!({
+                        "state": "active_detected",
+                        "transcription": truncate_for_log(transcription.trim(), 80),
+                        "phrase_score": wake_detection.phrase_score,
+                        "kws_score": wake_detection.kws_score,
+                        "speaker_score": wake_detection.speaker_score,
+                        "spoof_score": wake_detection.spoof_score,
+                        "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+                    }),
+                );
+                let _ = self.app_handle.emit(
+                    "wake-word-detected",
+                    serde_json::json!({
+                        "phrase": settings.wake_word.wake_phrase,
+                        "action": format!("{:?}", action),
+                        "phrase_score": wake_detection.phrase_score,
+                        "kws_score": wake_detection.kws_score,
+                        "speaker_score": wake_detection.speaker_score,
+                        "spoof_score": wake_detection.spoof_score,
+                        "rejection_reason": wake_detection.rejection_reason,
+                    }),
+                );
+                drop(detector);
+                self.execute_wake_word_action(action);
+            } else {
+                TelemetryEventBuilder::new("wake_word", "active_detection_rejected")
+                    .level(TelemetryLevel::Debug)
+                    .message("Wake phrase rejected during active listening session")
+                    .session_id(session_id.clone())
+                    .status(
+                        wake_detection
+                            .rejection_reason
+                            .as_ref()
+                            .map(|reason| format!("{:?}", reason))
+                            .unwrap_or_else(|| "unknown".to_string()),
+                    )
+                    .sensitive_attr("transcription", truncate_for_log(transcription.trim(), 120))
+                    .attr("kws_score", format!("{:.3}", wake_detection.kws_score))
+                    .emit();
+                emit_wake_health_event(
+                    &self.app_handle,
+                    serde_json::json!({
+                        "state": "active_rejected",
+                        "transcription": truncate_for_log(transcription.trim(), 80),
+                        "last_rejection_reason": wake_detection.rejection_reason,
+                        "kws_score": wake_detection.kws_score,
+                        "speaker_score": wake_detection.speaker_score,
+                        "spoof_score": wake_detection.spoof_score,
+                        "timestamp_ms": chrono::Utc::now().timestamp_millis(),
+                    }),
+                );
+            }
+        }
+
         if transcription.trim().is_empty() {
-            info!("Empty transcription, skipping Ollama");
+            info!("Empty transcription, skipping LLM generation");
             self.transition_to_listening();
             return;
         }
@@ -797,10 +1395,16 @@ impl ActiveListeningManagerHandle {
 
         // Step 3: Generate insight with Ollama
         let settings = get_settings(&self.app_handle);
-        let ollama_settings = &settings.active_listening;
+        let al_settings = &settings.active_listening;
 
-        if ollama_settings.ollama_model.is_empty() {
-            warn!("No Ollama model configured, skipping insight generation");
+        // Determine which model to use based on provider
+        let active_model = match al_settings.llm_provider {
+            LlmProvider::Ollama => al_settings.ollama_model.clone(),
+            _ => al_settings.llm_model.clone().unwrap_or_default(),
+        };
+
+        if active_model.is_empty() {
+            warn!("No LLM model configured, skipping insight generation");
             self.add_insight_to_session(
                 &session_id,
                 transcription.clone(),
@@ -817,12 +1421,12 @@ impl ActiveListeningManagerHandle {
         }
 
         info!(
-            "Calling Ollama with model: {} at base URL: {}",
-            ollama_settings.ollama_model, ollama_settings.ollama_base_url
+            "Calling LLM ({:?}) with model: {}",
+            al_settings.llm_provider, active_model
         );
 
         // Get the selected prompt
-        let prompt_template = ollama_settings
+        let prompt_template = al_settings
             .get_selected_prompt()
             .map(|p| p.prompt_template.clone())
             .unwrap_or_else(|| "Summarize: {{transcription}}".to_string());
@@ -850,17 +1454,8 @@ impl ActiveListeningManagerHandle {
             topic.as_deref(),
         );
 
-        info!("Ollama prompt: {}", prompt);
+        info!("LLM prompt: {}", prompt);
 
-        // Call Ollama with streaming
-        let client = match OllamaClient::new(&ollama_settings.ollama_base_url) {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Failed to create Ollama client: {}", e);
-                self.transition_to_listening();
-                return;
-            }
-        };
         let (tx, mut rx) = mpsc::channel::<String>(100);
 
         let session_id_clone = session_id.clone();
@@ -883,10 +1478,46 @@ impl ActiveListeningManagerHandle {
             full_response
         });
 
-        // Call Ollama
-        let ollama_result = client
-            .generate_stream(&ollama_settings.ollama_model, prompt, tx)
-            .await;
+        // Dispatch to the appropriate LLM provider
+        let llm_result = match al_settings.llm_provider {
+            LlmProvider::Ollama => {
+                // Use Ollama client
+                let client = match OllamaClient::new(&al_settings.ollama_base_url) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        error!("Failed to create Ollama client: {}", e);
+                        self.transition_to_listening();
+                        return;
+                    }
+                };
+                client
+                    .generate_stream(&al_settings.ollama_model, prompt, tx)
+                    .await
+            }
+            _ => {
+                // Use OpenAI-compatible streaming API
+                let base_url =
+                    cloud_base_url(al_settings.llm_provider, al_settings.llm_base_url.as_ref());
+                let provider = crate::settings::PostProcessProvider {
+                    id: format!("{:?}", al_settings.llm_provider).to_lowercase(),
+                    label: format!("{:?}", al_settings.llm_provider),
+                    base_url,
+                    allow_base_url_edit: false,
+                    models_endpoint: None,
+                    supports_structured_output: false,
+                };
+                let api_key = al_settings.llm_api_key.clone().unwrap_or_default();
+                crate::llm_client::stream_chat_completion(
+                    &provider,
+                    api_key,
+                    &active_model,
+                    None,
+                    vec![("user".to_string(), prompt)],
+                    tx,
+                )
+                .await
+            }
+        };
 
         // Wait for stream forwarding to complete
         let insight = match stream_forward_handle.await {
@@ -897,12 +1528,12 @@ impl ActiveListeningManagerHandle {
             }
         };
 
-        // Handle Ollama result
+        // Handle LLM result
         info!(
-            "Ollama stream completed, insight length: {} chars",
+            "LLM stream completed, insight length: {} chars",
             insight.len()
         );
-        match ollama_result {
+        match llm_result {
             Ok(_) => {
                 // Emit done signal
                 let _ = self.app_handle.emit(
@@ -920,7 +1551,7 @@ impl ActiveListeningManagerHandle {
                     context.push_back(insight.clone());
 
                     // Keep only the configured number of context entries
-                    let max_context = ollama_settings.context_window_size;
+                    let max_context = al_settings.context_window_size;
                     while context.len() > max_context {
                         context.pop_front();
                     }
@@ -1027,6 +1658,35 @@ impl ActiveListeningManagerHandle {
                 error: Some(error),
             },
         );
+    }
+
+    fn detect_and_emit_sounds(&self, session_id: &str, samples: &[f32]) {
+        let Some(detector_state) = self
+            .app_handle
+            .try_state::<std::sync::Mutex<SoundDetector>>()
+        else {
+            return;
+        };
+
+        let events = match detector_state.lock() {
+            Ok(detector) => detector.detect_sounds(samples, WHISPER_SAMPLE_RATE),
+            Err(e) => {
+                warn!("Failed to lock SoundDetector: {}", e);
+                return;
+            }
+        };
+
+        for event in events {
+            let _ = self.app_handle.emit(
+                "sound-detected",
+                serde_json::json!({
+                    "session_id": session_id,
+                    "category": event.category,
+                    "confidence": event.confidence,
+                    "timestamp_ms": event.timestamp_ms,
+                }),
+            );
+        }
     }
 
     /// Generate and emit suggestions based on the transcribed segment

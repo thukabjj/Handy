@@ -449,6 +449,17 @@ async openAccessibilitySettings() : Promise<Result<null, string>> {
 }
 },
 /**
+ * Open macOS System Settings to the Screen Recording pane.
+ */
+async openScreenRecordingSettings() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_screen_recording_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Check if Apple Intelligence is available on this device.
  * Called by the frontend when the user selects Apple Intelligence provider.
  */
@@ -887,6 +898,61 @@ async changeOllamaModelSetting(model: string) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Change the LLM provider for active listening
+ */
+async changeActiveListeningLlmProvider(provider: LlmProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM API key for active listening
+ */
+async changeActiveListeningLlmApiKey(apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_api_key", { apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM model for active listening (cloud provider)
+ */
+async changeActiveListeningLlmModel(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the custom LLM base URL for active listening
+ */
+async changeActiveListeningLlmBaseUrl(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_base_url", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Fetch available models from OpenRouter or other OpenAI-compatible API
+ */
+async fetchLlmModels(providerType: LlmProvider, apiKey: string, baseUrl: string | null) : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("fetch_llm_models", { providerType, apiKey, baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Change the context window size
  */
 async changeActiveListeningContextWindowSetting(size: number) : Promise<Result<null, string>> {
@@ -1031,6 +1097,54 @@ async exportMeetingSummary(summary: MeetingSummary, format: string) : Promise<Re
     else return { status: "error", error: e  as any };
 }
 },
+async getScreenVisionSettings() : Promise<Result<ScreenVisionSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_screen_vision_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateScreenVisionSettings(settings: ScreenVisionSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_screen_vision_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getScreenVisionStatus() : Promise<Result<ScreenVisionStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_screen_vision_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async testScreenVisionOnce() : Promise<Result<ScreenVisionSnapshotResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_screen_vision_once") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startScreenVisionSession() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_screen_vision_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopScreenVisionSession() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_screen_vision_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Get the current Ask AI state
  */
@@ -1145,6 +1259,50 @@ async changeAskAiOllamaModelSetting(model: string) : Promise<Result<null, string
 }
 },
 /**
+ * Change the LLM provider for Ask AI
+ */
+async changeAskAiLlmProvider(provider: LlmProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM API key for Ask AI
+ */
+async changeAskAiLlmApiKey(apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_api_key", { apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM model for Ask AI (cloud provider)
+ */
+async changeAskAiLlmModel(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the custom LLM base URL for Ask AI
+ */
+async changeAskAiLlmBaseUrl(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_base_url", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Change Ask AI system prompt
  */
 async changeAskAiSystemPromptSetting(prompt: string) : Promise<Result<null, string>> {
@@ -1228,6 +1386,17 @@ async deleteAskAiConversationFromHistory(id: string) : Promise<Result<null, stri
 async ragAddDocument(content: string, sourceType: string, sourceId: string | null, title: string | null) : Promise<Result<number, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("rag_add_document", { content, sourceType, sourceId, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Add a document from a file path (.txt/.md/.pdf)
+ */
+async ragAddDocumentFromFile(path: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_add_document_from_file", { path }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -1889,6 +2058,158 @@ async changeWakeWordCooldownSetting(seconds: number) : Promise<void> {
     await TAURI_INVOKE("change_wake_word_cooldown_setting", { seconds });
 },
 /**
+ * Enable or disable owner-only voice authentication.
+ */
+async changeWakeWordVoiceAuthEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_voice_auth_enabled_setting", { enabled });
+},
+async changeWakeWordKwsThresholdSetting(threshold: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_kws_threshold_setting", { threshold });
+},
+async changeWakeWordSpoofThresholdSetting(threshold: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_spoof_threshold_setting", { threshold });
+},
+async changeWakeWordVadEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_vad_enabled_setting", { enabled });
+},
+async changeWakeWordTargetFarSetting(targetFarPerHour: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_target_far_setting", { targetFarPerHour });
+},
+async runWakeCalibrationSession() : Promise<WakeCalibrationResult> {
+    return await TAURI_INVOKE("run_wake_calibration_session");
+},
+/**
+ * Start owner voice enrollment flow.
+ */
+async startWakeVoiceEnrollment() : Promise<void> {
+    await TAURI_INVOKE("start_wake_voice_enrollment");
+},
+/**
+ * Capture one enrollment sample from a WAV file path.
+ */
+async captureWakeVoiceSample(audioPath: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("capture_wake_voice_sample", { audioPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Finish enrollment and persist profile into wake word settings.
+ */
+async finishWakeVoiceEnrollment() : Promise<Result<WakeVoiceProfileStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("finish_wake_voice_enrollment") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Clear enrolled owner voice profile.
+ */
+async resetWakeVoiceEnrollment() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_wake_voice_enrollment") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get owner voice profile enrollment status.
+ */
+async getWakeVoiceProfileStatus() : Promise<WakeVoiceProfileStatus> {
+    return await TAURI_INVOKE("get_wake_voice_profile_status");
+},
+/**
+ * Test voice authentication score against enrolled profile using a WAV sample.
+ */
+async testWakeVoiceAuth(audioPath: string) : Promise<Result<WakeVoiceAuthTestResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_wake_voice_auth", { audioPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getObservabilitySettings() : Promise<ObservabilitySettings> {
+    return await TAURI_INVOKE("get_observability_settings");
+},
+async updateObservabilitySettings(settings: ObservabilitySettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_observability_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityDataModeSetting(mode: ObservabilityDataMode) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_data_mode_setting", { mode }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityMaxEventsSetting(maxEvents: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_max_events_setting", { maxEvents }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRecentTelemetryEvents(limit: number | null) : Promise<Result<TelemetryEvent[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_telemetry_events", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTelemetrySnapshot() : Promise<Result<TelemetrySnapshot, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_telemetry_snapshot") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearTelemetryEvents() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_telemetry_events") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async recordFrontendTelemetryEvent(event: TelemetryRecordInput) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("record_frontend_telemetry_event", { event }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTelemetrySnapshotBundle() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_telemetry_snapshot_bundle") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Store an API key in the system keyring.
  */
 async setApiKey(providerId: string, apiKey: string) : Promise<Result<null, string>> {
@@ -1942,7 +2263,7 @@ async getMaskedApiKey(providerId: string) : Promise<Result<string | null, string
 },
 /**
  * Checks if the Mac is a laptop by detecting battery presence
- * 
+ *
  * This uses pmset to check for battery information.
  * Returns true if a battery is detected (laptop), false otherwise (desktop)
  */
@@ -1970,27 +2291,27 @@ export type ActionItem = { id: number; entry_id: number; task: string; assignee:
 /**
  * A prompt template for active listening
  */
-export type ActiveListeningPrompt = { 
+export type ActiveListeningPrompt = {
 /**
  * Unique identifier for the prompt
  */
-id: string; 
+id: string;
 /**
  * Display name for the prompt
  */
-name: string; 
+name: string;
 /**
  * Prompt template supporting {{transcription}}, {{previous_context}}, {{session_topic}}
  */
-prompt_template: string; 
+prompt_template: string;
 /**
  * When this prompt was created (Unix timestamp in milliseconds)
  */
-created_at: number; 
+created_at: number;
 /**
  * Whether this is a built-in default prompt
  */
-is_default?: boolean; 
+is_default?: boolean;
 /**
  * Category for grouping prompts in the UI
  */
@@ -1998,23 +2319,23 @@ category?: PromptCategory }
 /**
  * Information about an active listening session
  */
-export type ActiveListeningSession = { 
+export type ActiveListeningSession = {
 /**
  * Unique session identifier
  */
-id: string; 
+id: string;
 /**
  * Unix timestamp when session started (milliseconds)
  */
-started_at: number; 
+started_at: number;
 /**
  * Unix timestamp when session ended (milliseconds)
  */
-ended_at: number | null; 
+ended_at: number | null;
 /**
  * User-defined topic for this session
  */
-topic: string | null; 
+topic: string | null;
 /**
  * All insights generated during this session
  */
@@ -2022,39 +2343,55 @@ insights: SessionInsight[] }
 /**
  * Settings for the Active Listening feature
  */
-export type ActiveListeningSettings = { 
+export type ActiveListeningSettings = {
 /**
  * Whether active listening is enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
 /**
  * Duration of each audio segment in seconds before transcription
  */
-segment_duration_seconds?: number; 
+segment_duration_seconds?: number;
+/**
+ * LLM provider to use for generating insights
+ */
+llm_provider?: LlmProvider;
+/**
+ * API key for cloud LLM providers (OpenRouter, etc.)
+ */
+llm_api_key?: string | null;
+/**
+ * Model to use with the cloud LLM provider
+ */
+llm_model?: string | null;
+/**
+ * Custom base URL for the LLM provider (used with Custom provider)
+ */
+llm_base_url?: string | null;
 /**
  * Ollama server base URL
  */
-ollama_base_url?: string; 
+ollama_base_url?: string;
 /**
  * Ollama model to use for generating insights
  */
-ollama_model?: string; 
+ollama_model?: string;
 /**
  * Custom prompts for active listening
  */
-prompts?: ActiveListeningPrompt[]; 
+prompts?: ActiveListeningPrompt[];
 /**
  * Currently selected prompt ID
  */
-selected_prompt_id?: string | null; 
+selected_prompt_id?: string | null;
 /**
  * Number of previous summaries to keep for context
  */
-context_window_size?: number; 
+context_window_size?: number;
 /**
  * Audio source type for capturing audio
  */
-audio_source_type?: AudioSourceType; 
+audio_source_type?: AudioSourceType;
 /**
  * Settings for audio mixing when using Mixed mode
  */
@@ -2062,64 +2399,72 @@ audio_mix_settings?: AudioMixSettings }
 /**
  * State of the active listening session
  */
-export type ActiveListeningState = 
+export type ActiveListeningState =
 /**
  * No active session
  */
-"idle" | 
+"idle" |
 /**
  * Listening and accumulating audio
  */
-"listening" | 
+"listening" |
 /**
  * Processing a segment (transcribing + Ollama)
  */
-"processing" | 
+"processing" |
 /**
  * Error state
  */
 "error"
-export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk: boolean; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; experimental_enabled?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; typing_tool?: TypingTool; external_script_path: string | null; 
+export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk: boolean; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; experimental_enabled?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; typing_tool?: TypingTool; external_script_path: string | null;
 /**
  * Enable transcription hook (external script that processes transcription output)
  */
-transcription_hook_enabled?: boolean; 
+transcription_hook_enabled?: boolean;
 /**
  * Path to transcription hook script (if not set, uses default location in app data dir)
  */
-transcription_hook_path?: string | null; 
+transcription_hook_path?: string | null;
 /**
  * Enable text replacements (applied after transcription, before LLM post-processing)
  */
-text_replacements_enabled?: boolean; 
+text_replacements_enabled?: boolean;
 /**
  * List of text replacement rules
  */
-text_replacements?: TextReplacement[]; 
+text_replacements?: TextReplacement[];
 /**
  * Wake-word detection settings
  */
-wake_word?: WakeWordSettings; custom_filler_words?: string[] | null; 
+wake_word?: WakeWordSettings; custom_filler_words?: string[] | null;
 /**
  * Active Listening feature settings
  */
-active_listening?: ActiveListeningSettings; 
+active_listening?: ActiveListeningSettings;
 /**
  * Ask AI feature settings
  */
-ask_ai?: AskAiSettings; 
+ask_ai?: AskAiSettings;
 /**
  * Knowledge Base (RAG) feature settings
  */
-knowledge_base?: KnowledgeBaseSettings; 
+knowledge_base?: KnowledgeBaseSettings;
+/**
+ * Screen Vision feature settings
+ */
+screen_vision?: ScreenVisionSettings;
 /**
  * Sound Detection feature settings
  */
-sound_detection?: SoundDetectionSettings; 
+sound_detection?: SoundDetectionSettings;
 /**
  * Suggestions feature settings
  */
-suggestions?: SuggestionsSettings; 
+suggestions?: SuggestionsSettings;
+/**
+ * Observability and diagnostics settings
+ */
+observability?: ObservabilitySettings;
 /**
  * Hide overlay from screen capture/sharing
  */
@@ -2127,23 +2472,23 @@ private_overlay?: boolean }
 /**
  * An Ask AI conversation consisting of multiple turns
  */
-export type AskAiConversation = { 
+export type AskAiConversation = {
 /**
  * Unique identifier for the conversation
  */
-id: string; 
+id: string;
 /**
  * All Q&A turns in this conversation
  */
-turns: ConversationTurn[]; 
+turns: ConversationTurn[];
 /**
  * Unix timestamp when conversation was created
  */
-created_at: number; 
+created_at: number;
 /**
  * Unix timestamp when conversation was last updated
  */
-updated_at: number; 
+updated_at: number;
 /**
  * Auto-generated title from first question
  */
@@ -2151,35 +2496,51 @@ title: string | null }
 /**
  * Settings for the Ask AI feature
  */
-export type AskAiSettings = { 
+export type AskAiSettings = {
 /**
  * Whether Ask AI feature is enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
+/**
+ * LLM provider to use for generating responses
+ */
+llm_provider?: LlmProvider;
+/**
+ * API key for cloud LLM providers (OpenRouter, etc.)
+ */
+llm_api_key?: string | null;
+/**
+ * Model to use with the cloud LLM provider
+ */
+llm_model?: string | null;
+/**
+ * Custom base URL for the LLM provider (used with Custom provider)
+ */
+llm_base_url?: string | null;
 /**
  * Ollama server base URL
  */
-ollama_base_url?: string; 
+ollama_base_url?: string;
 /**
  * Ollama model to use for generating responses
  */
-ollama_model?: string; 
+ollama_model?: string;
 /**
  * System prompt for the AI assistant
  */
-system_prompt?: string; 
+system_prompt?: string;
 /**
  * Saved window width for the Ask AI overlay
  */
-window_width?: number | null; 
+window_width?: number | null;
 /**
  * Saved window height for the Ask AI overlay
  */
-window_height?: number | null; 
+window_height?: number | null;
 /**
  * Saved window X position for the Ask AI overlay
  */
-window_x?: number | null; 
+window_x?: number | null;
 /**
  * Saved window Y position for the Ask AI overlay
  */
@@ -2187,31 +2548,31 @@ window_y?: number | null }
 /**
  * State of the Ask AI session
  */
-export type AskAiState = 
+export type AskAiState =
 /**
  * No active session
  */
-"idle" | 
+"idle" |
 /**
  * Recording the user's question
  */
-"recording" | 
+"recording" |
 /**
  * Transcribing the recorded audio
  */
-"transcribing" | 
+"transcribing" |
 /**
  * Generating AI response
  */
-"generating" | 
+"generating" |
 /**
  * Response complete, waiting for follow-up
  */
-"complete" | 
+"complete" |
 /**
  * Conversation active, waiting for follow-up question
  */
-"conversation_active" | 
+"conversation_active" |
 /**
  * Error occurred
  */
@@ -2224,7 +2585,7 @@ export type AudioDevice = { index: string; name: string; is_default: boolean }
 /**
  * Settings for audio source mixing when using Mixed mode
  */
-export type AudioMixSettings = { 
+export type AudioMixSettings = {
 /**
  * Mix ratio: 0.0 = microphone only, 1.0 = system audio only, 0.5 = equal mix
  */
@@ -2233,15 +2594,15 @@ mix_ratio?: number }
  * Audio source type for Active Listening
  * Determines where audio is captured from for transcription
  */
-export type AudioSourceType = 
+export type AudioSourceType =
 /**
  * Microphone input only (current default behavior)
  */
-"microphone" | 
+"microphone" |
 /**
  * System audio output only (loopback capture)
  */
-"system_audio" | 
+"system_audio" |
 /**
  * Both microphone and system audio mixed together
  */
@@ -2254,23 +2615,23 @@ export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 /**
  * A single turn in a conversation (question + response pair)
  */
-export type ConversationTurn = { 
+export type ConversationTurn = {
 /**
  * Unique identifier for the turn
  */
-id: string; 
+id: string;
 /**
  * The transcribed question
  */
-question: string; 
+question: string;
 /**
  * The AI response
  */
-response: string; 
+response: string;
 /**
  * Unix timestamp when this turn was created
  */
-timestamp: number; 
+timestamp: number;
 /**
  * Optional reference to the audio file for this turn
  */
@@ -2279,15 +2640,15 @@ export type CustomSounds = { start: boolean; stop: boolean }
 /**
  * Document metadata for RAG storage
  */
-export type DocMetadata = { 
+export type DocMetadata = {
 /**
  * Type of source: "transcription", "upload", "note"
  */
-source_type: string; 
+source_type: string;
 /**
  * Optional reference ID (e.g., history entry ID, file path)
  */
-source_id: string | null; 
+source_id: string | null;
 /**
  * Document title or description
  */
@@ -2298,7 +2659,7 @@ export type HistoryEntry = { id: number; file_name: string; timestamp: number; s
 /**
  * Result of changing keyboard implementation
  */
-export type ImplementationChangeResult = { success: boolean; 
+export type ImplementationChangeResult = { success: boolean;
 /**
  * List of binding IDs that were reset to defaults due to incompatibility
  */
@@ -2308,32 +2669,68 @@ export type KeyboardImplementation = "tauri" | "handy_keys"
 /**
  * Settings for the Knowledge Base feature
  */
-export type KnowledgeBaseSettings = { 
+export type KnowledgeBaseSettings = {
 /**
  * Whether knowledge base is enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
 /**
  * Automatically index transcriptions from Active Listening
  */
-auto_index_transcriptions?: boolean; 
+auto_index_transcriptions?: boolean;
 /**
  * Embedding model to use (Ollama model name)
  */
-embedding_model?: string; 
+embedding_model?: string;
 /**
  * Number of context chunks to retrieve per query
  */
-top_k?: number; 
+top_k?: number;
 /**
  * Minimum similarity threshold for including results (0.0-1.0)
  */
-similarity_threshold?: number; 
+similarity_threshold?: number;
 /**
  * Use RAG context in Active Listening prompts
  */
 use_in_active_listening?: boolean }
 export type LLMPrompt = { id: string; name: string; prompt: string }
+/**
+ * LLM provider type for AI features
+ */
+export type LlmProvider =
+/**
+ * Local Ollama server
+ */
+"ollama" |
+/**
+ * Local OpenAI-compatible server (vLLM/TGI)
+ */
+"local_open_ai" |
+/**
+ * OpenRouter API (OpenAI-compatible)
+ */
+"open_router" |
+/**
+ * OpenAI API
+ */
+"open_ai" |
+/**
+ * Groq API (OpenAI-compatible)
+ */
+"groq" |
+/**
+ * Together AI API (OpenAI-compatible)
+ */
+"together" |
+/**
+ * Fireworks AI API (OpenAI-compatible)
+ */
+"fireworks" |
+/**
+ * Custom OpenAI-compatible API
+ */
+"custom"
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
 /**
  * Loopback device information for the frontend
@@ -2342,15 +2739,15 @@ export type LoopbackDeviceInfoDto = { id: string; name: string; is_default: bool
 /**
  * Loopback support level for the frontend
  */
-export type LoopbackSupportLevel = 
+export type LoopbackSupportLevel =
 /**
  * Full native support for loopback capture
  */
-"native" | 
+"native" |
 /**
  * Requires additional software/virtual audio device
  */
-"requires_virtual_device" | 
+"requires_virtual_device" |
 /**
  * Not supported on this platform
  */
@@ -2358,15 +2755,15 @@ export type LoopbackSupportLevel =
 /**
  * An action item extracted from a meeting
  */
-export type MeetingActionItem = { 
+export type MeetingActionItem = {
 /**
  * Description of the action
  */
-description: string; 
+description: string;
 /**
  * Person responsible (if mentioned)
  */
-assignee: string | null; 
+assignee: string | null;
 /**
  * Deadline (if mentioned)
  */
@@ -2374,35 +2771,35 @@ deadline: string | null }
 /**
  * Comprehensive meeting summary generated from a session
  */
-export type MeetingSummary = { 
+export type MeetingSummary = {
 /**
  * Session ID this summary is for
  */
-session_id: string; 
+session_id: string;
 /**
  * Brief executive summary (2-3 sentences)
  */
-executive_summary: string; 
+executive_summary: string;
 /**
  * Key decisions made during the meeting
  */
-decisions: string[]; 
+decisions: string[];
 /**
  * Action items with optional assignees and deadlines
  */
-action_items: MeetingActionItem[]; 
+action_items: MeetingActionItem[];
 /**
  * Main topics discussed
  */
-topics: string[]; 
+topics: string[];
 /**
  * Suggested follow-up questions
  */
-follow_ups: string[]; 
+follow_ups: string[];
 /**
  * Total duration in minutes
  */
-duration_minutes: number; 
+duration_minutes: number;
 /**
  * When this summary was generated
  */
@@ -2410,6 +2807,8 @@ generated_at: number }
 export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; is_custom: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_5"
+export type ObservabilityDataMode = "metadata_only" | "sensitive_text" | "developer"
+export type ObservabilitySettings = { enabled?: boolean; data_mode?: ObservabilityDataMode; max_events?: number; emit_live_events?: boolean; capture_frontend_events?: boolean }
 /**
  * Ollama model information
  */
@@ -2420,15 +2819,15 @@ export type PostProcessProvider = { id: string; label: string; base_url: string;
 /**
  * Category for grouping prompts
  */
-export type PromptCategory = 
+export type PromptCategory =
 /**
  * Note-taking and summarization prompts
  */
-"note_taking" | 
+"note_taking" |
 /**
  * Real-time meeting coach prompts (Perssua-like)
  */
-"meeting_coach" | 
+"meeting_coach" |
 /**
  * User-created custom prompts
  */
@@ -2436,31 +2835,31 @@ export type PromptCategory =
 /**
  * A quick response template that can be triggered by keywords
  */
-export type QuickResponse = { 
+export type QuickResponse = {
 /**
  * Unique identifier for the quick response
  */
-id: string; 
+id: string;
 /**
  * Display name for the quick response
  */
-name: string; 
+name: string;
 /**
  * Keywords that trigger this response (comma-separated phrases)
  */
-trigger_phrases: string[]; 
+trigger_phrases: string[];
 /**
  * Category for grouping (e.g., "pricing", "objection", "closing")
  */
-category: string; 
+category: string;
 /**
  * The response template to suggest
  */
-response_template: string; 
+response_template: string;
 /**
  * Whether this quick response is enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
 /**
  * When this was created (Unix timestamp in milliseconds)
  */
@@ -2470,26 +2869,29 @@ created_at: number }
  */
 export type RagStats = { document_count: number; embedding_count: number }
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"
+export type ScreenVisionSettings = { enabled?: boolean; interval_seconds?: number; duration_seconds?: number; max_snapshots?: number; llm_provider?: LlmProvider; llm_api_key?: string | null; llm_base_url?: string | null; llm_model?: string; prompt?: string }
+export type ScreenVisionSnapshotResult = { timestamp_ms: number; capture_path: string | null; analysis: string }
+export type ScreenVisionStatus = { running: boolean; session_id: string | null; started_at_ms: number | null; expires_at_ms: number | null; snapshots_processed: number; last_result: ScreenVisionSnapshotResult | null; last_error: string | null }
 /**
  * Search result from RAG query
  */
-export type SearchResult = { 
+export type SearchResult = {
 /**
  * Document ID
  */
-document_id: number; 
+document_id: number;
 /**
  * Chunk text that matched
  */
-chunk_text: string; 
+chunk_text: string;
 /**
  * Similarity score (0-1, higher is better)
  */
-similarity: number; 
+similarity: number;
 /**
  * Document metadata
  */
-metadata: DocMetadata; 
+metadata: DocMetadata;
 /**
  * Original document title
  */
@@ -2497,27 +2899,27 @@ title: string | null }
 /**
  * A single insight generated from a segment
  */
-export type SessionInsight = { 
+export type SessionInsight = {
 /**
  * Unix timestamp when this insight was generated
  */
-timestamp: number; 
+timestamp: number;
 /**
  * The transcribed text for this segment
  */
-transcription: string; 
+transcription: string;
 /**
  * The AI-generated insight
  */
-insight: string; 
+insight: string;
 /**
  * Duration of the audio segment in milliseconds
  */
-duration_ms: number; 
+duration_ms: number;
 /**
  * Speaker ID (0 = primary/you, 1+ = others)
  */
-speaker_id: number | null; 
+speaker_id: number | null;
 /**
  * Human-readable speaker label (e.g., "You", "Speaker 2", or custom name)
  */
@@ -2530,19 +2932,19 @@ export type SoundCategory = "doorbell" | "alarm" | "phone_ring" | "dog_bark" | "
 /**
  * Settings for the Environmental Sound Detection feature
  */
-export type SoundDetectionSettings = { 
+export type SoundDetectionSettings = {
 /**
  * Whether sound detection is enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
 /**
  * Which sound categories to detect
  */
-categories?: SoundCategory[]; 
+categories?: SoundCategory[];
 /**
  * Minimum confidence threshold for triggering a detection (0.0-1.0)
  */
-threshold?: number; 
+threshold?: number;
 /**
  * Whether to show system notifications on detection
  */
@@ -2555,67 +2957,75 @@ export type StoredDocument = { id: number; content: string; source_type: string;
 /**
  * Settings for the Suggestions feature
  */
-export type SuggestionsSettings = { 
+export type SuggestionsSettings = {
 /**
  * Whether suggestions are enabled
  */
-enabled?: boolean; 
+enabled?: boolean;
 /**
  * Quick response templates
  */
-quick_responses?: QuickResponse[]; 
+quick_responses?: QuickResponse[];
 /**
  * Whether to use RAG for context-aware suggestions
  */
-rag_suggestions_enabled?: boolean; 
+rag_suggestions_enabled?: boolean;
 /**
  * Whether to use LLM for generating dynamic suggestions
  */
-llm_suggestions_enabled?: boolean; 
+llm_suggestions_enabled?: boolean;
 /**
  * Maximum number of suggestions to show at once
  */
-max_suggestions?: number; 
+max_suggestions?: number;
 /**
  * Minimum confidence score for showing suggestions (0.0 - 1.0)
  */
-min_confidence?: number; 
+min_confidence?: number;
 /**
  * Whether to auto-dismiss suggestions after copying
  */
-auto_dismiss_on_copy?: boolean; 
+auto_dismiss_on_copy?: boolean;
 /**
  * Suggestion display duration in seconds (0 = until dismissed)
  */
 display_duration_seconds?: number }
+export type TelemetryAttribute = { key: string; value: string; redacted?: boolean }
+export type TelemetryAttributeInput = { key: string; value: string; sensitive?: boolean }
+export type TelemetryComponentStat = { component: string; total_events: number; error_events: number; warn_events: number; last_event_at_ms: number | null }
+export type TelemetryEvent = { id: string; timestamp_ms: number; component: string; action: string; level: TelemetryLevel; message: string; trace_id: string | null; session_id: string | null; duration_ms: number | null; status: string | null; source: string; attributes: TelemetryAttribute[] }
+export type TelemetryLevel = "trace" | "debug" | "info" | "warn" | "error"
+export type TelemetryRecordInput = { component: string; action: string; level: TelemetryLevel; message: string; trace_id: string | null; session_id: string | null; duration_ms: number | null; status: string | null; source?: string | null; attributes?: TelemetryAttributeInput[] }
+export type TelemetrySnapshot = { settings: ObservabilitySettings; stats: TelemetryStats; events: TelemetryEvent[] }
+export type TelemetryStats = { total_events: number; buffered_events: number; dropped_events: number; error_events: number; warn_events: number; last_event_at_ms: number | null; live_streaming_enabled: boolean; component_breakdown: TelemetryComponentStat[] }
 /**
  * A text replacement rule.
  */
-export type TextReplacement = { 
+export type TextReplacement = {
 /**
  * Unique identifier for this replacement.
  */
-id: string; 
+id: string;
 /**
  * Whether this replacement is enabled.
  */
-enabled: boolean; 
+enabled: boolean;
 /**
  * The pattern to match (literal text or regex).
  */
-pattern: string; 
+pattern: string;
 /**
  * The replacement text (supports magic commands).
  */
-replacement: string; 
+replacement: string;
 /**
  * Whether the pattern is a regular expression.
  */
-is_regex: boolean; 
+is_regex: boolean;
 /**
  * Whether the match should be case-insensitive.
  */
-case_insensitive: boolean; 
+case_insensitive: boolean;
 /**
  * Optional description of what this replacement does.
  */
@@ -2623,17 +3033,44 @@ description?: string | null }
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type VocabularyEntry = { id: number; term: string; frequency: number; source: string; category: string | null; created_at: string }
 /**
+ * Voice authentication mode for wake-word detection.
+ */
+export type VoiceAuthMode =
+/**
+ * Disable speaker verification.
+ */
+"disabled" |
+/**
+ * Only accept wake phrase when it matches the enrolled owner voice.
+ */
+"owner_only"
+export type WakeCalibrationResult = { suggested_kws_threshold: number; suggested_speaker_threshold: number; suggested_spoof_threshold: number; target_far_per_hour: number; note: string }
+export type WakeVoiceAuthTestResult = { accepted: boolean; score: number; threshold: number }
+/**
+ * Lightweight voice profile computed from enrollment samples.
+ */
+export type WakeVoiceProfile = {
+/**
+ * Mean feature vector for the enrolled speaker.
+ */
+centroid: number[];
+/**
+ * Number of samples used to build the profile.
+ */
+sample_count: number }
+export type WakeVoiceProfileStatus = { enrolled: boolean; sample_count: number; voice_auth_enabled: boolean; mode: VoiceAuthMode; enrollment_active: boolean }
+/**
  * Action to perform when wake-word is detected.
  */
-export type WakeWordAction = 
+export type WakeWordAction =
 /**
  * Start an Active Listening session
  */
-"start_active_listening" | 
+"start_active_listening" |
 /**
  * Start standard transcription
  */
-"start_recording" | 
+"start_recording" |
 /**
  * No action (disabled)
  */
@@ -2641,32 +3078,72 @@ export type WakeWordAction =
 /**
  * Wake-word detection settings.
  */
-export type WakeWordSettings = { 
+export type WakeWordSettings = {
 /**
  * Whether wake-word detection is enabled
  */
-enabled: boolean; 
+enabled: boolean;
 /**
  * The wake phrase to listen for (e.g., "Hey Handy")
  */
-wake_phrase: string; 
+wake_phrase: string;
 /**
  * Case-insensitive matching
  */
-case_insensitive: boolean; 
+case_insensitive: boolean;
 /**
  * Action to perform when wake-word is detected
  */
-trigger_action: WakeWordAction; 
+trigger_action: WakeWordAction;
 /**
  * Minimum confidence threshold (0.0 - 1.0)
  * For transcript matching, this is fuzzy match threshold
  */
-detection_threshold: number; 
+detection_threshold: number;
 /**
  * Cooldown period in seconds between detections
  */
-cooldown_seconds: number }
+cooldown_seconds: number;
+/**
+ * Enable speaker verification for owner-only wake word.
+ */
+voice_auth_enabled?: boolean;
+/**
+ * Voice authentication strategy.
+ */
+voice_auth_mode?: VoiceAuthMode;
+/**
+ * Minimum similarity threshold for speaker verification (0.0 - 1.0).
+ */
+speaker_threshold?: number;
+/**
+ * Minimum audio duration required for speaker verification.
+ */
+quality_min_duration_ms?: number;
+/**
+ * Optional enrolled profile for speaker verification.
+ */
+voice_profile?: WakeVoiceProfile | null;
+/**
+ * KWS acceptance threshold (0.0 - 1.0).
+ */
+kws_threshold?: number;
+/**
+ * Anti-spoof threshold (0.0 - 1.0). Used only when voice auth is enabled.
+ */
+spoof_threshold?: number;
+/**
+ * Enable simple voice activity gating before wake detection.
+ */
+vad_enabled?: boolean;
+/**
+ * Target false accepts per hour used for calibration suggestions.
+ */
+target_far_per_hour?: number;
+/**
+ * If true, owner-only mode falls back to phrase-only detection when no profile is enrolled.
+ */
+fallback_when_no_profile?: boolean }
 
 /** tauri-specta globals **/
 

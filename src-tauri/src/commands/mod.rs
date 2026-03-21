@@ -4,9 +4,11 @@ pub mod audio;
 pub mod batch_processing;
 pub mod history;
 pub mod keyring;
+pub mod observability;
 pub mod models;
 pub mod rag;
 pub mod replacements;
+pub mod screen_vision;
 pub mod sound_detection;
 pub mod suggestions;
 pub mod tasks;
@@ -128,6 +130,24 @@ pub fn open_accessibility_settings() -> Result<(), String> {
             .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
             .output()
             .map_err(|e| format!("Failed to open Accessibility settings: {}", e))?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(())
+    }
+}
+
+/// Open macOS System Settings to the Screen Recording pane.
+#[specta::specta]
+#[tauri::command]
+pub fn open_screen_recording_settings() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+            .output()
+            .map_err(|e| format!("Failed to open Screen Recording settings: {}", e))?;
         Ok(())
     }
     #[cfg(not(target_os = "macos"))]

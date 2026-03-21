@@ -18,6 +18,7 @@ pub mod portable;
 mod settings;
 mod shortcut;
 mod signal_handle;
+mod telemetry;
 mod transcription_coordinator;
 mod tray;
 mod tray_i18n;
@@ -36,6 +37,7 @@ use managers::batch_processor::BatchProcessor;
 use managers::history::HistoryManager;
 use managers::model::ModelManager;
 use managers::rag::RagManager;
+use managers::suggestion_engine::SuggestionEngine;
 use managers::task_extractor::TaskExtractor;
 use managers::transcription::TranscriptionManager;
 use managers::vocabulary::VocabularyManager;
@@ -116,6 +118,14 @@ fn show_main_window(app: &AppHandle) {
 }
 
 fn initialize_core_logic(app_handle: &AppHandle) {
+    telemetry::initialize_global_telemetry(app_handle);
+    let telemetry_manager = Arc::new(telemetry::TelemetryManager::new(app_handle));
+    app_handle.manage(telemetry_manager);
+    telemetry::TelemetryEventBuilder::new("app", "core_logic_init_started")
+        .message("Initializing core application services")
+        .attr("platform", std::env::consts::OS)
+        .emit();
+
     // Note: Enigo (keyboard/mouse simulation) is NOT initialized here.
     // The frontend is responsible for calling the `initialize_enigo` command
     // after onboarding completes. This avoids triggering permission dialogs
@@ -165,10 +175,18 @@ fn initialize_core_logic(app_handle: &AppHandle) {
         RagManager::new(rag_db_path, ollama_client.clone())
             .expect("Failed to initialize RAG manager"),
     );
+    let suggestion_engine = SuggestionEngine::new(
+        app_handle,
+        Some(rag_manager.clone()),
+        ollama_client.clone(),
+        app_settings.suggestions.clone(),
+    );
 
     // Simple managers (wrapped in appropriate Mutex types)
     let sound_detector = std::sync::Mutex::new(audio_toolkit::SoundDetector::new());
-    let batch_processor = tokio::sync::Mutex::new(BatchProcessor::new());
+    let mut raw_batch_processor = BatchProcessor::new();
+    raw_batch_processor.set_app_handle(app_handle.clone());
+    let batch_processor = tokio::sync::Mutex::new(raw_batch_processor);
     let mut task_extractor = TaskExtractor::new();
     task_extractor.set_app_handle(app_handle.clone());
     let task_extractor = std::sync::Mutex::new(task_extractor);
@@ -186,10 +204,23 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(ask_ai_manager);
     app_handle.manage(ask_ai_history_manager);
     app_handle.manage(rag_manager);
+    app_handle.manage(suggestion_engine);
     app_handle.manage(sound_detector);
     app_handle.manage(batch_processor);
     app_handle.manage(task_extractor);
     app_handle.manage(vocabulary_manager);
+
+    telemetry::TelemetryEventBuilder::new("app", "core_logic_init_completed")
+        .message("Core application services initialized")
+        .attr("wake_word_enabled", app_settings.wake_word.enabled)
+        .attr("ask_ai_enabled", app_settings.ask_ai.enabled)
+        .attr("active_listening_enabled", app_settings.active_listening.enabled)
+        .emit();
+
+    // Start passive wake-word monitoring on app startup when enabled.
+    if let Err(err) = commands::wake_word::sync_wake_word_monitoring(app_handle) {
+        log::warn!("Failed to initialize wake-word monitoring: {}", err);
+    }
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -378,6 +409,7 @@ pub fn run(cli_args: CliArgs) {
         commands::open_log_dir,
         commands::open_app_data_dir,
         commands::open_accessibility_settings,
+        commands::open_screen_recording_settings,
         commands::check_apple_intelligence_available,
         commands::initialize_enigo,
         commands::initialize_shortcuts,
@@ -435,6 +467,11 @@ pub fn run(cli_args: CliArgs) {
         commands::active_listening::change_active_listening_segment_duration_setting,
         commands::active_listening::change_ollama_base_url_setting,
         commands::active_listening::change_ollama_model_setting,
+        commands::active_listening::change_active_listening_llm_provider,
+        commands::active_listening::change_active_listening_llm_api_key,
+        commands::active_listening::change_active_listening_llm_model,
+        commands::active_listening::change_active_listening_llm_base_url,
+        commands::active_listening::fetch_llm_models,
         commands::active_listening::change_active_listening_context_window_setting,
         commands::active_listening::change_audio_source_type_setting,
         commands::active_listening::change_audio_mix_ratio_setting,
@@ -450,6 +487,13 @@ pub fn run(cli_args: CliArgs) {
         commands::active_listening::open_presentation_mode,
         commands::active_listening::generate_meeting_summary,
         commands::active_listening::export_meeting_summary,
+        // Screen Vision commands
+        commands::screen_vision::get_screen_vision_settings,
+        commands::screen_vision::update_screen_vision_settings,
+        commands::screen_vision::get_screen_vision_status,
+        commands::screen_vision::test_screen_vision_once,
+        commands::screen_vision::start_screen_vision_session,
+        commands::screen_vision::stop_screen_vision_session,
         // Ask AI commands
         commands::ask_ai::get_ask_ai_state,
         commands::ask_ai::is_ask_ai_active,
@@ -464,6 +508,10 @@ pub fn run(cli_args: CliArgs) {
         commands::ask_ai::change_ask_ai_enabled_setting,
         commands::ask_ai::change_ask_ai_ollama_base_url_setting,
         commands::ask_ai::change_ask_ai_ollama_model_setting,
+        commands::ask_ai::change_ask_ai_llm_provider,
+        commands::ask_ai::change_ask_ai_llm_api_key,
+        commands::ask_ai::change_ask_ai_llm_model,
+        commands::ask_ai::change_ask_ai_llm_base_url,
         commands::ask_ai::change_ask_ai_system_prompt_setting,
         commands::ask_ai::get_ask_ai_settings,
         commands::ask_ai::save_ask_ai_window_bounds,
@@ -474,6 +522,7 @@ pub fn run(cli_args: CliArgs) {
         commands::ask_ai::delete_ask_ai_conversation_from_history,
         // RAG / Knowledge Base commands
         commands::rag::rag_add_document,
+        commands::rag::rag_add_document_from_file,
         commands::rag::rag_search,
         commands::rag::rag_delete_document,
         commands::rag::rag_list_documents,
@@ -549,6 +598,29 @@ pub fn run(cli_args: CliArgs) {
         commands::wake_word::change_wake_word_action_setting,
         commands::wake_word::change_wake_word_threshold_setting,
         commands::wake_word::change_wake_word_cooldown_setting,
+        commands::wake_word::change_wake_word_voice_auth_enabled_setting,
+        commands::wake_word::change_wake_word_kws_threshold_setting,
+        commands::wake_word::change_wake_word_spoof_threshold_setting,
+        commands::wake_word::change_wake_word_vad_enabled_setting,
+        commands::wake_word::change_wake_word_target_far_setting,
+        commands::wake_word::run_wake_calibration_session,
+        commands::wake_word::start_wake_voice_enrollment,
+        commands::wake_word::capture_wake_voice_sample,
+        commands::wake_word::finish_wake_voice_enrollment,
+        commands::wake_word::reset_wake_voice_enrollment,
+        commands::wake_word::get_wake_voice_profile_status,
+        commands::wake_word::test_wake_voice_auth,
+        // Observability commands
+        commands::observability::get_observability_settings,
+        commands::observability::update_observability_settings,
+        commands::observability::change_observability_enabled_setting,
+        commands::observability::change_observability_data_mode_setting,
+        commands::observability::change_observability_max_events_setting,
+        commands::observability::get_recent_telemetry_events,
+        commands::observability::get_telemetry_snapshot,
+        commands::observability::clear_telemetry_events,
+        commands::observability::record_frontend_telemetry_event,
+        commands::observability::export_telemetry_snapshot_bundle,
         // Keyring commands
         commands::keyring::set_api_key,
         commands::keyring::get_api_key,

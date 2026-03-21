@@ -2,11 +2,14 @@ use crate::audio_toolkit::{list_input_devices, vad::SmoothedVad, AudioRecorder, 
 use crate::error::HandyError;
 use crate::helpers::clamshell;
 use crate::settings::{get_settings, AppSettings};
+use crate::telemetry::{TelemetryEventBuilder, TelemetryLevel};
 use crate::utils;
 use log::{debug, error, info, warn};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tauri::Manager;
+use std::time::SystemTime;
 
 /// Helper macro to safely acquire a mutex lock and return early on failure
 macro_rules! safe_lock {
@@ -129,6 +132,7 @@ fn set_mute(mute: bool) {
 }
 
 const WHISPER_SAMPLE_RATE: usize = 16000;
+static LAST_MIC_TELEMETRY_LOG_MS: AtomicU64 = AtomicU64::new(0);
 
 /* ──────────────────────────────────────────────────────────────── */
 
@@ -170,12 +174,53 @@ fn create_audio_recorder(
 
     // If a sample callback is provided, wire it up for Active Listening
     if let Some(cb) = sample_callback {
+        let app_handle = app_handle.clone();
         recorder = recorder.with_sample_callback(move |samples| {
+            let now_ms = now_unix_ms();
+            let last = LAST_MIC_TELEMETRY_LOG_MS.load(Ordering::Relaxed);
+            if now_ms.saturating_sub(last) >= 1500 {
+                LAST_MIC_TELEMETRY_LOG_MS.store(now_ms, Ordering::Relaxed);
+                let (rms, peak) = sample_stats(samples);
+                let mode = app_handle
+                    .try_state::<Arc<AudioRecordingManager>>()
+                    .and_then(|mgr| mgr.mode.lock().ok().map(|m| format!("{:?}", *m)))
+                    .unwrap_or_else(|| "unknown".to_string());
+                info!(
+                    "[wake-mic] telemetry mode={} samples={} rms={:.5} peak={:.5}",
+                    mode,
+                    samples.len(),
+                    rms,
+                    peak
+                );
+            }
             cb(samples);
         });
     }
 
     Ok(recorder)
+}
+
+fn sample_stats(samples: &[f32]) -> (f32, f32) {
+    if samples.is_empty() {
+        return (0.0, 0.0);
+    }
+    let mut sum_sq = 0.0f32;
+    let mut peak = 0.0f32;
+    for s in samples {
+        sum_sq += s * s;
+        let a = s.abs();
+        if a > peak {
+            peak = a;
+        }
+    }
+    ((sum_sq / samples.len() as f32).sqrt(), peak)
+}
+
+fn now_unix_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
 }
 
 /* ──────────────────────────────────────────────────────────────── */
@@ -440,13 +485,28 @@ impl AudioRecordingManager {
                             binding_id: binding_id.to_string(),
                         };
                         debug!("Recording started for binding {binding_id}");
+                        TelemetryEventBuilder::new("audio", "recording_started")
+                            .message("Manual recording started")
+                            .attr("binding_id", binding_id)
+                            .emit();
                         return true;
                     }
                 }
             }
             error!("Recorder not available");
+            TelemetryEventBuilder::new("audio", "recording_start_failed")
+                .level(TelemetryLevel::Error)
+                .message("Failed to start manual recording")
+                .attr("binding_id", binding_id)
+                .status("recorder_unavailable")
+                .emit();
             false
         } else {
+            TelemetryEventBuilder::new("audio", "recording_start_rejected")
+                .level(TelemetryLevel::Warn)
+                .message("Recording start ignored because another recording is active")
+                .attr("binding_id", binding_id)
+                .emit();
             false
         }
     }
@@ -507,6 +567,11 @@ impl AudioRecordingManager {
 
                 // Pad if very short
                 let s_len = samples.len();
+                TelemetryEventBuilder::new("audio", "recording_stopped")
+                    .message("Manual recording stopped")
+                    .attr("binding_id", binding_id)
+                    .attr("sample_count", s_len)
+                    .emit();
                 // debug!("Got {} samples", s_len);
                 if s_len < WHISPER_SAMPLE_RATE && s_len > 0 {
                     let mut padded = samples;
@@ -552,6 +617,10 @@ impl AudioRecordingManager {
             if is_on_demand {
                 self.stop_microphone_stream();
             }
+
+            TelemetryEventBuilder::new("audio", "recording_cancelled")
+                .message("Manual recording cancelled")
+                .emit();
         }
     }
 
@@ -607,6 +676,9 @@ impl AudioRecordingManager {
         }
 
         info!("Active listening started");
+        TelemetryEventBuilder::new("audio", "active_listening_stream_started")
+            .message("Active listening microphone stream started")
+            .emit();
         Ok(())
     }
 
@@ -663,6 +735,9 @@ impl AudioRecordingManager {
         }
 
         info!("Active listening stopped");
+        TelemetryEventBuilder::new("audio", "active_listening_stream_stopped")
+            .message("Active listening microphone stream stopped")
+            .emit();
         Ok(())
     }
 

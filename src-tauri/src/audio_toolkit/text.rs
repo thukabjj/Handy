@@ -27,72 +27,117 @@ pub fn apply_custom_words(text: &str, custom_words: &[String], threshold: f64) -
 
     let words: Vec<&str> = text.split_whitespace().collect();
     let mut corrected_words = Vec::new();
-
-    for word in words {
+    let mut i = 0;
+    while i < words.len() {
+        let word = words[i];
         let cleaned_word = word
             .trim_matches(|c: char| !c.is_alphabetic())
             .to_lowercase();
 
-        if cleaned_word.is_empty() {
+        if cleaned_word.is_empty() || cleaned_word.chars().count() > 50 {
             corrected_words.push(word.to_string());
-            continue;
-        }
-
-        // Skip extremely long words to avoid performance issues
-        if cleaned_word.len() > 50 {
-            corrected_words.push(word.to_string());
+            i += 1;
             continue;
         }
 
         let mut best_match: Option<&String> = None;
         let mut best_score = f64::MAX;
+        let mut consume_words = 1usize;
 
-        for (i, custom_word_lower) in custom_words_lower.iter().enumerate() {
-            // Skip if lengths are too different (optimization)
-            let len_diff = (cleaned_word.len() as i32 - custom_word_lower.len() as i32).abs();
-            if len_diff > 5 {
-                continue;
-            }
+        // Single-word candidate
+        if let Some((replacement, score)) =
+            find_best_custom_match(&cleaned_word, custom_words, &custom_words_lower, threshold)
+        {
+            best_match = Some(replacement);
+            best_score = score;
+        }
 
-            // Calculate Levenshtein distance (normalized by length)
-            let levenshtein_dist = levenshtein(&cleaned_word, custom_word_lower);
-            let max_len = cleaned_word.len().max(custom_word_lower.len()) as f64;
-            let levenshtein_score = if max_len > 0.0 {
-                levenshtein_dist as f64 / max_len
-            } else {
-                1.0
-            };
+        // Two-word candidate, useful for split proper nouns like "Charge B,"
+        if cleaned_word.chars().count() >= 2 && i + 1 < words.len() {
+            let next_word = words[i + 1];
+            let cleaned_next = next_word
+                .trim_matches(|c: char| !c.is_alphabetic())
+                .to_lowercase();
 
-            // Calculate phonetic similarity using Soundex
-            let phonetic_match = soundex(&cleaned_word, custom_word_lower);
-
-            // Combine scores: favor phonetic matches, but also consider string similarity
-            let combined_score = if phonetic_match {
-                levenshtein_score * 0.3 // Give significant boost to phonetic matches
-            } else {
-                levenshtein_score
-            };
-
-            // Accept if the score is good enough (configurable threshold)
-            if combined_score < threshold && combined_score < best_score {
-                best_match = Some(&custom_words[i]);
-                best_score = combined_score;
+            if !cleaned_next.is_empty() && cleaned_next.chars().count() <= 50 {
+                let bigram_cleaned = format!("{}{}", cleaned_word, cleaned_next);
+                if let Some((replacement, score)) = find_best_custom_match(
+                    &bigram_cleaned,
+                    custom_words,
+                    &custom_words_lower,
+                    threshold,
+                ) {
+                    // Prefer joining when the second token is very short (e.g. "Charge B,")
+                    let prefer_split_join = cleaned_next.chars().count() <= 2;
+                    if prefer_split_join || score < best_score {
+                        best_match = Some(replacement);
+                        consume_words = 2;
+                    }
+                }
             }
         }
 
         if let Some(replacement) = best_match {
-            // Preserve the original case pattern as much as possible
             let corrected = preserve_case_pattern(word, replacement);
+            let (prefix, _) = extract_punctuation(word);
+            let suffix = if consume_words == 2 {
+                let (_, end_suffix) = extract_punctuation(words[i + 1]);
+                end_suffix
+            } else {
+                let (_, end_suffix) = extract_punctuation(word);
+                end_suffix
+            };
 
-            // Preserve punctuation from original word
-            let (prefix, suffix) = extract_punctuation(word);
             corrected_words.push(format!("{}{}{}", prefix, corrected, suffix));
+            i += consume_words;
         } else {
             corrected_words.push(word.to_string());
+            i += 1;
         }
     }
 
     corrected_words.join(" ")
+}
+
+fn find_best_custom_match<'a>(
+    candidate: &str,
+    custom_words: &'a [String],
+    custom_words_lower: &[String],
+    threshold: f64,
+) -> Option<(&'a String, f64)> {
+    let mut best_match: Option<&String> = None;
+    let mut best_score = f64::MAX;
+    let candidate_len = candidate.chars().count() as i32;
+
+    for (i, custom_word_lower) in custom_words_lower.iter().enumerate() {
+        let custom_len = custom_word_lower.chars().count() as i32;
+        let len_diff = (candidate_len - custom_len).abs();
+        if len_diff > 5 {
+            continue;
+        }
+
+        let levenshtein_dist = levenshtein(candidate, custom_word_lower);
+        let max_len = candidate_len.max(custom_len) as f64;
+        let levenshtein_score = if max_len > 0.0 {
+            levenshtein_dist as f64 / max_len
+        } else {
+            1.0
+        };
+
+        let phonetic_match = soundex(candidate, custom_word_lower);
+        let combined_score = if phonetic_match {
+            levenshtein_score * 0.3
+        } else {
+            levenshtein_score
+        };
+
+        if combined_score < threshold && combined_score < best_score {
+            best_match = Some(&custom_words[i]);
+            best_score = combined_score;
+        }
+    }
+
+    best_match.map(|m| (m, best_score))
 }
 
 /// Preserves the case pattern of the original word when applying a replacement

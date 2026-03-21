@@ -100,6 +100,7 @@ impl AudioRecorder {
         let vad = self.vad.clone();
         // Move the optional level callback into the worker thread
         let level_cb = self.level_cb.clone();
+        let sample_cb = self.sample_cb.clone();
 
         let worker = std::thread::spawn(move || {
             let config = thread_config;
@@ -142,7 +143,7 @@ impl AudioRecorder {
             stream.play().expect("failed to start stream");
 
             // keep the stream alive while we process samples
-            run_consumer(sample_rate, vad, sample_rx, cmd_rx, level_cb);
+            run_consumer(sample_rate, vad, sample_rx, cmd_rx, level_cb, sample_cb);
             // stream is dropped here, after run_consumer returns
         });
 
@@ -276,6 +277,7 @@ fn run_consumer(
     sample_rx: mpsc::Receiver<Vec<f32>>,
     cmd_rx: mpsc::Receiver<Cmd>,
     level_cb: Option<Arc<dyn Fn(Vec<f32>) + Send + Sync + 'static>>,
+    sample_cb: Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
 ) {
     let mut frame_resampler = FrameResampler::new(
         in_sample_rate as usize,
@@ -302,9 +304,14 @@ fn run_consumer(
         recording: bool,
         vad: &Option<Arc<Mutex<Box<dyn vad::VoiceActivityDetector>>>>,
         out_buf: &mut Vec<f32>,
+        sample_cb: &Option<Arc<dyn Fn(&[f32]) + Send + Sync + 'static>>,
     ) {
         if !recording {
             return;
+        }
+
+        if let Some(cb) = sample_cb {
+            cb(samples);
         }
 
         if let Some(vad_arc) = vad {
@@ -333,7 +340,7 @@ fn run_consumer(
 
         // ---------- existing pipeline ------------------------------------ //
         frame_resampler.push(&raw, &mut |frame: &[f32]| {
-            handle_frame(frame, recording, &vad, &mut processed_samples)
+            handle_frame(frame, recording, &vad, &mut processed_samples, &sample_cb)
         });
 
         // non-blocking check for a command
@@ -353,12 +360,12 @@ fn run_consumer(
                     // Drain any audio chunks that were captured but not yet consumed
                     while let Ok(remaining) = sample_rx.try_recv() {
                         frame_resampler.push(&remaining, &mut |frame: &[f32]| {
-                            handle_frame(frame, true, &vad, &mut processed_samples)
+                            handle_frame(frame, true, &vad, &mut processed_samples, &sample_cb)
                         });
                     }
 
                     frame_resampler.finish(&mut |frame: &[f32]| {
-                        handle_frame(frame, true, &vad, &mut processed_samples)
+                        handle_frame(frame, true, &vad, &mut processed_samples, &sample_cb)
                     });
 
                     let _ = reply_tx.send(std::mem::take(&mut processed_samples));

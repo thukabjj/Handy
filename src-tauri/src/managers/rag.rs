@@ -4,6 +4,7 @@
 //! Uses SQLite for vector storage and Ollama for embedding generation.
 
 use crate::ollama_client::OllamaClient;
+use crate::telemetry::{TelemetryEventBuilder, TelemetryLevel};
 use log::{debug, info, warn};
 use rusqlite::{params, Connection};
 use rusqlite_migration::{Migrations, M};
@@ -168,6 +169,14 @@ impl RagManager {
     /// # Returns
     /// The document ID
     pub async fn add_document(&self, content: &str, metadata: DocMetadata) -> Result<i64, String> {
+        let started = std::time::Instant::now();
+        TelemetryEventBuilder::new("rag", "add_document_started")
+            .message("Adding document to knowledge base")
+            .attr("source_type", metadata.source_type.clone())
+            .attr("has_title", metadata.title.is_some())
+            .attr("content_chars", content.chars().count())
+            .emit();
+
         let conn = self.get_connection()?;
 
         // Insert document
@@ -187,13 +196,27 @@ impl RagManager {
                 metadata_json
             ],
         )
-        .map_err(|e| format!("Failed to insert document: {}", e))?;
+        .map_err(|e| {
+            TelemetryEventBuilder::new("rag", "add_document_failed")
+                .level(TelemetryLevel::Error)
+                .message("Failed to insert knowledge base document")
+                .status("insert_failed")
+                .attr("error", &e)
+                .emit();
+            format!("Failed to insert document: {}", e)
+        })?;
 
         let document_id = conn.last_insert_rowid();
         debug!("Added document {} to knowledge base", document_id);
 
         // Generate and store embeddings for the document
         self.index_document(document_id, content).await?;
+
+        TelemetryEventBuilder::new("rag", "add_document_completed")
+            .message("Document added to knowledge base")
+            .attr("document_id", document_id)
+            .duration_ms(started.elapsed().as_millis() as u64)
+            .emit();
 
         Ok(document_id)
     }
@@ -202,6 +225,7 @@ impl RagManager {
     async fn index_document(&self, document_id: i64, content: &str) -> Result<(), String> {
         let chunks = self.chunk_text(content);
         let model = self.embedding_model.lock().await.clone();
+        let started = std::time::Instant::now();
 
         debug!(
             "Indexing document {} with {} chunks using model {}",
@@ -219,7 +243,18 @@ impl RagManager {
             let embedding = self
                 .ollama_client
                 .generate_embeddings(&model, chunk)
-                .await?;
+                .await
+                .map_err(|e| {
+                    TelemetryEventBuilder::new("rag", "index_document_failed")
+                        .level(TelemetryLevel::Error)
+                        .message("Failed to generate document embedding")
+                        .attr("document_id", document_id)
+                        .attr("chunk_index", index)
+                        .status("embedding_failed")
+                        .attr("error", &e)
+                        .emit();
+                    e
+                })?;
 
             // Store embedding
             let conn = self.get_connection()?;
@@ -236,7 +271,17 @@ impl RagManager {
                     model
                 ],
             )
-            .map_err(|e| format!("Failed to store embedding: {}", e))?;
+            .map_err(|e| {
+                TelemetryEventBuilder::new("rag", "index_document_failed")
+                    .level(TelemetryLevel::Error)
+                    .message("Failed to store document embedding")
+                    .attr("document_id", document_id)
+                    .attr("chunk_index", index)
+                    .status("store_failed")
+                    .attr("error", &e)
+                    .emit();
+                format!("Failed to store embedding: {}", e)
+            })?;
         }
 
         info!(
@@ -244,6 +289,13 @@ impl RagManager {
             document_id,
             chunks.len()
         );
+        TelemetryEventBuilder::new("rag", "index_document_completed")
+            .message("Document indexing completed")
+            .attr("document_id", document_id)
+            .attr("chunk_count", chunks.len())
+            .attr("model", model)
+            .duration_ms(started.elapsed().as_millis() as u64)
+            .emit();
         Ok(())
     }
 
@@ -301,12 +353,28 @@ impl RagManager {
     /// Vector of search results sorted by similarity
     pub async fn search(&self, query: &str, top_k: usize) -> Result<Vec<SearchResult>, String> {
         let model = self.embedding_model.lock().await.clone();
+        let started = std::time::Instant::now();
+        TelemetryEventBuilder::new("rag", "search_started")
+            .message("Knowledge base search started")
+            .sensitive_attr("query", query)
+            .attr("top_k", top_k)
+            .attr("model", model.clone())
+            .emit();
 
         // Generate query embedding
         let query_embedding = self
             .ollama_client
             .generate_embeddings(&model, query)
-            .await?;
+            .await
+            .map_err(|e| {
+                TelemetryEventBuilder::new("rag", "search_failed")
+                    .level(TelemetryLevel::Error)
+                    .message("Failed to generate search embedding")
+                    .status("embedding_failed")
+                    .attr("error", &e)
+                    .emit();
+                e
+            })?;
 
         // Search for similar embeddings
         let conn = self.get_connection()?;
@@ -378,6 +446,13 @@ impl RagManager {
             query.chars().take(50).collect::<String>(),
             results.len()
         );
+        TelemetryEventBuilder::new("rag", "search_completed")
+            .message("Knowledge base search completed")
+            .attr("result_count", results.len())
+            .attr("top_k", top_k)
+            .attr("model", model)
+            .duration_ms(started.elapsed().as_millis() as u64)
+            .emit();
 
         Ok(results)
     }
@@ -398,6 +473,10 @@ impl RagManager {
             .map_err(|e| format!("Failed to delete document: {}", e))?;
 
         info!("Deleted document {} from knowledge base", document_id);
+        TelemetryEventBuilder::new("rag", "delete_document_completed")
+            .message("Document deleted from knowledge base")
+            .attr("document_id", document_id)
+            .emit();
         Ok(())
     }
 
@@ -452,6 +531,10 @@ impl RagManager {
 
         *self.embedding_model.lock().await = model.to_string();
         info!("Updated embedding model to: {}", model);
+        TelemetryEventBuilder::new("rag", "embedding_model_updated")
+            .message("Knowledge base embedding model updated")
+            .attr("model", model)
+            .emit();
         Ok(())
     }
 
@@ -471,6 +554,9 @@ impl RagManager {
             .map_err(|e| format!("Failed to clear documents: {}", e))?;
 
         warn!("Cleared all documents from knowledge base");
+        TelemetryEventBuilder::new("rag", "clear_all_completed")
+            .message("Knowledge base cleared")
+            .emit();
         Ok(())
     }
 

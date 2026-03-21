@@ -106,7 +106,7 @@ export const HistorySettings: React.FC = () => {
             return URL.createObjectURL(blob);
           }
 
-          return convertFileSrc(result.data, "asset");
+          return convertFileSrc(result.data);
         }
         return null;
       } catch (error) {

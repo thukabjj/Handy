@@ -5,10 +5,10 @@ import {
   useSettingsSearch,
   type SearchableItem,
 } from "@/hooks/useSettingsSearch";
-import type { SidebarSection } from "@/components/Sidebar";
+import type { SettingsNavigationTarget } from "@/components/settings/unified/navigation";
 
 interface SettingsSearchProps {
-  onNavigate: (section: SidebarSection) => void;
+  onNavigate: (target: SettingsNavigationTarget) => void;
 }
 
 function SettingsSearch({ onNavigate }: SettingsSearchProps) {
@@ -51,7 +51,7 @@ function SettingsSearch({ onNavigate }: SettingsSearchProps) {
 
   const handleSelect = useCallback(
     (item: SearchableItem) => {
-      onNavigate(item.section);
+      onNavigate(item.target);
       setIsOpen(false);
     },
     [onNavigate, setIsOpen],

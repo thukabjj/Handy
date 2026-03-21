@@ -9,7 +9,9 @@
 use crate::managers::transcription::TranscriptionManager;
 use crate::ollama_client::OllamaClient;
 use crate::overlay::{hide_recording_overlay, reset_overlay_size, show_ask_ai_response_overlay};
+use crate::settings::active_listening::LlmProvider;
 use crate::settings::get_settings;
+use crate::telemetry::{TelemetryEventBuilder, TelemetryLevel};
 use crate::tray::{change_tray_icon, TrayIconState};
 use chrono::Utc;
 use log::{debug, error, info, warn};
@@ -20,6 +22,76 @@ use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 use uuid::Uuid;
+
+fn cloud_base_url(provider: LlmProvider, custom_base_url: Option<&String>) -> String {
+    match provider {
+        LlmProvider::Custom => custom_base_url
+            .cloned()
+            .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string()),
+        LlmProvider::LocalOpenAi => custom_base_url
+            .cloned()
+            .unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()),
+        _ => provider
+            .default_base_url()
+            .unwrap_or("https://openrouter.ai/api/v1")
+            .to_string(),
+    }
+}
+
+#[cfg(test)]
+mod provider_tests {
+    use super::*;
+
+    #[test]
+    fn test_cloud_base_url_for_supported_providers() {
+        assert_eq!(
+            cloud_base_url(LlmProvider::LocalOpenAi, None),
+            "http://127.0.0.1:8000/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::OpenRouter, None),
+            "https://openrouter.ai/api/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::OpenAi, None),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Groq, None),
+            "https://api.groq.com/openai/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Together, None),
+            "https://api.together.xyz/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Fireworks, None),
+            "https://api.fireworks.ai/inference/v1"
+        );
+    }
+
+    #[test]
+    fn test_cloud_base_url_for_custom() {
+        assert_eq!(
+            cloud_base_url(
+                LlmProvider::LocalOpenAi,
+                Some(&"http://127.0.0.1:8080/v1".to_string()),
+            ),
+            "http://127.0.0.1:8080/v1"
+        );
+        assert_eq!(
+            cloud_base_url(
+                LlmProvider::Custom,
+                Some(&"https://example.com/v1".to_string()),
+            ),
+            "https://example.com/v1"
+        );
+        assert_eq!(
+            cloud_base_url(LlmProvider::Custom, None),
+            "https://openrouter.ai/api/v1"
+        );
+    }
+}
 
 /// Maximum number of conversation turns to include in context
 #[allow(dead_code)]
@@ -309,6 +381,10 @@ impl AskAiManager {
         self.emit_state_change_with_conversation(AskAiState::Recording, None, None, conversation);
 
         info!("Ask AI: Started recording (follow_up: {})", is_follow_up);
+        TelemetryEventBuilder::new("ask_ai", "recording_started")
+            .message("Ask AI recording started")
+            .attr("follow_up", is_follow_up)
+            .emit();
         Ok(())
     }
 
@@ -324,6 +400,9 @@ impl AskAiManager {
         }
 
         info!("Ask AI: Started new conversation");
+        TelemetryEventBuilder::new("ask_ai", "conversation_started")
+            .message("Started a new Ask AI conversation")
+            .emit();
         Ok(())
     }
 
@@ -389,6 +468,62 @@ impl AskAiManager {
         tauri::async_runtime::spawn(async move {
             handle.process(samples).await;
         });
+    }
+
+    /// Process an already-transcribed wake query and generate an AI response.
+    /// This enables wake-word UX to reuse the Ask AI response modal pipeline.
+    pub fn process_transcribed_question(&self, question: String) -> Result<(), String> {
+        let question = question.trim().to_string();
+        if question.is_empty() {
+            return Err("Empty wake query".to_string());
+        }
+
+        {
+            let state = self.state.lock().unwrap();
+            if !matches!(
+                *state,
+                AskAiState::Idle | AskAiState::Complete | AskAiState::ConversationActive
+            ) {
+                return Err("Ask AI session busy".to_string());
+            }
+        }
+
+        // Ensure there is a conversation container.
+        {
+            let mut conversation = self.active_conversation.lock().unwrap();
+            if conversation.is_none() {
+                *conversation = Some(AskAiConversation::new());
+            }
+        }
+
+        self.cancel_signal.store(false, Ordering::SeqCst);
+        {
+            let mut response = self.current_response.lock().unwrap();
+            response.clear();
+        }
+
+        let handle = AskAiManagerHandle {
+            app_handle: self.app_handle.clone(),
+            transcription_manager: self.transcription_manager.clone(),
+            state: self.state.clone(),
+            current_question: self.current_question.clone(),
+            current_response: self.current_response.clone(),
+            current_audio_samples: self.current_audio_samples.clone(),
+            active_conversation: self.active_conversation.clone(),
+            cancel_signal: self.cancel_signal.clone(),
+        };
+        let telemetry_question = question.clone();
+
+        tauri::async_runtime::spawn(async move {
+            handle.generate_for_question(question).await;
+        });
+
+        TelemetryEventBuilder::new("ask_ai", "transcribed_question_accepted")
+            .message("Accepted pre-transcribed Ask AI question")
+            .sensitive_attr("question", telemetry_question)
+            .emit();
+
+        Ok(())
     }
 
     /// Cancel the current session
@@ -508,7 +643,10 @@ impl AskAiManagerHandle {
         }
 
         info!("Ask AI: Transcribed question: {}", transcription);
+        self.generate_for_question(transcription).await;
+    }
 
+    async fn generate_for_question(&self, transcription: String) {
         // Store the question
         {
             let mut question = self.current_question.lock().unwrap();
@@ -517,11 +655,11 @@ impl AskAiManagerHandle {
 
         // Check for cancellation
         if self.cancel_signal.load(Ordering::SeqCst) {
-            debug!("Ask AI: Cancelled after transcription");
+            debug!("Ask AI: Cancelled before generation");
             return;
         }
 
-        // Update state to generating
+        // Update state to generating and show Ask AI response overlay.
         {
             let mut state = self.state.lock().unwrap();
             *state = AskAiState::Generating;
@@ -533,19 +671,44 @@ impl AskAiManagerHandle {
             None,
             conversation,
         );
-
-        // Show the Ask AI response overlay (replaces the recording overlay with expanded view)
-        show_ask_ai_response_overlay(&self.app_handle, "");
+        show_ask_ai_response_overlay(&self.app_handle, "ask-ai-generating");
         change_tray_icon(&self.app_handle, TrayIconState::Idle);
+        TelemetryEventBuilder::new("ask_ai", "generation_started")
+            .message("Ask AI response generation started")
+            .sensitive_attr("question", transcription.clone())
+            .emit();
 
-        // Step 2: Get AI response from Ollama
+        // Step 2: Get AI response
         let settings = get_settings(&self.app_handle);
         let ask_ai_settings = &settings.ask_ai;
+        let shared_settings = &settings.active_listening;
 
-        if ask_ai_settings.ollama_model.is_empty() {
-            warn!("Ask AI: No Ollama model configured");
+        let provider = shared_settings.llm_provider;
+        let active_model = match provider {
+            LlmProvider::Ollama => {
+                if !ask_ai_settings.ollama_model.trim().is_empty() {
+                    ask_ai_settings.ollama_model.clone()
+                } else {
+                    shared_settings.ollama_model.clone()
+                }
+            }
+            _ => ask_ai_settings
+                .llm_model
+                .clone()
+                .filter(|m| !m.trim().is_empty())
+                .or_else(|| shared_settings.llm_model.clone())
+                .unwrap_or_default(),
+        };
+
+        if active_model.is_empty() {
+            warn!("Ask AI: No LLM model configured");
+            TelemetryEventBuilder::new("ask_ai", "generation_failed")
+                .level(TelemetryLevel::Warn)
+                .message("Ask AI generation aborted because no model is configured")
+                .status("missing_model")
+                .emit();
             self.emit_error(
-                "No Ollama model configured. Please configure an Ollama model in Ask AI settings."
+                "No LLM model configured. Please configure a model in centralized AI settings."
                     .to_string(),
             );
             return;
@@ -554,14 +717,6 @@ impl AskAiManagerHandle {
         // Build the prompt with conversation context and system prompt
         let prompt = self.build_prompt(&transcription, &ask_ai_settings.system_prompt);
 
-        let client = match OllamaClient::new(&ask_ai_settings.ollama_base_url) {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Ask AI: Failed to create Ollama client: {}", e);
-                self.emit_error(format!("Failed to create Ollama client: {}", e));
-                return;
-            }
-        };
         let (tx, mut rx) = mpsc::channel::<String>(100);
 
         let app_handle_clone = self.app_handle.clone();
@@ -593,10 +748,50 @@ impl AskAiManagerHandle {
             full_response
         });
 
-        // Call Ollama
-        let ollama_result = client
-            .generate_stream(&ask_ai_settings.ollama_model, prompt, tx)
-            .await;
+        // Dispatch to the configured Ask AI provider (with Active Listening fallback for migrations)
+        let llm_result = match provider {
+            LlmProvider::Ollama => {
+                let ollama_base_url = shared_settings.ollama_base_url.clone();
+
+                let client = match OllamaClient::new(&ollama_base_url) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        error!("Ask AI: Failed to create Ollama client: {}", e);
+                        self.emit_error(format!("Failed to create Ollama client: {}", e));
+                        return;
+                    }
+                };
+                client
+                    .generate_stream(&active_model, prompt, tx)
+                    .await
+            }
+            _ => {
+                let base_url = cloud_base_url(provider, shared_settings.llm_base_url.as_ref());
+                let provider = crate::settings::PostProcessProvider {
+                    id: format!("{:?}", provider).to_lowercase(),
+                    label: format!("{:?}", provider),
+                    base_url,
+                    allow_base_url_edit: false,
+                    models_endpoint: None,
+                    supports_structured_output: false,
+                };
+                let api_key = ask_ai_settings
+                    .llm_api_key // temporary backward compatibility for previously stored values
+                    .clone()
+                    .filter(|k| !k.trim().is_empty())
+                    .or_else(|| shared_settings.llm_api_key.clone())
+                    .unwrap_or_default();
+                crate::llm_client::stream_chat_completion(
+                    &provider,
+                    api_key,
+                    &active_model,
+                    Some(ask_ai_settings.system_prompt.clone()),
+                    vec![("user".to_string(), prompt)],
+                    tx,
+                )
+                .await
+            }
+        };
 
         // Wait for stream forwarding to complete
         let full_response = stream_forward_handle.await.unwrap_or_default();
@@ -610,7 +805,7 @@ impl AskAiManagerHandle {
         }
 
         // Handle result
-        match ollama_result {
+        match llm_result {
             Ok(_) => {
                 // Add turn to conversation
                 {
@@ -643,9 +838,20 @@ impl AskAiManagerHandle {
                 );
 
                 info!("Ask AI: Response complete");
+                TelemetryEventBuilder::new("ask_ai", "generation_completed")
+                    .message("Ask AI response generation completed")
+                    .sensitive_attr("question", transcription)
+                    .attr("response_chars", full_response.len())
+                    .emit();
             }
             Err(e) => {
                 error!("Ask AI: Ollama generation failed: {}", e);
+                TelemetryEventBuilder::new("ask_ai", "generation_failed")
+                    .level(TelemetryLevel::Error)
+                    .message("Ask AI response generation failed")
+                    .status("provider_error")
+                    .attr("error", &e)
+                    .emit();
                 self.emit_error(format!("AI generation failed: {}", e));
             }
         }
@@ -712,8 +918,13 @@ impl AskAiManagerHandle {
             *state = AskAiState::Error;
         }
         // Show error in the expanded overlay
-        show_ask_ai_response_overlay(&self.app_handle, &error);
+        show_ask_ai_response_overlay(&self.app_handle, "ask-ai-error");
         change_tray_icon(&self.app_handle, TrayIconState::Idle);
+        TelemetryEventBuilder::new("ask_ai", "state_error")
+            .level(TelemetryLevel::Error)
+            .message("Ask AI entered error state")
+            .attr("error", &error)
+            .emit();
         let conversation = self.active_conversation.lock().unwrap().clone();
         self.emit_state_change_with_conversation(
             AskAiState::Error,

@@ -173,7 +173,7 @@ describe('ConversationHistory', () => {
       // Click on the first conversation to expand it
       const conversationButton = screen
         .getByText('First Conversation')
-        .closest('button');
+        .closest('[role="button"]');
       if (conversationButton) {
         await user.click(conversationButton);
       }
