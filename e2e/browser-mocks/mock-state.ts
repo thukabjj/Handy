@@ -43,6 +43,10 @@ export interface MockSettings {
   active_listening: {
     enabled: boolean;
     segment_duration_seconds: number;
+    llm_provider?: string;
+    llm_api_key?: string;
+    llm_base_url?: string;
+    llm_model?: string;
     ollama_base_url: string;
     ollama_model: string;
     prompts: unknown[];
@@ -55,6 +59,7 @@ export interface MockSettings {
     enabled: boolean;
     ollama_base_url: string;
     ollama_model: string;
+    llm_model?: string;
     system_prompt: string;
     window_width: number | null;
     window_height: number | null;
@@ -181,6 +186,10 @@ function createDefaultSettings(): MockSettings {
     active_listening: {
       enabled: false,
       segment_duration_seconds: 30,
+      llm_provider: "ollama",
+      llm_api_key: "",
+      llm_base_url: "",
+      llm_model: "",
       ollama_base_url: "http://localhost:11434",
       ollama_model: "llama3",
       prompts: [],
@@ -193,6 +202,7 @@ function createDefaultSettings(): MockSettings {
       enabled: false,
       ollama_base_url: "http://localhost:11434",
       ollama_model: "llama3",
+      llm_model: "",
       system_prompt: "You are a helpful assistant.",
       window_width: null,
       window_height: null,
@@ -219,7 +229,16 @@ function createDefaultSettings(): MockSettings {
     },
     sound_detection: {
       enabled: false,
-      categories: ["doorbell", "alarm", "phone_ring", "dog_bark", "baby_cry", "knocking", "siren", "applause"],
+      categories: [
+        "doorbell",
+        "alarm",
+        "phone_ring",
+        "dog_bark",
+        "baby_cry",
+        "knocking",
+        "siren",
+        "applause",
+      ],
       threshold: 0.5,
       notification_enabled: true,
     },
@@ -365,7 +384,9 @@ export function updateSettings(partial: Partial<MockSettings>): void {
 }
 
 /** Patch any top-level state fields */
-export function updateState(partial: Partial<Omit<MockState, "eventListeners">>): void {
+export function updateState(
+  partial: Partial<Omit<MockState, "eventListeners">>,
+): void {
   Object.assign(mockState, partial);
 }
 

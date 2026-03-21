@@ -5,12 +5,14 @@ pub mod batch_processing;
 pub mod history;
 pub mod keyring;
 pub mod models;
+pub mod observability;
 pub mod rag;
 pub mod replacements;
+pub mod screen_vision;
+pub mod sound_detection;
 pub mod suggestions;
 pub mod tasks;
 pub mod transcription;
-pub mod sound_detection;
 pub mod vocabulary;
 pub mod wake_word;
 
@@ -115,6 +117,43 @@ pub fn open_app_data_dir(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to open app data directory: {}", e))?;
 
     Ok(())
+}
+
+/// Open macOS System Settings to the Accessibility pane.
+/// This is a fallback for when the system prompt doesn't properly show the app.
+#[specta::specta]
+#[tauri::command]
+pub fn open_accessibility_settings() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .output()
+            .map_err(|e| format!("Failed to open Accessibility settings: {}", e))?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(())
+    }
+}
+
+/// Open macOS System Settings to the Screen Recording pane.
+#[specta::specta]
+#[tauri::command]
+pub fn open_screen_recording_settings() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")
+            .output()
+            .map_err(|e| format!("Failed to open Screen Recording settings: {}", e))?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(())
+    }
 }
 
 /// Check if Apple Intelligence is available on this device.

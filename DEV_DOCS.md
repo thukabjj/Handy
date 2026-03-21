@@ -594,32 +594,32 @@ Use a debugger to set breakpoints and inspect the state of the Rust backend. The
 1. **Install the CodeLLDB extension** in VS Code.
 2. **Create a `launch.json` file** in the `.vscode` directory with the following configuration:
 
-    ```json
-    {
-      "version": "0.2.0",
-      "configurations": [
-        {
-          "name": "Debug Handy Backend",
-          "type": "lldb",
-          "request": "launch",
-          "program": "${workspaceFolder}/src-tauri/target/debug/handy",
-          "args": [],
-          "cwd": "${workspaceFolder}",
-          "sourceLanguages": ["rust"]
-        }
-      ]
-    }
-    ```
+   ```json
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "Debug Handy Backend",
+         "type": "lldb",
+         "request": "launch",
+         "program": "${workspaceFolder}/src-tauri/target/debug/handy",
+         "args": [],
+         "cwd": "${workspaceFolder}",
+         "sourceLanguages": ["rust"]
+       }
+     ]
+   }
+   ```
 
 3. **Start the frontend development server first**:
-    ```bash
-    bun run dev
-    ```
-    Wait for the frontend to compile.
+   ```bash
+   bun run dev
+   ```
+   Wait for the frontend to compile.
 4. **Start the debugger in VS Code**:
-    - Open the "Run and Debug" view (Ctrl+Shift+D).
-    - Select "Debug Handy Backend" from the dropdown menu.
-    - Press F5 to start debugging.
+   - Open the "Run and Debug" view (Ctrl+Shift+D).
+   - Select "Debug Handy Backend" from the dropdown menu.
+   - Press F5 to start debugging.
 
 The debugger will attach to the Rust process, and you can now set breakpoints in your Rust code.
 
@@ -645,31 +645,33 @@ This demonstrates how the frontend code is structured and how easy it is to make
 ### 2. Add a new Tauri command
 
 1. **Backend (Rust)**:
-    - Open `src-tauri/src/commands/` and create or edit a command file.
-    - Create a new function with the `#[tauri::command]` and `#[specta::specta]` attributes:
-      ```rust
-      #[tauri::command]
-      #[specta::specta]
-      fn greet(name: &str) -> String {
-        format!("Hello, {}!", name)
-      }
-      ```
-    - Register the command in `src-tauri/src/commands/mod.rs`.
+   - Open `src-tauri/src/commands/` and create or edit a command file.
+   - Create a new function with the `#[tauri::command]` and `#[specta::specta]` attributes:
+     ```rust
+     #[tauri::command]
+     #[specta::specta]
+     fn greet(name: &str) -> String {
+       format!("Hello, {}!", name)
+     }
+     ```
+   - Register the command in `src-tauri/src/commands/mod.rs`.
 
 2. **Generate bindings**:
-    ```bash
-    make generate-bindings
-    ```
-    This updates `src/bindings.ts` with the new command's TypeScript types.
+
+   ```bash
+   make generate-bindings
+   ```
+
+   This updates `src/bindings.ts` with the new command's TypeScript types.
 
 3. **Frontend (TypeScript)**:
-    - Import the generated command from `@/bindings`:
+   - Import the generated command from `@/bindings`:
 
-      ```tsx
-      import { commands } from "@/bindings";
+     ```tsx
+     import { commands } from "@/bindings";
 
-      const result = await commands.greet("Developer");
-      ```
+     const result = await commands.greet("Developer");
+     ```
 
 4. **Run the app** (`make dev`) and test the new command.
 
@@ -731,11 +733,13 @@ Frontend tests use [Vitest](https://vitest.dev/) and [React Testing Library](htt
 1. **Mocking Tauri Commands**: All Tauri commands are mocked in `src/test/setup.ts`:
 
    ```typescript
-   vi.mock('@/bindings', () => ({
+   vi.mock("@/bindings", () => ({
      commands: {
-       getSettings: vi.fn(() => Promise.resolve({ status: 'ok', data: mockSettings })),
+       getSettings: vi.fn(() =>
+         Promise.resolve({ status: "ok", data: mockSettings }),
+       ),
        // ... other mocked commands
-     }
+     },
    }));
    ```
 
@@ -832,63 +836,63 @@ Backend to frontend communication uses Tauri's event system. Here are all events
 
 ### Audio Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `audio-level` | `{ level: f32 }` | Real-time audio level (0.0 - 1.0) |
-| `audio-device-changed` | `{ deviceId: string }` | Input device was changed |
-| `audio-devices-updated` | `AudioDevice[]` | Device list refreshed |
+| Event                   | Payload                | Description                       |
+| ----------------------- | ---------------------- | --------------------------------- |
+| `audio-level`           | `{ level: f32 }`       | Real-time audio level (0.0 - 1.0) |
+| `audio-device-changed`  | `{ deviceId: string }` | Input device was changed          |
+| `audio-devices-updated` | `AudioDevice[]`        | Device list refreshed             |
 
 ### Transcription Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `transcription-started` | `{}` | Recording started |
-| `transcription-progress` | `{ progress: f32 }` | Processing progress (0.0 - 1.0) |
-| `transcription-complete` | `{ text: string, duration_ms: u64 }` | Transcription finished |
-| `transcription-error` | `{ error: string }` | Transcription failed |
-| `transcription-cancelled` | `{}` | User cancelled |
+| Event                     | Payload                              | Description                     |
+| ------------------------- | ------------------------------------ | ------------------------------- |
+| `transcription-started`   | `{}`                                 | Recording started               |
+| `transcription-progress`  | `{ progress: f32 }`                  | Processing progress (0.0 - 1.0) |
+| `transcription-complete`  | `{ text: string, duration_ms: u64 }` | Transcription finished          |
+| `transcription-error`     | `{ error: string }`                  | Transcription failed            |
+| `transcription-cancelled` | `{}`                                 | User cancelled                  |
 
 ### Model Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `model-state-changed` | `{ modelId: string, state: string }` | Model loading state changed |
-| `model-download-progress` | `{ modelId: string, progress: f32 }` | Download progress |
-| `model-download-complete` | `{ modelId: string }` | Download finished |
-| `model-download-error` | `{ modelId: string, error: string }` | Download failed |
+| Event                     | Payload                              | Description                 |
+| ------------------------- | ------------------------------------ | --------------------------- |
+| `model-state-changed`     | `{ modelId: string, state: string }` | Model loading state changed |
+| `model-download-progress` | `{ modelId: string, progress: f32 }` | Download progress           |
+| `model-download-complete` | `{ modelId: string }`                | Download finished           |
+| `model-download-error`    | `{ modelId: string, error: string }` | Download failed             |
 
 ### Active Listening Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `active-listening-started` | `{ sessionId: string }` | Session started |
-| `active-listening-stopped` | `{ sessionId: string }` | Session ended |
+| Event                      | Payload                              | Description               |
+| -------------------------- | ------------------------------------ | ------------------------- |
+| `active-listening-started` | `{ sessionId: string }`              | Session started           |
+| `active-listening-stopped` | `{ sessionId: string }`              | Session ended             |
 | `active-listening-segment` | `{ text: string, speaker?: string }` | New transcription segment |
-| `active-listening-insight` | `{ insight: string, type: string }` | AI insight generated |
-| `active-listening-error` | `{ error: string }` | Session error |
+| `active-listening-insight` | `{ insight: string, type: string }`  | AI insight generated      |
+| `active-listening-error`   | `{ error: string }`                  | Session error             |
 
 ### Ask AI Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `ask-ai-response-start` | `{}` | LLM started responding |
-| `ask-ai-response-chunk` | `{ text: string }` | Streaming response chunk |
-| `ask-ai-response-complete` | `{ fullText: string }` | Response finished |
-| `ask-ai-error` | `{ error: string }` | LLM error |
+| Event                      | Payload                | Description              |
+| -------------------------- | ---------------------- | ------------------------ |
+| `ask-ai-response-start`    | `{}`                   | LLM started responding   |
+| `ask-ai-response-chunk`    | `{ text: string }`     | Streaming response chunk |
+| `ask-ai-response-complete` | `{ fullText: string }` | Response finished        |
+| `ask-ai-error`             | `{ error: string }`    | LLM error                |
 
 ### Suggestion Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `suggestions-updated` | `Suggestion[]` | New suggestions available |
-| `suggestion-accepted` | `{ id: string }` | User accepted suggestion |
+| Event                 | Payload          | Description               |
+| --------------------- | ---------------- | ------------------------- |
+| `suggestions-updated` | `Suggestion[]`   | New suggestions available |
+| `suggestion-accepted` | `{ id: string }` | User accepted suggestion  |
 
 ### System Events
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `error` | `HandyError` | Global error occurred |
-| `settings-changed` | `{ key: string, value: any }` | Setting was updated |
+| Event              | Payload                       | Description           |
+| ------------------ | ----------------------------- | --------------------- |
+| `error`            | `HandyError`                  | Global error occurred |
+| `settings-changed` | `{ key: string, value: any }` | Setting was updated   |
 
 ---
 
@@ -1122,6 +1126,6 @@ bun run build --analyze
 
 ---
 
-*Last updated: 2026-03-01*
+_Last updated: 2026-03-01_
 
 This document should provide a good starting point for exploring the Handy codebase. For more detailed information, refer to the source code, [CLAUDE.md](CLAUDE.md) for architecture details, and the documentation of the libraries used.

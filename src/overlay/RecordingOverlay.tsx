@@ -9,8 +9,14 @@ import {
   CancelIcon,
 } from "../components/icons";
 import "./RecordingOverlay.css";
-import { commands, AskAiState, AskAiConversation, ConversationTurn } from "@/bindings";
+import {
+  commands,
+  AskAiState,
+  AskAiConversation,
+  ConversationTurn,
+} from "@/bindings";
 import { syncLanguageFromSettings } from "@/i18n";
+import { recordFrontendTelemetryEvent } from "@/lib/telemetry";
 
 type OverlayState =
   | "recording"
@@ -83,11 +89,17 @@ const RecordingOverlay: React.FC = () => {
   const autoDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Conversation state for multi-turn
-  const [conversation, setConversation] = useState<AskAiConversation | null>(null);
+  const [conversation, setConversation] = useState<AskAiConversation | null>(
+    null,
+  );
 
   // Active Listening insight state
-  const [activeListeningSessionId, setActiveListeningSessionId] = useState<string | null>(null);
-  const [activeListeningInsights, setActiveListeningInsights] = useState<ActiveListeningInsight[]>([]);
+  const [activeListeningSessionId, setActiveListeningSessionId] = useState<
+    string | null
+  >(null);
+  const [activeListeningInsights, setActiveListeningInsights] = useState<
+    ActiveListeningInsight[]
+  >([]);
   const [currentTranscription, setCurrentTranscription] = useState<string>("");
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const insightsScrollRef = useRef<HTMLDivElement>(null);
@@ -111,7 +123,8 @@ const RecordingOverlay: React.FC = () => {
   // Auto-scroll Active Listening insights
   useEffect(() => {
     if (insightsScrollRef.current) {
-      insightsScrollRef.current.scrollTop = insightsScrollRef.current.scrollHeight;
+      insightsScrollRef.current.scrollTop =
+        insightsScrollRef.current.scrollHeight;
     }
   }, [activeListeningInsights]);
 
@@ -137,17 +150,29 @@ const RecordingOverlay: React.FC = () => {
     };
   }, [state, conversation]);
 
+  useEffect(() => {
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "state_changed",
+      message: "Recording overlay state changed",
+      attributes: [
+        { key: "state", value: state },
+        { key: "visible", value: String(isVisible) },
+      ],
+    });
+  }, [state, isVisible]);
+
   // Handle window drag
   const handleDragStart = useCallback(async (e: React.MouseEvent) => {
     // Only allow drag from header area
-    if ((e.target as HTMLElement).closest('.ask-ai-header-actions')) {
+    if ((e.target as HTMLElement).closest(".ask-ai-header-actions")) {
       return; // Don't drag when clicking buttons
     }
     try {
       const window = getCurrentWindow();
       await window.startDragging();
     } catch (err) {
-      console.error('Failed to start dragging:', err);
+      console.error("Failed to start dragging:", err);
     }
   }, []);
 
@@ -166,7 +191,7 @@ const RecordingOverlay: React.FC = () => {
         y: position.y / scaleFactor,
       });
     } catch (err) {
-      console.error('Failed to save window bounds:', err);
+      console.error("Failed to save window bounds:", err);
     }
   }, []);
 
@@ -285,7 +310,7 @@ const RecordingOverlay: React.FC = () => {
           } else if (payload.state === "error" && payload.error) {
             console.error("Active listening error:", payload.error);
           }
-        }
+        },
       );
       unlistenFns.push(unlistenALState);
 
@@ -316,7 +341,7 @@ const RecordingOverlay: React.FC = () => {
               },
             ];
           });
-        }
+        },
       );
       unlistenFns.push(unlistenALSegment);
 
@@ -345,7 +370,7 @@ const RecordingOverlay: React.FC = () => {
             }
             return updated;
           });
-        }
+        },
       );
       unlistenFns.push(unlistenALInsight);
 
@@ -377,25 +402,30 @@ const RecordingOverlay: React.FC = () => {
               break;
             case "transcribing":
               setState("ask-ai-transcribing");
+              setIsVisible(true);
               break;
             case "generating":
               setState("ask-ai-generating");
+              setIsVisible(true);
               break;
             case "complete":
               setState("ask-ai-complete");
+              setIsVisible(true);
               break;
             case "conversation_active":
               setState("ask-ai-complete");
+              setIsVisible(true);
               break;
             case "error":
               setState("ask-ai-error");
+              setIsVisible(true);
               break;
             case "idle":
               // Reset conversation on idle
               setConversation(null);
               break;
           }
-        }
+        },
       );
       unlistenFns.push(unlistenAskAiState);
 
@@ -409,7 +439,7 @@ const RecordingOverlay: React.FC = () => {
           if (!payload.done && payload.chunk) {
             setAskAiResponse((prev) => prev + payload.chunk);
           }
-        }
+        },
       );
       unlistenFns.push(unlistenAskAiResponse);
     };
@@ -459,13 +489,13 @@ const RecordingOverlay: React.FC = () => {
     if (isActiveListening && isProcessing) {
       return t(
         "overlay.status.activeListeningProcessing",
-        "Active listening, processing audio"
+        "Active listening, processing audio",
       );
     }
     if (isActiveListening) {
       return t(
         "overlay.status.activeListening",
-        "Active listening mode enabled"
+        "Active listening mode enabled",
       );
     }
     if (isAskAiResponse) {
@@ -487,6 +517,12 @@ const RecordingOverlay: React.FC = () => {
     if (autoDismissRef.current) {
       clearTimeout(autoDismissRef.current);
     }
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "dismissed",
+      message: "Recording overlay dismissed",
+      attributes: [{ key: "state", value: state }],
+    });
     await commands.dismissAskAiSession();
     setIsVisible(false);
     // Reset state after fade out
@@ -503,6 +539,11 @@ const RecordingOverlay: React.FC = () => {
     if (autoDismissRef.current) {
       clearTimeout(autoDismissRef.current);
     }
+    void recordFrontendTelemetryEvent({
+      component: "overlay",
+      action: "new_conversation",
+      message: "Started a new Ask AI conversation from overlay",
+    });
     await commands.startNewAskAiConversation();
     // Clear current state but keep overlay visible
     setAskAiQuestion("");
@@ -521,17 +562,32 @@ const RecordingOverlay: React.FC = () => {
   };
 
   // Error type detection for showing appropriate actions
-  const getErrorType = (error: string): "connection" | "config" | "transient" | "speech" | "unknown" => {
-    if (error.includes("connection refused") || error.includes("Failed to connect")) {
+  const getErrorType = (
+    error: string,
+  ): "connection" | "config" | "transient" | "speech" | "unknown" => {
+    if (
+      error.includes("connection refused") ||
+      error.includes("Failed to connect")
+    ) {
       return "connection";
     }
-    if (error.includes("No Ollama model configured") || error.includes("No model")) {
+    if (
+      error.includes("No Ollama model configured") ||
+      error.includes("No model")
+    ) {
       return "config";
     }
-    if (error.includes("timeout") || error.includes("timed out") || error.includes("model may be loading")) {
+    if (
+      error.includes("timeout") ||
+      error.includes("timed out") ||
+      error.includes("model may be loading")
+    ) {
       return "transient";
     }
-    if (error.includes("Transcription failed") || error.includes("No speech detected")) {
+    if (
+      error.includes("Transcription failed") ||
+      error.includes("No speech detected")
+    ) {
       return "speech";
     }
     return "unknown";
@@ -544,31 +600,34 @@ const RecordingOverlay: React.FC = () => {
     ) {
       return t(
         "askAi.errors.connectionFailed",
-        "Could not connect to Ollama. Please ensure Ollama is running."
+        "Could not connect to Ollama. Please ensure Ollama is running.",
       );
     }
-    if (error.includes("No Ollama model configured") || error.includes("No model")) {
+    if (
+      error.includes("No Ollama model configured") ||
+      error.includes("No model")
+    ) {
       return t(
         "askAi.errors.noModel",
-        "No AI model selected. Please configure a model in Ask AI settings."
+        "No AI model selected. Please configure a model in Ask AI settings.",
       );
     }
     if (error.includes("Transcription failed")) {
       return t(
         "askAi.errors.transcriptionFailed",
-        "Failed to transcribe audio. Please try speaking more clearly."
+        "Failed to transcribe audio. Please try speaking more clearly.",
       );
     }
     if (error.includes("No speech detected")) {
       return t(
         "askAi.errors.noSpeech",
-        "No speech was detected. Please speak clearly and try again."
+        "No speech was detected. Please speak clearly and try again.",
       );
     }
     if (error.includes("timeout") || error.includes("timed out")) {
       return t(
         "askAi.errors.timeout",
-        "The request timed out. The AI model may be loading or busy."
+        "The request timed out. The AI model may be loading or busy.",
       );
     }
     return error.length > 100 ? error.substring(0, 100) + "..." : error;
@@ -612,7 +671,8 @@ const RecordingOverlay: React.FC = () => {
               </span>
               <span className="active-listening-stat">
                 {t("activeListening.overlay.insights", "{{count}} insights", {
-                  count: activeListeningInsights.filter((i) => i.insight).length,
+                  count: activeListeningInsights.filter((i) => i.insight)
+                    .length,
                 })}
               </span>
             </div>
@@ -631,7 +691,10 @@ const RecordingOverlay: React.FC = () => {
           )}
 
           {/* Insights list */}
-          <div className="active-listening-insights-scroll" ref={insightsScrollRef}>
+          <div
+            className="active-listening-insights-scroll"
+            ref={insightsScrollRef}
+          >
             {activeListeningInsights.map((item) => (
               <div
                 key={item.id}
@@ -639,7 +702,9 @@ const RecordingOverlay: React.FC = () => {
               >
                 <div className="active-listening-insight-transcription">
                   {item.speakerLabel && (
-                    <span className={`active-listening-speaker-label speaker-${item.speakerId ?? 0}`}>
+                    <span
+                      className={`active-listening-speaker-label speaker-${item.speakerId ?? 0}`}
+                    >
                       [{item.speakerLabel}]
                     </span>
                   )}
@@ -650,7 +715,10 @@ const RecordingOverlay: React.FC = () => {
                 <div className="active-listening-insight-content">
                   {item.insight || (
                     <span className="active-listening-insight-waiting">
-                      {t("activeListening.overlay.generating", "Generating insight...")}
+                      {t(
+                        "activeListening.overlay.generating",
+                        "Generating insight...",
+                      )}
                     </span>
                   )}
                   {item.isStreaming && item.insight && (
@@ -665,11 +733,17 @@ const RecordingOverlay: React.FC = () => {
           <div className="active-listening-status">
             {isProcessing ? (
               <span className="active-listening-status-text processing">
-                {t("activeListening.overlay.processingSegment", "Processing segment...")}
+                {t(
+                  "activeListening.overlay.processingSegment",
+                  "Processing segment...",
+                )}
               </span>
             ) : (
               <span className="active-listening-status-text listening">
-                {t("activeListening.overlay.listening", "Listening for speech...")}
+                {t(
+                  "activeListening.overlay.listening",
+                  "Listening for speech...",
+                )}
               </span>
             )}
           </div>
@@ -691,11 +765,10 @@ const RecordingOverlay: React.FC = () => {
       >
         <div className="ask-ai-response-container">
           {/* Draggable header */}
-          <div
-            className="ask-ai-header"
-            onMouseDown={handleDragStart}
-          >
-            <span className="ask-ai-header-title">{t("askAi.title", "Ask AI")}</span>
+          <div className="ask-ai-header" onMouseDown={handleDragStart}>
+            <span className="ask-ai-header-title">
+              {t("askAi.title", "Ask AI")}
+            </span>
             <div className="ask-ai-header-actions">
               {hasPreviousTurns && (
                 <button
@@ -732,21 +805,28 @@ const RecordingOverlay: React.FC = () => {
           {/* Scrollable conversation */}
           <div className="ask-ai-conversation-scroll" ref={responseRef}>
             {/* Previous turns from conversation history */}
-            {hasPreviousTurns && conversation.turns.map((turn: ConversationTurn) => (
-              <div key={turn.id} className="ask-ai-turn">
-                <div className="ask-ai-q">
-                  <span className="ask-ai-label">{t("askAi.question", "Q:")}</span>
-                  <span className="ask-ai-question-text">{turn.question}</span>
+            {hasPreviousTurns &&
+              conversation.turns.map((turn: ConversationTurn) => (
+                <div key={turn.id} className="ask-ai-turn">
+                  <div className="ask-ai-q">
+                    <span className="ask-ai-label">
+                      {t("askAi.question", "Q:")}
+                    </span>
+                    <span className="ask-ai-question-text">
+                      {turn.question}
+                    </span>
+                  </div>
+                  <div className="ask-ai-a">{turn.response}</div>
                 </div>
-                <div className="ask-ai-a">{turn.response}</div>
-              </div>
-            ))}
+              ))}
 
             {/* Current turn (question being asked or response generating) */}
             {askAiQuestion && (
               <div className="ask-ai-turn current">
                 <div className="ask-ai-q">
-                  <span className="ask-ai-label">{t("askAi.question", "Q:")}</span>
+                  <span className="ask-ai-label">
+                    {t("askAi.question", "Q:")}
+                  </span>
                   <span className="ask-ai-question-text">{askAiQuestion}</span>
                 </div>
                 {state === "ask-ai-error" && askAiError ? (
@@ -772,13 +852,18 @@ const RecordingOverlay: React.FC = () => {
                         </span>
                       </div>
                       {/* Show troubleshooting hint for connection/config errors */}
-                      {(getErrorType(askAiError) === "connection" || getErrorType(askAiError) === "config") && (
+                      {(getErrorType(askAiError) === "connection" ||
+                        getErrorType(askAiError) === "config") && (
                         <div className="ask-ai-error-hint">
-                          {t("askAi.errors.checkSettings", "Check Ask AI settings to configure Ollama.")}
+                          {t(
+                            "askAi.errors.checkSettings",
+                            "Check Ask AI settings to configure Ollama.",
+                          )}
                         </div>
                       )}
                       {/* Show retry button for transient errors */}
-                      {(getErrorType(askAiError) === "transient" || getErrorType(askAiError) === "speech") && (
+                      {(getErrorType(askAiError) === "transient" ||
+                        getErrorType(askAiError) === "speech") && (
                         <button
                           type="button"
                           className="ask-ai-retry-button"
@@ -828,13 +913,18 @@ const RecordingOverlay: React.FC = () => {
                     </span>
                   </div>
                   {/* Show troubleshooting hint for connection/config errors */}
-                  {(getErrorType(askAiError) === "connection" || getErrorType(askAiError) === "config") && (
+                  {(getErrorType(askAiError) === "connection" ||
+                    getErrorType(askAiError) === "config") && (
                     <div className="ask-ai-error-hint">
-                      {t("askAi.errors.checkSettings", "Check Ask AI settings to configure Ollama.")}
+                      {t(
+                        "askAi.errors.checkSettings",
+                        "Check Ask AI settings to configure Ollama.",
+                      )}
                     </div>
                   )}
                   {/* Show retry button for transient errors */}
-                  {(getErrorType(askAiError) === "transient" || getErrorType(askAiError) === "speech") && (
+                  {(getErrorType(askAiError) === "transient" ||
+                    getErrorType(askAiError) === "speech") && (
                     <button
                       type="button"
                       className="ask-ai-retry-button"
@@ -851,7 +941,10 @@ const RecordingOverlay: React.FC = () => {
           {/* Hint when waiting for follow-up */}
           {state === "ask-ai-complete" && (
             <div className="ask-ai-hint">
-              {t("askAi.followUpHint", "Press shortcut to continue conversation...")}
+              {t(
+                "askAi.followUpHint",
+                "Press shortcut to continue conversation...",
+              )}
             </div>
           )}
 
@@ -971,7 +1064,7 @@ const RecordingOverlay: React.FC = () => {
             role="img"
             aria-label={t(
               "overlay.activeListeningIndicator",
-              "Active listening indicator"
+              "Active listening indicator",
             )}
           >
             <span className="pulse-dot" aria-hidden="true" />

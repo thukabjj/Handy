@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Monitor, Mic, Blend } from "lucide-react";
-import { commands, AudioSourceType, LoopbackSupportLevel, LoopbackDeviceInfoDto } from "@/bindings";
+import {
+  commands,
+  AudioSourceType,
+  LoopbackSupportLevel,
+  LoopbackDeviceInfoDto,
+} from "@/bindings";
 
 import {
   Dropdown,
@@ -16,7 +21,9 @@ import { useSettings } from "../../../hooks/useSettings";
  */
 const LoopbackSupportNotice: React.FC = () => {
   const { t } = useTranslation();
-  const [supportLevel, setSupportLevel] = useState<LoopbackSupportLevel | null>(null);
+  const [supportLevel, setSupportLevel] = useState<LoopbackSupportLevel | null>(
+    null,
+  );
   const [devices, setDevices] = useState<LoopbackDeviceInfoDto[]>([]);
 
   useEffect(() => {
@@ -61,7 +68,9 @@ const LoopbackSupportNotice: React.FC = () => {
           <p>{t("settings.activeListening.audioSource.loopback.macosNote")}</p>
           {devices.length === 0 && (
             <p className="mt-1 text-xs opacity-75">
-              {t("settings.activeListening.audioSource.loopback.permissionRequired")}
+              {t(
+                "settings.activeListening.audioSource.loopback.permissionRequired",
+              )}
             </p>
           )}
         </div>
@@ -104,20 +113,26 @@ const AudioSourceTypeSelector: React.FC = () => {
     {
       value: "microphone" as AudioSourceType,
       label: t("settings.activeListening.audioSource.type.microphone"),
-      description: t("settings.activeListening.audioSource.type.microphoneDescription"),
+      description: t(
+        "settings.activeListening.audioSource.type.microphoneDescription",
+      ),
       icon: Mic,
     },
     {
       value: "system_audio" as AudioSourceType,
       label: t("settings.activeListening.audioSource.type.systemAudio"),
-      description: t("settings.activeListening.audioSource.type.systemAudioDescription"),
+      description: t(
+        "settings.activeListening.audioSource.type.systemAudioDescription",
+      ),
       icon: Monitor,
       disabled: !isLoopbackSupported,
     },
     {
       value: "mixed" as AudioSourceType,
       label: t("settings.activeListening.audioSource.type.mixed"),
-      description: t("settings.activeListening.audioSource.type.mixedDescription"),
+      description: t(
+        "settings.activeListening.audioSource.type.mixedDescription",
+      ),
       icon: Blend,
       disabled: !isLoopbackSupported,
     },
@@ -182,15 +197,21 @@ const MixRatioSlider: React.FC = () => {
         max={1}
         step={0.05}
         label={t("settings.activeListening.audioSource.mixRatio.title")}
-        description={t("settings.activeListening.audioSource.mixRatio.description")}
+        description={t(
+          "settings.activeListening.audioSource.mixRatio.description",
+        )}
         descriptionMode="tooltip"
         grouped={true}
         showValue={true}
         formatValue={formatValue}
       />
       <div className="flex justify-between text-xs text-mid-gray px-1">
-        <span>{t("settings.activeListening.audioSource.mixRatio.microphoneLabel")}</span>
-        <span>{t("settings.activeListening.audioSource.mixRatio.systemLabel")}</span>
+        <span>
+          {t("settings.activeListening.audioSource.mixRatio.microphoneLabel")}
+        </span>
+        <span>
+          {t("settings.activeListening.audioSource.mixRatio.systemLabel")}
+        </span>
       </div>
     </div>
   );

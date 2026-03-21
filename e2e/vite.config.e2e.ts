@@ -67,23 +67,38 @@ export default defineConfig({
       "@tauri-apps/api/core": resolve(mockDir, "tauri-api-core.ts"),
       "@tauri-apps/api/event": resolve(mockDir, "tauri-api-event.ts"),
       "@tauri-apps/api/window": resolve(mockDir, "tauri-api-window.ts"),
-      "@tauri-apps/api/webviewWindow": resolve(mockDir, "tauri-api-webview-window.ts"),
+      "@tauri-apps/api/webviewWindow": resolve(
+        mockDir,
+        "tauri-api-webview-window.ts",
+      ),
       "@tauri-apps/api/app": resolve(mockDir, "tauri-api-app.ts"),
 
       // ── @tauri-apps/plugin-* ──────────────────────────────────────
       "@tauri-apps/plugin-os": resolve(mockDir, "tauri-plugin-os.ts"),
       "@tauri-apps/plugin-opener": resolve(mockDir, "tauri-plugin-opener.ts"),
-      "@tauri-apps/plugin-clipboard-manager": resolve(mockDir, "tauri-plugin-clipboard.ts"),
+      "@tauri-apps/plugin-clipboard-manager": resolve(
+        mockDir,
+        "tauri-plugin-clipboard.ts",
+      ),
       "@tauri-apps/plugin-store": resolve(mockDir, "tauri-plugin-store.ts"),
-      "@tauri-apps/plugin-autostart": resolve(mockDir, "tauri-plugin-autostart.ts"),
+      "@tauri-apps/plugin-autostart": resolve(
+        mockDir,
+        "tauri-plugin-autostart.ts",
+      ),
       "@tauri-apps/plugin-dialog": resolve(mockDir, "tauri-plugin-dialog.ts"),
       "@tauri-apps/plugin-updater": resolve(mockDir, "tauri-plugin-updater.ts"),
       "@tauri-apps/plugin-process": resolve(mockDir, "tauri-plugin-process.ts"),
       "@tauri-apps/plugin-fs": resolve(mockDir, "tauri-plugin-fs.ts"),
-      "@tauri-apps/plugin-global-shortcut": resolve(mockDir, "tauri-plugin-global-shortcut.ts"),
+      "@tauri-apps/plugin-global-shortcut": resolve(
+        mockDir,
+        "tauri-plugin-global-shortcut.ts",
+      ),
 
       // ── Third-party Tauri plugins ─────────────────────────────────
-      "tauri-plugin-macos-permissions-api": resolve(mockDir, "tauri-plugin-macos-perms.ts"),
+      "tauri-plugin-macos-permissions-api": resolve(
+        mockDir,
+        "tauri-plugin-macos-perms.ts",
+      ),
     },
   },
 

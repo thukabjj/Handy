@@ -1,5 +1,6 @@
 // Settings section components
 export { DebugSettings } from "./debug/DebugSettings";
+export { DiagnosticsSettings } from "./diagnostics";
 export { HistorySettings } from "./history/HistorySettings";
 export { AboutSettings } from "./about/AboutSettings";
 export { PostProcessingSettings } from "./post-processing/PostProcessingSettings";
@@ -7,6 +8,7 @@ export { ActiveListeningSettings } from "./active-listening";
 export { AskAiSettings } from "./ask-ai";
 export { KnowledgeBaseSettings } from "./knowledge-base";
 export { BatchProcessingPanel } from "./batch-processing";
+export { SuggestionsSettings } from "./suggestions";
 export { VocabularyPanel } from "./vocabulary";
 
 // New simplified navigation components

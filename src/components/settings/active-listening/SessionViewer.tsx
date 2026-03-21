@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock, Trash2, Download, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import {
+  Clock,
+  Trash2,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+} from "lucide-react";
 import { commands, HistoryEntry } from "@/bindings";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { SettingsGroup } from "@/components/ui";
@@ -58,9 +65,17 @@ const InsightEntry: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden bg-white/50 dark:bg-black/20">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-3 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left cursor-pointer"
       >
         <div className="flex-shrink-0 mt-0.5">
           <MessageSquare className="h-4 w-4 text-green-500" />
@@ -82,7 +97,7 @@ const InsightEntry: React.FC<{
             <ChevronDown className="h-4 w-4 text-mid-gray" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="px-3 pb-3 border-t border-mid-gray/10">
@@ -137,9 +152,17 @@ const SessionGroup: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center gap-3 bg-mid-gray/5 hover:bg-mid-gray/10 transition-colors"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-4 flex items-center gap-3 bg-mid-gray/5 hover:bg-mid-gray/10 transition-colors cursor-pointer"
       >
         <div className="flex-1 text-left">
           <h3 className="font-semibold text-text">{group.date}</h3>
@@ -168,7 +191,7 @@ const SessionGroup: React.FC<{
             <ChevronDown className="h-5 w-5 text-mid-gray" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="p-3 space-y-2">
@@ -199,7 +222,7 @@ export const SessionViewer: React.FC = () => {
       if (result.status === "ok") {
         // Filter to only show entries with post-processed text (Active Listening insights)
         const activeListeningEntries = result.data.filter(
-          (e) => e.post_processed_text && e.post_processed_text.length > 0
+          (e) => e.post_processed_text && e.post_processed_text.length > 0,
         );
         setEntries(activeListeningEntries);
       } else {
@@ -276,7 +299,7 @@ export const SessionViewer: React.FC = () => {
           <p className="text-mid-gray">
             {t(
               "sessionViewer.empty",
-              "No Active Listening sessions yet. Start a session to see your insights here."
+              "No Active Listening sessions yet. Start a session to see your insights here.",
             )}
           </p>
         </div>
@@ -288,7 +311,10 @@ export const SessionViewer: React.FC = () => {
     <SettingsGroup title={t("sessionViewer.title", "Session History")}>
       <div className="space-y-3">
         <p className="text-sm text-mid-gray">
-          {t("sessionViewer.description", "View and export your past Active Listening sessions and AI-generated insights.")}
+          {t(
+            "sessionViewer.description",
+            "View and export your past Active Listening sessions and AI-generated insights.",
+          )}
         </p>
         {groupedSessions.map((group) => (
           <SessionGroup

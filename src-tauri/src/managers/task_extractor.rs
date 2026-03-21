@@ -62,9 +62,7 @@ pub async fn extract_action_items_standalone(
         .map_err(|e| format!("Ollama health check failed: {}", e))?;
 
     if !health {
-        return Err(
-            "Ollama server is not available. Please ensure Ollama is running.".to_string(),
-        );
+        return Err("Ollama server is not available. Please ensure Ollama is running.".to_string());
     }
 
     let prompt = format!(

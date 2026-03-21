@@ -5,6 +5,7 @@ use std::sync::{Mutex, MutexGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 ///
 /// This trait provides a way to handle mutex poisoning gracefully by returning
 /// a `HandyError` instead of panicking with `unwrap()`.
+#[allow(dead_code)]
 pub trait SafeLock<T> {
     /// Safely acquire a lock, returning a `HandyError` if the lock is poisoned.
     fn safe_lock(&self) -> Result<MutexGuard<'_, T>, HandyError>;
@@ -20,6 +21,7 @@ impl<T> SafeLock<T> for Mutex<T> {
 }
 
 /// A trait for safely locking RwLock primitives with proper error handling.
+#[allow(dead_code)]
 pub trait SafeRwLock<T> {
     /// Safely acquire a read lock, returning a `HandyError` if the lock is poisoned.
     fn safe_read(&self) -> Result<RwLockReadGuard<'_, T>, HandyError>;

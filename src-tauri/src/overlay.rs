@@ -32,6 +32,12 @@ tauri_panel! {
 
 const OVERLAY_WIDTH: f64 = 172.0;
 const OVERLAY_HEIGHT: f64 = 36.0;
+const ASK_AI_DEFAULT_WIDTH: f64 = 720.0;
+const ASK_AI_DEFAULT_HEIGHT: f64 = 520.0;
+const ASK_AI_MIN_WIDTH: f64 = 520.0;
+const ASK_AI_MIN_HEIGHT: f64 = 360.0;
+const ASK_AI_MAX_WIDTH: f64 = 960.0;
+const ASK_AI_MAX_HEIGHT: f64 = 720.0;
 
 #[cfg(target_os = "macos")]
 const OVERLAY_TOP_OFFSET: f64 = 46.0;
@@ -194,6 +200,81 @@ fn calculate_overlay_position(app_handle: &AppHandle) -> Option<(f64, f64)> {
     None
 }
 
+fn calculate_centered_overlay_position(
+    app_handle: &AppHandle,
+    width: f64,
+    height: f64,
+) -> Option<(f64, f64)> {
+    let monitor = get_monitor_with_cursor(app_handle)?;
+    let work_area = monitor.work_area();
+    let scale = monitor.scale_factor();
+    let work_area_width = work_area.size.width as f64 / scale;
+    let work_area_height = work_area.size.height as f64 / scale;
+    let work_area_x = work_area.position.x as f64 / scale;
+    let work_area_y = work_area.position.y as f64 / scale;
+
+    Some((
+        work_area_x + (work_area_width - width) / 2.0,
+        work_area_y + (work_area_height - height) / 2.0,
+    ))
+}
+
+fn is_ask_ai_overlay_state(state: &str) -> bool {
+    matches!(
+        state,
+        "ask-ai-recording"
+            | "ask-ai-transcribing"
+            | "ask-ai-generating"
+            | "ask-ai-complete"
+            | "ask-ai-error"
+    )
+}
+
+fn get_ask_ai_overlay_size(app_handle: &AppHandle) -> (f64, f64) {
+    let settings = settings::get_settings(app_handle);
+    let width = settings
+        .ask_ai
+        .window_width
+        .unwrap_or(ASK_AI_DEFAULT_WIDTH)
+        .clamp(ASK_AI_MIN_WIDTH, ASK_AI_MAX_WIDTH);
+    let height = settings
+        .ask_ai
+        .window_height
+        .unwrap_or(ASK_AI_DEFAULT_HEIGHT)
+        .clamp(ASK_AI_MIN_HEIGHT, ASK_AI_MAX_HEIGHT);
+    (width, height)
+}
+
+fn apply_compact_overlay_layout(app_handle: &AppHandle) {
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let _ = overlay_window.set_resizable(false);
+        let _ = overlay_window.set_size(tauri::LogicalSize::new(OVERLAY_WIDTH, OVERLAY_HEIGHT));
+
+        #[cfg(target_os = "linux")]
+        {
+            update_gtk_layer_shell_anchors(&overlay_window);
+        }
+
+        if let Some((x, y)) = calculate_overlay_position(app_handle) {
+            let _ = overlay_window
+                .set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+        }
+    }
+}
+
+fn apply_ask_ai_overlay_layout(app_handle: &AppHandle) {
+    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
+        let (width, height) = get_ask_ai_overlay_size(app_handle);
+        let _ = overlay_window.set_resizable(true);
+        let _ = overlay_window.set_size(tauri::LogicalSize::new(width, height));
+
+        if let Some((x, y)) = calculate_centered_overlay_position(app_handle, width, height) {
+            let _ = overlay_window
+                .set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+        }
+    }
+}
+
 /// Creates the recording overlay window and keeps it hidden by default
 #[cfg(not(target_os = "macos"))]
 pub fn create_recording_overlay(app_handle: &AppHandle) {
@@ -283,7 +364,7 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
             .build()
         {
             Ok(panel) => {
-                let _ = panel.hide();
+                panel.hide();
             }
             Err(e) => {
                 log::error!("Failed to create recording overlay panel: {}", e);
@@ -295,11 +376,15 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
 fn show_overlay_state(app_handle: &AppHandle, state: &str) {
     // Check if overlay should be shown based on position setting
     let settings = settings::get_settings(app_handle);
-    if settings.overlay_position == OverlayPosition::None {
+    if settings.overlay_position == OverlayPosition::None && !is_ask_ai_overlay_state(state) {
         return;
     }
 
-    update_overlay_position(app_handle);
+    if is_ask_ai_overlay_state(state) {
+        apply_ask_ai_overlay_layout(app_handle);
+    } else {
+        apply_compact_overlay_layout(app_handle);
+    }
 
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         let _ = overlay_window.show();
@@ -329,17 +414,7 @@ pub fn show_processing_overlay(app_handle: &AppHandle) {
 
 /// Updates the overlay window position based on current settings
 pub fn update_overlay_position(app_handle: &AppHandle) {
-    if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        #[cfg(target_os = "linux")]
-        {
-            update_gtk_layer_shell_anchors(&overlay_window);
-        }
-
-        if let Some((x, y)) = calculate_overlay_position(app_handle) {
-            let _ = overlay_window
-                .set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
-        }
-    }
+    apply_compact_overlay_layout(app_handle);
 }
 
 /// Hides the recording overlay window with fade-out animation
@@ -366,4 +441,15 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &Vec<f32>) {
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
         let _ = overlay_window.emit("mic-level", levels);
     }
+}
+
+/// Reset the overlay window to its default size
+#[allow(dead_code)]
+pub fn reset_overlay_size(app_handle: &AppHandle) {
+    apply_compact_overlay_layout(app_handle);
+}
+
+/// Show the Ask AI overlay using the same overlay window used for transcription.
+pub fn show_ask_ai_response_overlay(app_handle: &AppHandle, state: &str) {
+    show_overlay_state(app_handle, state);
 }

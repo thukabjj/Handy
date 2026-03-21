@@ -1,19 +1,33 @@
 //! Tauri commands for Active Listening feature
 
 use crate::audio_toolkit::audio::loopback::{LoopbackCapture, LoopbackSupport};
+use crate::commands::wake_word::sync_wake_word_monitoring;
 use crate::managers::active_listening::{
     ActiveListeningManager, ActiveListeningSession, ActiveListeningState, MeetingSummary,
 };
 use crate::managers::audio::AudioRecordingManager;
 use crate::ollama_client::OllamaClient;
+use crate::settings::active_listening::LlmProvider;
 use crate::settings::{
-    get_settings, write_settings, ActiveListeningPrompt, AudioSourceType, PromptCategory,
+    get_settings, write_settings, ActiveListeningPrompt, AppSettings, AudioSourceType,
+    PromptCategory,
 };
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::sync::Arc;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+
+fn sync_shared_ai_settings(settings: &mut AppSettings) {
+    settings.ask_ai.llm_provider = settings.active_listening.llm_provider;
+    settings.ask_ai.llm_api_key = settings.active_listening.llm_api_key.clone();
+    settings.ask_ai.llm_base_url = settings.active_listening.llm_base_url.clone();
+    settings.ask_ai.ollama_base_url = settings.active_listening.ollama_base_url.clone();
+
+    settings.screen_vision.llm_provider = settings.active_listening.llm_provider;
+    settings.screen_vision.llm_api_key = settings.active_listening.llm_api_key.clone();
+    settings.screen_vision.llm_base_url = settings.active_listening.llm_base_url.clone();
+}
 
 /// Ollama model information
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
@@ -94,6 +108,14 @@ pub fn stop_active_listening_session(
             "Active listening session stopped: {} with {} insights",
             s.id,
             s.insights.len()
+        );
+    }
+
+    // If wake word is enabled, keep passive monitoring running after session stop.
+    if let Err(err) = sync_wake_word_monitoring(&app) {
+        log::warn!(
+            "Failed to re-enable wake-word passive monitoring after session stop: {}",
+            err
         );
     }
 
@@ -178,6 +200,7 @@ pub fn change_active_listening_segment_duration_setting(
 pub fn change_ollama_base_url_setting(app: AppHandle, base_url: String) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.active_listening.ollama_base_url = base_url.clone();
+    sync_shared_ai_settings(&mut settings);
     write_settings(&app, settings);
     debug!("Ollama base URL: {}", base_url);
     Ok(())
@@ -189,9 +212,131 @@ pub fn change_ollama_base_url_setting(app: AppHandle, base_url: String) -> Resul
 pub fn change_ollama_model_setting(app: AppHandle, model: String) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.active_listening.ollama_model = model.clone();
+    if settings.ask_ai.ollama_model.trim().is_empty() {
+        settings.ask_ai.ollama_model = model.clone();
+    }
     write_settings(&app, settings);
     debug!("Ollama model: {}", model);
     Ok(())
+}
+
+// ---- LLM Provider Settings commands ----
+
+/// Change the LLM provider for active listening
+#[tauri::command]
+#[specta::specta]
+pub fn change_active_listening_llm_provider(
+    app: AppHandle,
+    provider: LlmProvider,
+) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.active_listening.llm_provider = provider;
+    sync_shared_ai_settings(&mut settings);
+    write_settings(&app, settings);
+    debug!("Active listening LLM provider: {:?}", provider);
+    Ok(())
+}
+
+/// Change the LLM API key for active listening
+#[tauri::command]
+#[specta::specta]
+pub fn change_active_listening_llm_api_key(app: AppHandle, api_key: String) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.active_listening.llm_api_key = if api_key.is_empty() {
+        None
+    } else {
+        Some(api_key)
+    };
+    sync_shared_ai_settings(&mut settings);
+    write_settings(&app, settings);
+    debug!("Active listening LLM API key updated");
+    Ok(())
+}
+
+/// Change the LLM model for active listening (cloud provider)
+#[tauri::command]
+#[specta::specta]
+pub fn change_active_listening_llm_model(app: AppHandle, model: String) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.active_listening.llm_model = if model.is_empty() {
+        None
+    } else {
+        Some(model.clone())
+    };
+    if settings
+        .ask_ai
+        .llm_model
+        .as_ref()
+        .map(|value| value.trim().is_empty())
+        .unwrap_or(true)
+    {
+        settings.ask_ai.llm_model = settings.active_listening.llm_model.clone();
+    }
+    write_settings(&app, settings);
+    debug!("Active listening LLM model: {}", model);
+    Ok(())
+}
+
+/// Change the custom LLM base URL for active listening
+#[tauri::command]
+#[specta::specta]
+pub fn change_active_listening_llm_base_url(
+    app: AppHandle,
+    base_url: String,
+) -> Result<(), String> {
+    let mut settings = get_settings(&app);
+    settings.active_listening.llm_base_url = if base_url.is_empty() {
+        None
+    } else {
+        Some(base_url.clone())
+    };
+    sync_shared_ai_settings(&mut settings);
+    write_settings(&app, settings);
+    debug!("Active listening LLM base URL: {}", base_url);
+    Ok(())
+}
+
+/// Fetch available models from OpenRouter or other OpenAI-compatible API
+#[tauri::command]
+#[specta::specta]
+pub async fn fetch_llm_models(
+    _app: AppHandle,
+    provider_type: LlmProvider,
+    api_key: String,
+    base_url: Option<String>,
+) -> Result<Vec<String>, String> {
+    let url = resolve_llm_provider_url(provider_type, base_url)?;
+
+    let provider = crate::settings::PostProcessProvider {
+        id: format!("{:?}", provider_type).to_lowercase(),
+        label: format!("{:?}", provider_type),
+        base_url: url,
+        allow_base_url_edit: false,
+        models_endpoint: None,
+        supports_structured_output: false,
+    };
+
+    crate::llm_client::fetch_models(&provider, api_key).await
+}
+
+fn resolve_llm_provider_url(
+    provider_type: LlmProvider,
+    base_url: Option<String>,
+) -> Result<String, String> {
+    match provider_type {
+        LlmProvider::Ollama => Err("Use fetch_ollama_models for Ollama".to_string()),
+        LlmProvider::Custom => base_url
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| "Custom provider requires a base URL".to_string()),
+        LlmProvider::LocalOpenAi => {
+            Ok(base_url.unwrap_or_else(|| "http://127.0.0.1:8000/v1".to_string()))
+        }
+        _ => Ok(provider_type
+            .default_base_url()
+            .unwrap_or("https://openrouter.ai/api/v1")
+            .to_string()),
+    }
 }
 
 /// Change the context window size
@@ -254,6 +399,62 @@ pub fn get_audio_source_type(app: AppHandle) -> AudioSourceType {
 pub fn get_audio_mix_ratio(app: AppHandle) -> f32 {
     let settings = get_settings(&app);
     settings.active_listening.audio_mix_settings.mix_ratio
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_llm_provider_url_for_known_providers() {
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::LocalOpenAi, None).unwrap(),
+            "http://127.0.0.1:8000/v1"
+        );
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::OpenRouter, None).unwrap(),
+            "https://openrouter.ai/api/v1"
+        );
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::OpenAi, None).unwrap(),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::Groq, None).unwrap(),
+            "https://api.groq.com/openai/v1"
+        );
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::Together, None).unwrap(),
+            "https://api.together.xyz/v1"
+        );
+        assert_eq!(
+            resolve_llm_provider_url(LlmProvider::Fireworks, None).unwrap(),
+            "https://api.fireworks.ai/inference/v1"
+        );
+    }
+
+    #[test]
+    fn test_resolve_llm_provider_url_for_custom() {
+        assert_eq!(
+            resolve_llm_provider_url(
+                LlmProvider::Custom,
+                Some("https://example.com/v1".to_string())
+            )
+            .unwrap(),
+            "https://example.com/v1"
+        );
+        let err = resolve_llm_provider_url(LlmProvider::Custom, None).unwrap_err();
+        assert!(err.contains("requires a base URL"));
+        let err =
+            resolve_llm_provider_url(LlmProvider::Custom, Some("   ".to_string())).unwrap_err();
+        assert!(err.contains("requires a base URL"));
+    }
+
+    #[test]
+    fn test_resolve_llm_provider_url_rejects_ollama() {
+        let err = resolve_llm_provider_url(LlmProvider::Ollama, None).unwrap_err();
+        assert!(err.contains("fetch_ollama_models"));
+    }
 }
 
 // ---- Prompt CRUD commands ----
@@ -403,6 +604,37 @@ pub fn list_loopback_devices() -> Result<Vec<LoopbackDeviceInfoDto>, String> {
     }
 }
 
+/// Open the presentation mode window
+#[tauri::command]
+#[specta::specta]
+pub fn open_presentation_mode(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("presentation_mode") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    let window = WebviewWindowBuilder::new(
+        &app,
+        "presentation_mode",
+        WebviewUrl::App("src/presentation/index.html".into()),
+    )
+    .title("Handy Presentation Mode")
+    .resizable(true)
+    .maximizable(true)
+    .minimizable(true)
+    .decorations(true)
+    .inner_size(1280.0, 720.0)
+    .build()
+    .map_err(|e| format!("Failed to create presentation mode window: {}", e))?;
+
+    window
+        .set_focus()
+        .map_err(|e| format!("Failed to focus presentation mode window: {}", e))?;
+    info!("Presentation mode window opened");
+    Ok(())
+}
+
 // ---- Meeting Summary commands ----
 
 /// Generate a comprehensive summary from a completed session
@@ -419,10 +651,7 @@ pub async fn generate_meeting_summary(
 /// Export meeting summary to different formats
 #[tauri::command]
 #[specta::specta]
-pub fn export_meeting_summary(
-    summary: MeetingSummary,
-    format: String,
-) -> Result<String, String> {
+pub fn export_meeting_summary(summary: MeetingSummary, format: String) -> Result<String, String> {
     match format.as_str() {
         "markdown" => Ok(export_summary_to_markdown(&summary)),
         "text" => Ok(export_summary_to_text(&summary)),
@@ -437,7 +666,10 @@ fn export_summary_to_markdown(summary: &MeetingSummary) -> String {
     let mut md = String::new();
 
     md.push_str("# Meeting Summary\n\n");
-    md.push_str(&format!("**Duration:** {} minutes\n\n", summary.duration_minutes));
+    md.push_str(&format!(
+        "**Duration:** {} minutes\n\n",
+        summary.duration_minutes
+    ));
 
     md.push_str("## Executive Summary\n\n");
     md.push_str(&summary.executive_summary);
@@ -493,7 +725,10 @@ fn export_summary_to_text(summary: &MeetingSummary) -> String {
     text.push_str("MEETING SUMMARY\n");
     text.push_str(&"=".repeat(50));
     text.push('\n');
-    text.push_str(&format!("Duration: {} minutes\n\n", summary.duration_minutes));
+    text.push_str(&format!(
+        "Duration: {} minutes\n\n",
+        summary.duration_minutes
+    ));
 
     text.push_str("EXECUTIVE SUMMARY\n");
     text.push_str(&"-".repeat(30));

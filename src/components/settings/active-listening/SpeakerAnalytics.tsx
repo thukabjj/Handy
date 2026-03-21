@@ -1,6 +1,12 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { BarChart3, Users, Clock, MessageSquare, RefreshCcw } from "lucide-react";
+import {
+  BarChart3,
+  Users,
+  Clock,
+  MessageSquare,
+  RefreshCcw,
+} from "lucide-react";
 import { commands, ActiveListeningSession, SessionInsight } from "@/bindings";
 import { SettingsGroup } from "@/components/ui";
 import { Button } from "../../ui/Button";
@@ -43,15 +49,25 @@ const SPEAKER_TEXT_COLORS = [
 function computeAnalytics(session: ActiveListeningSession): AnalyticsData {
   const speakerMap = new Map<
     string,
-    { id: number | null; label: string; durationMs: number; turns: number; words: number }
+    {
+      id: number | null;
+      label: string;
+      durationMs: number;
+      turns: number;
+      words: number;
+    }
   >();
 
   for (const insight of session.insights) {
-    const key = insight.speaker_id !== null ? String(insight.speaker_id) : "unknown";
+    const key =
+      insight.speaker_id !== null ? String(insight.speaker_id) : "unknown";
     const label = insight.speaker_label || "Unknown";
 
     const existing = speakerMap.get(key);
-    const wordCount = insight.transcription.trim().split(/\s+/).filter(Boolean).length;
+    const wordCount = insight.transcription
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
 
     if (existing) {
       existing.durationMs += insight.duration_ms;
@@ -70,15 +86,15 @@ function computeAnalytics(session: ActiveListeningSession): AnalyticsData {
 
   const totalDurationMs = Array.from(speakerMap.values()).reduce(
     (sum, s) => sum + s.durationMs,
-    0
+    0,
   );
   const totalTurns = Array.from(speakerMap.values()).reduce(
     (sum, s) => sum + s.turns,
-    0
+    0,
   );
   const totalWords = Array.from(speakerMap.values()).reduce(
     (sum, s) => sum + s.words,
-    0
+    0,
   );
 
   const sessionDurationMs = session.ended_at
@@ -92,11 +108,18 @@ function computeAnalytics(session: ActiveListeningSession): AnalyticsData {
       totalDurationMs: s.durationMs,
       turnCount: s.turns,
       wordCount: s.words,
-      percentage: totalDurationMs > 0 ? (s.durationMs / totalDurationMs) * 100 : 0,
+      percentage:
+        totalDurationMs > 0 ? (s.durationMs / totalDurationMs) * 100 : 0,
     }))
     .sort((a, b) => b.totalDurationMs - a.totalDurationMs);
 
-  return { speakers, totalDurationMs, totalTurns, totalWords, sessionDurationMs };
+  return {
+    speakers,
+    totalDurationMs,
+    totalTurns,
+    totalWords,
+    sessionDurationMs,
+  };
 }
 
 function formatDuration(ms: number): string {
@@ -115,18 +138,19 @@ const SpeakerBar: React.FC<{ speaker: SpeakerStats; index: number }> = ({
 }) => {
   const { t } = useTranslation();
   const colorClass = SPEAKER_COLORS[index % SPEAKER_COLORS.length];
-  const textColorClass = SPEAKER_TEXT_COLORS[index % SPEAKER_TEXT_COLORS.length];
+  const textColorClass =
+    SPEAKER_TEXT_COLORS[index % SPEAKER_TEXT_COLORS.length];
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           <div className={`w-3 h-3 rounded-full ${colorClass}`} />
-          <span className={`font-medium ${textColorClass}`}>{speaker.label}</span>
+          <span className={`font-medium ${textColorClass}`}>
+            {speaker.label}
+          </span>
         </div>
-        <span className="text-mid-gray">
-          {speaker.percentage.toFixed(1)}%
-        </span>
+        <span className="text-mid-gray">{speaker.percentage.toFixed(1)}%</span>
       </div>
       <div className="w-full bg-mid-gray/10 rounded-full h-2.5">
         <div
@@ -136,7 +160,8 @@ const SpeakerBar: React.FC<{ speaker: SpeakerStats; index: number }> = ({
       </div>
       <div className="flex gap-4 text-xs text-mid-gray">
         <span>
-          {t("speakerAnalytics.talkTime", "Talk time")}: {formatDuration(speaker.totalDurationMs)}
+          {t("speakerAnalytics.talkTime", "Talk time")}:{" "}
+          {formatDuration(speaker.totalDurationMs)}
         </span>
         <span>
           {t("speakerAnalytics.turns", "Turns")}: {speaker.turnCount}
@@ -210,7 +235,7 @@ export const SpeakerAnalytics: React.FC = () => {
           <p className="text-mid-gray">
             {t(
               "speakerAnalytics.empty",
-              "No speaker data available. Start an Active Listening session to see speaker analytics."
+              "No speaker data available. Start an Active Listening session to see speaker analytics.",
             )}
           </p>
         </div>
@@ -225,7 +250,7 @@ export const SpeakerAnalytics: React.FC = () => {
           <p className="text-sm text-mid-gray">
             {t(
               "speakerAnalytics.description",
-              "Talk time, participation, and turn-taking analysis for the current session."
+              "Talk time, participation, and turn-taking analysis for the current session.",
             )}
           </p>
           <Button
@@ -280,7 +305,10 @@ export const SpeakerAnalytics: React.FC = () => {
         {analytics.speakers.length >= 2 && (
           <div className="p-3 bg-mid-gray/5 rounded-lg border border-mid-gray/10">
             <p className="text-xs font-semibold text-mid-gray uppercase tracking-wide mb-2">
-              {t("speakerAnalytics.participationBalance", "Participation Balance")}
+              {t(
+                "speakerAnalytics.participationBalance",
+                "Participation Balance",
+              )}
             </p>
             <div className="flex h-4 rounded-full overflow-hidden">
               {analytics.speakers.map((speaker, index) => (

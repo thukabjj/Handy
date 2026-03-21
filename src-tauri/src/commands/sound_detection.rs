@@ -24,9 +24,10 @@ pub fn change_sound_detection_enabled(
 ) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.sound_detection.enabled = enabled;
-    if let Ok(mut det) = detector.lock() {
-        det.update_settings(&settings.sound_detection);
-    }
+    detector
+        .lock()
+        .map_err(|e| format!("Failed to lock sound detector: {}", e))?
+        .update_settings(&settings.sound_detection);
     write_settings(&app, settings);
     Ok(())
 }
@@ -44,9 +45,10 @@ pub fn change_sound_detection_threshold(
     }
     let mut settings = get_settings(&app);
     settings.sound_detection.threshold = threshold;
-    if let Ok(mut det) = detector.lock() {
-        det.update_settings(&settings.sound_detection);
-    }
+    detector
+        .lock()
+        .map_err(|e| format!("Failed to lock sound detector: {}", e))?
+        .update_settings(&settings.sound_detection);
     write_settings(&app, settings);
     Ok(())
 }
@@ -61,9 +63,10 @@ pub fn change_sound_detection_categories(
 ) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.sound_detection.categories = categories;
-    if let Ok(mut det) = detector.lock() {
-        det.update_settings(&settings.sound_detection);
-    }
+    detector
+        .lock()
+        .map_err(|e| format!("Failed to lock sound detector: {}", e))?
+        .update_settings(&settings.sound_detection);
     write_settings(&app, settings);
     Ok(())
 }
@@ -71,10 +74,7 @@ pub fn change_sound_detection_categories(
 /// Enable or disable sound detection notifications
 #[tauri::command]
 #[specta::specta]
-pub fn change_sound_detection_notification(
-    app: AppHandle,
-    enabled: bool,
-) -> Result<(), String> {
+pub fn change_sound_detection_notification(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.sound_detection.notification_enabled = enabled;
     write_settings(&app, settings);

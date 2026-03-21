@@ -7,7 +7,7 @@
 use crate::managers::rag::RagManager;
 use crate::ollama_client::OllamaClient;
 use crate::settings::{QuickResponse, SuggestionsSettings, WarningSeverity};
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::sync::Arc;
@@ -55,6 +55,7 @@ pub struct SuggestionsEvent {
 }
 
 /// Context for generating suggestions
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct SuggestionContext {
     /// The current transcribed segment
@@ -85,6 +86,7 @@ pub struct SuggestionEngine {
     settings: Arc<RwLock<SuggestionsSettings>>,
 }
 
+#[allow(dead_code)]
 impl SuggestionEngine {
     /// Create a new SuggestionEngine
     pub fn new(
@@ -192,7 +194,8 @@ impl SuggestionEngine {
                 let trigger_lower = trigger.to_lowercase();
                 if transcription_lower.contains(&trigger_lower) {
                     // Calculate confidence based on how well the trigger matches
-                    let confidence = self.calculate_trigger_confidence(&transcription_lower, &trigger_lower);
+                    let confidence =
+                        self.calculate_trigger_confidence(&transcription_lower, &trigger_lower);
 
                     matches.push(Suggestion::QuickResponse {
                         id: qr.id.clone(),
@@ -226,7 +229,10 @@ impl SuggestionEngine {
         }
 
         // Boost for exact phrase match (not just contains)
-        if text.split_whitespace().collect::<Vec<_>>().windows(trigger_words.len())
+        if text
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .windows(trigger_words.len())
             .any(|window| window == trigger_words.as_slice())
         {
             confidence += 0.1;
@@ -242,8 +248,7 @@ impl SuggestionEngine {
         // Query the knowledge base
         let query = format!(
             "{}\n\nContext: {}",
-            context.transcription,
-            context.previous_context
+            context.transcription, context.previous_context
         );
 
         match rag.search(&query, 3).await {
@@ -291,16 +296,16 @@ RATIONALE: [Brief reason why this is helpful]
 Be concise - each point should be actionable and under 50 words. Only suggest if truly relevant."#,
             context.transcription,
             context.previous_context,
-            context.session_topic.as_deref().unwrap_or("General conversation")
+            context
+                .session_topic
+                .as_deref()
+                .unwrap_or("General conversation")
         );
 
         // Use Ollama to generate suggestions
         match self
             .ollama_client
-            .generate(
-                &active_listening_settings.ollama_model,
-                prompt,
-            )
+            .generate(&active_listening_settings.ollama_model, prompt)
             .await
         {
             Ok(response) => {
@@ -403,7 +408,11 @@ Be concise - each point should be actionable and under 50 words. Only suggest if
 
             // Also update in settings
             let mut settings = self.settings.write().await;
-            if let Some(settings_qr) = settings.quick_responses.iter_mut().find(|qr| qr.id == response.id) {
+            if let Some(settings_qr) = settings
+                .quick_responses
+                .iter_mut()
+                .find(|qr| qr.id == response.id)
+            {
                 *settings_qr = response;
             }
 

@@ -187,7 +187,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
           break;
       }
     },
-    [disabled, isOpen, focusedIndex, enabledOptions, handleSelect, openDropdown],
+    [
+      disabled,
+      isOpen,
+      focusedIndex,
+      enabledOptions,
+      handleSelect,
+      openDropdown,
+    ],
   );
 
   // Scroll focused option into view
@@ -215,10 +222,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
             ? `${listboxId}-option-${focusedIndex}`
             : undefined
         }
-        className={`px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 rounded min-w-[200px] text-left flex items-center justify-between transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-light ${
+        className={`px-2 py-1 text-sm font-semibold bg-mid-gray/10 border border-mid-gray/80 rounded min-w-[200px] text-left flex items-center justify-between transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary ${
           disabled
             ? "opacity-50 cursor-not-allowed"
-            : "hover:bg-primary-light/10 cursor-pointer hover:border-primary-light"
+            : "hover:bg-logo-primary/10 cursor-pointer hover:border-logo-primary"
         }`}
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
@@ -246,10 +253,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
           id={listboxId}
           role="listbox"
           aria-label={ariaLabel}
-          className="glass-panel absolute top-full left-0 right-0 mt-1 bg-background border border-mid-gray/80 rounded shadow-lg z-50 max-h-60 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-1 bg-background border border-mid-gray/80 rounded shadow-lg z-50 max-h-60 overflow-y-auto"
         >
           {flatOptions.length === 0 ? (
-            <div className="px-2 py-1 text-sm text-mid-gray" role="option" aria-disabled="true">
+            <div
+              className="px-2 py-1 text-sm text-mid-gray"
+              role="option"
+              aria-disabled="true"
+            >
               {t("common.noOptionsFound")}
             </div>
           ) : isGroupedOptions(options) ? (
@@ -277,8 +288,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         tabIndex={-1}
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors duration-150 cursor-pointer ${
                           focusedIndex === enabledIndex
-                            ? "bg-primary-light/20"
-                            : "hover:bg-primary-light/10"
+                            ? "bg-logo-primary/20"
+                            : "hover:bg-logo-primary/10"
                         } ${
                           selectedValue === option.value ? "font-semibold" : ""
                         } ${option.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -306,8 +317,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 tabIndex={-1}
                 className={`w-full px-2 py-1 text-sm text-left transition-colors duration-150 cursor-pointer ${
                   focusedIndex === index
-                    ? "bg-primary-light/20"
-                    : "hover:bg-primary-light/10"
+                    ? "bg-logo-primary/20"
+                    : "hover:bg-logo-primary/10"
                 } ${
                   selectedValue === option.value ? "font-semibold" : ""
                 } ${option.disabled ? "opacity-50 cursor-not-allowed" : ""}`}

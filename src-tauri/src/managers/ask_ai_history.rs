@@ -73,7 +73,11 @@ impl AskAiHistoryManager {
             )?;
         }
 
-        debug!("Saved conversation {} with {} turns", conversation.id, conversation.turns.len());
+        debug!(
+            "Saved conversation {} with {} turns",
+            conversation.id,
+            conversation.turns.len()
+        );
         Ok(())
     }
 
@@ -187,11 +191,10 @@ impl AskAiHistoryManager {
     #[allow(dead_code)]
     pub fn get_conversation_count(&self) -> Result<i64> {
         let conn = self.get_connection()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM ask_ai_conversations",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 =
+            conn.query_row("SELECT COUNT(*) FROM ask_ai_conversations", [], |row| {
+                row.get(0)
+            })?;
         Ok(count)
     }
 

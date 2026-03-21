@@ -19,17 +19,17 @@ browser_snapshot()
 
 ## Available Playwright MCP Tools
 
-| Tool | Purpose |
-|------|---------|
-| `browser_navigate` | Go to a URL |
-| `browser_snapshot` | Get accessibility tree with element refs |
-| `browser_click` | Click an element by ref |
-| `browser_type` | Type text into an input |
-| `browser_press_key` | Press keyboard shortcuts |
-| `browser_evaluate` | Run JS (e.g., manipulate mock state) |
-| `browser_take_screenshot` | Capture a visual screenshot |
-| `browser_fill_form` | Fill multiple form fields |
-| `browser_select_option` | Select dropdown option |
+| Tool                      | Purpose                                  |
+| ------------------------- | ---------------------------------------- |
+| `browser_navigate`        | Go to a URL                              |
+| `browser_snapshot`        | Get accessibility tree with element refs |
+| `browser_click`           | Click an element by ref                  |
+| `browser_type`            | Type text into an input                  |
+| `browser_press_key`       | Press keyboard shortcuts                 |
+| `browser_evaluate`        | Run JS (e.g., manipulate mock state)     |
+| `browser_take_screenshot` | Capture a visual screenshot              |
+| `browser_fill_form`       | Fill multiple form fields                |
+| `browser_select_option`   | Select dropdown option                   |
 
 ## Mock State API
 
@@ -37,29 +37,31 @@ All mocks share centralized state accessible via `window.__E2E_MOCK__`:
 
 ```javascript
 // Get current state
-window.__E2E_MOCK__.getState()
+window.__E2E_MOCK__.getState();
 
 // Reset to defaults (returning user, models downloaded)
-window.__E2E_MOCK__.reset()
+window.__E2E_MOCK__.reset();
 
 // Patch settings
-window.__E2E_MOCK__.updateSettings({ push_to_talk: true })
+window.__E2E_MOCK__.updateSettings({ push_to_talk: true });
 
 // Patch any state
-window.__E2E_MOCK__.update({ hasAnyModels: false })
+window.__E2E_MOCK__.update({ hasAnyModels: false });
 ```
 
 After changing state, reload the page for the app to reinitialize:
 
 ```javascript
-window.__E2E_MOCK__.update({ hasAnyModels: false })
-location.reload()
+window.__E2E_MOCK__.update({ hasAnyModels: false });
+location.reload();
 ```
 
 ## Reset Between Tests
 
 ```javascript
-browser_evaluate({ function: "() => { window.__E2E_MOCK__.reset(); location.reload(); }" })
+browser_evaluate({
+  function: "() => { window.__E2E_MOCK__.reset(); location.reload(); }",
+});
 ```
 
 ## Scenarios

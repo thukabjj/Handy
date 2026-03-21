@@ -27,8 +27,11 @@ pub async fn extract_action_items(
 
     // Extract action items using LLM (without holding the lock)
     let items = crate::managers::task_extractor::extract_action_items_standalone(
-        &app, &transcript, entry_id
-    ).await?;
+        &app,
+        &transcript,
+        entry_id,
+    )
+    .await?;
 
     // Store in database
     let stored_items = history_manager
@@ -84,9 +87,25 @@ pub async fn export_action_items(
         .map_err(|e| format!("Failed to get action items: {}", e))?;
 
     match format.as_str() {
-        "json" => serde_json::to_string_pretty(&items)
-            .map_err(|e| format!("Failed to serialize: {}", e)),
-        "markdown" | _ => {
+        "json" => {
+            serde_json::to_string_pretty(&items).map_err(|e| format!("Failed to serialize: {}", e))
+        }
+        "markdown" => {
+            let mut md = String::from("# Action Items\n\n");
+            for item in &items {
+                let checkbox = if item.completed { "x" } else { " " };
+                md.push_str(&format!("- [{}] {}", checkbox, item.task));
+                if let Some(ref assignee) = item.assignee {
+                    md.push_str(&format!(" (@{})", assignee));
+                }
+                if let Some(ref deadline) = item.deadline {
+                    md.push_str(&format!(" [{}]", deadline));
+                }
+                md.push_str(&format!(" ({})\n", item.priority));
+            }
+            Ok(md)
+        }
+        _ => {
             let mut md = String::from("# Action Items\n\n");
             for item in &items {
                 let checkbox = if item.completed { "x" } else { " " };

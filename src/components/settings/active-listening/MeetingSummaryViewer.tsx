@@ -51,7 +51,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["executive", "decisions", "actionItems", "topics", "followUps"])
+    new Set(["executive", "decisions", "actionItems", "topics", "followUps"]),
   );
 
   const generateSummary = async () => {
@@ -61,10 +61,12 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
       // Use type assertion since commands may not be in bindings yet
       const commandsAny = commands as unknown as Record<string, unknown>;
       if (typeof commandsAny.generateMeetingSummary !== "function") {
-        throw new Error("Meeting summary feature not available. Please rebuild the application.");
+        throw new Error(
+          "Meeting summary feature not available. Please rebuild the application.",
+        );
       }
       const generateFn = commandsAny.generateMeetingSummary as (
-        session: ActiveListeningSession
+        session: ActiveListeningSession,
       ) => Promise<{ status: string; data?: MeetingSummary; error?: string }>;
       const result = await generateFn(session);
       if (result.status === "ok" && result.data) {
@@ -85,11 +87,13 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
       // Use type assertion since commands may not be in bindings yet
       const commandsAny = commands as unknown as Record<string, unknown>;
       if (typeof commandsAny.exportMeetingSummary !== "function") {
-        throw new Error("Export feature not available. Please rebuild the application.");
+        throw new Error(
+          "Export feature not available. Please rebuild the application.",
+        );
       }
       const exportFn = commandsAny.exportMeetingSummary as (
         summary: MeetingSummary,
-        format: string
+        format: string,
       ) => Promise<{ status: string; data?: string; error?: string }>;
       const result = await exportFn(summary, format);
       if (result.status === "ok" && result.data) {
@@ -153,11 +157,11 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
           {session.insights.length > 0
             ? t(
                 "settings.activeListening.summary.generate",
-                "Generate a comprehensive summary of this session"
+                "Generate a comprehensive summary of this session",
               )
             : t(
                 "settings.activeListening.summary.noInsights",
-                "This session has no insights to summarize."
+                "This session has no insights to summarize.",
               )}
         </p>
         {session.insights.length > 0 && (
@@ -174,11 +178,11 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
   if (isLoading) {
     return (
       <div className="p-6 text-center">
-        <Loader2 className="h-8 w-8 mx-auto text-primary-light animate-spin mb-3" />
+        <Loader2 className="h-8 w-8 mx-auto text-logo-primary animate-spin mb-3" />
         <p className="text-sm text-mid-gray">
           {t(
             "settings.activeListening.summary.generating",
-            "Generating summary..."
+            "Generating summary...",
           )}
         </p>
       </div>
@@ -225,7 +229,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
             onClick={() => exportSummary("markdown")}
             title={t(
               "settings.activeListening.summary.export.markdown",
-              "Export as Markdown"
+              "Export as Markdown",
             )}
           >
             <Download className="h-4 w-4" />
@@ -236,7 +240,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
             onClick={() => exportSummary("text")}
             title={t(
               "settings.activeListening.summary.export.copy",
-              "Copy to Clipboard"
+              "Copy to Clipboard",
             )}
           >
             {copiedToClipboard ? (
@@ -255,7 +259,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
           icon={<FileText className="h-4 w-4 text-blue-500" />}
           title={t(
             "settings.activeListening.summary.executiveSummary",
-            "Executive Summary"
+            "Executive Summary",
           )}
         />
         {expandedSections.has("executive") && (
@@ -264,7 +268,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
               {summary?.executive_summary ||
                 t(
                   "settings.activeListening.summary.noExecutiveSummary",
-                  "No summary available"
+                  "No summary available",
                 )}
             </p>
           </div>
@@ -276,7 +280,10 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
         <SectionHeader
           id="decisions"
           icon={<ClipboardList className="h-4 w-4 text-purple-500" />}
-          title={t("settings.activeListening.summary.decisions", "Key Decisions")}
+          title={t(
+            "settings.activeListening.summary.decisions",
+            "Key Decisions",
+          )}
           count={summary?.decisions.length}
         />
         {expandedSections.has("decisions") && (
@@ -297,7 +304,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
               <p className="text-sm text-mid-gray italic">
                 {t(
                   "settings.activeListening.summary.noDecisions",
-                  "No key decisions recorded"
+                  "No key decisions recorded",
                 )}
               </p>
             )}
@@ -312,7 +319,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
           icon={<Users className="h-4 w-4 text-green-500" />}
           title={t(
             "settings.activeListening.summary.actionItems",
-            "Action Items"
+            "Action Items",
           )}
           count={summary?.action_items.length}
         />
@@ -334,18 +341,24 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
                     <div className="flex gap-3 mt-1">
                       {item.assignee && (
                         <span className="text-xs text-green-600">
-                          {t("settings.activeListening.summary.actionItem.assignee", {
-                            name: item.assignee,
-                            defaultValue: `Assignee: ${item.assignee}`,
-                          })}
+                          {t(
+                            "settings.activeListening.summary.actionItem.assignee",
+                            {
+                              name: item.assignee,
+                              defaultValue: `Assignee: ${item.assignee}`,
+                            },
+                          )}
                         </span>
                       )}
                       {item.deadline && (
                         <span className="text-xs text-orange-600">
-                          {t("settings.activeListening.summary.actionItem.deadline", {
-                            date: item.deadline,
-                            defaultValue: `Due: ${item.deadline}`,
-                          })}
+                          {t(
+                            "settings.activeListening.summary.actionItem.deadline",
+                            {
+                              date: item.deadline,
+                              defaultValue: `Due: ${item.deadline}`,
+                            },
+                          )}
                         </span>
                       )}
                     </div>
@@ -356,7 +369,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
               <p className="text-sm text-mid-gray italic">
                 {t(
                   "settings.activeListening.summary.noActionItems",
-                  "No action items identified"
+                  "No action items identified",
                 )}
               </p>
             )}
@@ -371,7 +384,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
           icon={<MessageCircle className="h-4 w-4 text-orange-500" />}
           title={t(
             "settings.activeListening.summary.topics",
-            "Topics Discussed"
+            "Topics Discussed",
           )}
           count={summary?.topics.length}
         />
@@ -392,7 +405,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
               <p className="text-sm text-mid-gray italic">
                 {t(
                   "settings.activeListening.summary.noTopics",
-                  "No specific topics identified"
+                  "No specific topics identified",
                 )}
               </p>
             )}
@@ -407,7 +420,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
           icon={<HelpCircle className="h-4 w-4 text-cyan-500" />}
           title={t(
             "settings.activeListening.summary.followUps",
-            "Follow-up Questions"
+            "Follow-up Questions",
           )}
           count={summary?.follow_ups.length}
         />
@@ -427,7 +440,7 @@ export const MeetingSummaryViewer: React.FC<MeetingSummaryViewerProps> = ({
               <p className="text-sm text-mid-gray italic">
                 {t(
                   "settings.activeListening.summary.noFollowUps",
-                  "No follow-up questions suggested"
+                  "No follow-up questions suggested",
                 )}
               </p>
             )}

@@ -437,6 +437,29 @@ async openAppDataDir() : Promise<Result<null, string>> {
 }
 },
 /**
+ * Open macOS System Settings to the Accessibility pane.
+ * This is a fallback for when the system prompt doesn't properly show the app.
+ */
+async openAccessibilitySettings() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_accessibility_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Open macOS System Settings to the Screen Recording pane.
+ */
+async openScreenRecordingSettings() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_screen_recording_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Check if Apple Intelligence is available on this device.
  * Called by the frontend when the user selects Apple Intelligence provider.
  */
@@ -713,8 +736,1534 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
+ * Post-process a history entry using the current LLM settings.
+ * Returns the processed text if successful.
+ */
+async postProcessHistoryEntry(id: number) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("post_process_history_entry", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get a specific history entry by ID.
+ */
+async getHistoryEntryById(id: number) : Promise<Result<HistoryEntry | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_history_entry_by_id", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get a suggested filename for exporting a single history entry.
+ */
+async getExportFilename(entryId: number, format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_export_filename", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Export a single transcription entry in the given format.
+ */
+async exportTranscription(entryId: number, format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcription", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get a suggested filename for a batch export.
+ */
+async getBatchExportFilename(format: ExportFormat) : Promise<string> {
+    return await TAURI_INVOKE("get_batch_export_filename", { format });
+},
+/**
+ * Export multiple transcription entries in the given format.
+ */
+async exportTranscriptions(entryIds: number[], format: ExportFormat) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcriptions", { entryIds, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Start an active listening session
+ */
+async startActiveListeningSession(topic: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_active_listening_session", { topic }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Stop the current active listening session
+ */
+async stopActiveListeningSession() : Promise<Result<ActiveListeningSession | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_active_listening_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current active listening state
+ */
+async getActiveListeningState() : Promise<ActiveListeningState> {
+    return await TAURI_INVOKE("get_active_listening_state");
+},
+/**
+ * Get the current active listening session info
+ */
+async getActiveListeningSession() : Promise<ActiveListeningSession | null> {
+    return await TAURI_INVOKE("get_active_listening_session");
+},
+/**
+ * Check if Ollama server is available
+ */
+async checkOllamaConnection() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_ollama_connection") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Fetch available models from Ollama
+ */
+async fetchOllamaModels() : Promise<Result<OllamaModel[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("fetch_ollama_models") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable active listening
+ */
+async changeActiveListeningEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the segment duration
+ */
+async changeActiveListeningSegmentDurationSetting(durationSeconds: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_segment_duration_setting", { durationSeconds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the Ollama base URL
+ */
+async changeOllamaBaseUrlSetting(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ollama_base_url_setting", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the Ollama model
+ */
+async changeOllamaModelSetting(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ollama_model_setting", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM provider for active listening
+ */
+async changeActiveListeningLlmProvider(provider: LlmProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM API key for active listening
+ */
+async changeActiveListeningLlmApiKey(apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_api_key", { apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM model for active listening (cloud provider)
+ */
+async changeActiveListeningLlmModel(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the custom LLM base URL for active listening
+ */
+async changeActiveListeningLlmBaseUrl(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_llm_base_url", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Fetch available models from OpenRouter or other OpenAI-compatible API
+ */
+async fetchLlmModels(providerType: LlmProvider, apiKey: string, baseUrl: string | null) : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("fetch_llm_models", { providerType, apiKey, baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the context window size
+ */
+async changeActiveListeningContextWindowSetting(size: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_active_listening_context_window_setting", { size }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the audio source type for active listening
+ */
+async changeAudioSourceTypeSetting(sourceType: AudioSourceType) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_audio_source_type_setting", { sourceType }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the audio mix ratio (0.0 = microphone only, 1.0 = system audio only)
+ */
+async changeAudioMixRatioSetting(mixRatio: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_audio_mix_ratio_setting", { mixRatio }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current audio source type
+ */
+async getAudioSourceType() : Promise<AudioSourceType> {
+    return await TAURI_INVOKE("get_audio_source_type");
+},
+/**
+ * Get the current audio mix ratio
+ */
+async getAudioMixRatio() : Promise<number> {
+    return await TAURI_INVOKE("get_audio_mix_ratio");
+},
+/**
+ * Add a new active listening prompt
+ */
+async addActiveListeningPrompt(name: string, promptTemplate: string) : Promise<Result<ActiveListeningPrompt, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_active_listening_prompt", { name, promptTemplate }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update an existing active listening prompt
+ */
+async updateActiveListeningPrompt(id: string, name: string, promptTemplate: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_active_listening_prompt", { id, name, promptTemplate }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete an active listening prompt
+ */
+async deleteActiveListeningPrompt(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_active_listening_prompt", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Set the selected active listening prompt
+ */
+async setActiveListeningSelectedPrompt(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_active_listening_selected_prompt", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the loopback support level for the current platform
+ */
+async getLoopbackSupportLevel() : Promise<LoopbackSupportLevel> {
+    return await TAURI_INVOKE("get_loopback_support_level");
+},
+/**
+ * Check if loopback capture is supported on this platform
+ */
+async isLoopbackSupported() : Promise<boolean> {
+    return await TAURI_INVOKE("is_loopback_supported");
+},
+/**
+ * List available loopback devices
+ */
+async listLoopbackDevices() : Promise<Result<LoopbackDeviceInfoDto[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_loopback_devices") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Open the presentation mode window
+ */
+async openPresentationMode() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_presentation_mode") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Generate a comprehensive summary from a completed session
+ */
+async generateMeetingSummary(session: ActiveListeningSession) : Promise<Result<MeetingSummary, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_meeting_summary", { session }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Export meeting summary to different formats
+ */
+async exportMeetingSummary(summary: MeetingSummary, format: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_meeting_summary", { summary, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getScreenVisionSettings() : Promise<Result<ScreenVisionSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_screen_vision_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateScreenVisionSettings(settings: ScreenVisionSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_screen_vision_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getScreenVisionStatus() : Promise<Result<ScreenVisionStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_screen_vision_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async testScreenVisionOnce() : Promise<Result<ScreenVisionSnapshotResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_screen_vision_once") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startScreenVisionSession() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_screen_vision_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopScreenVisionSession() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_screen_vision_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current Ask AI state
+ */
+async getAskAiState() : Promise<AskAiState> {
+    return await TAURI_INVOKE("get_ask_ai_state");
+},
+/**
+ * Check if an Ask AI session is currently active
+ */
+async isAskAiActive() : Promise<boolean> {
+    return await TAURI_INVOKE("is_ask_ai_active");
+},
+/**
+ * Get the current question (if any)
+ */
+async getAskAiQuestion() : Promise<string | null> {
+    return await TAURI_INVOKE("get_ask_ai_question");
+},
+/**
+ * Get the current response text
+ */
+async getAskAiResponse() : Promise<string> {
+    return await TAURI_INVOKE("get_ask_ai_response");
+},
+/**
+ * Get the current conversation
+ */
+async getAskAiConversation() : Promise<AskAiConversation | null> {
+    return await TAURI_INVOKE("get_ask_ai_conversation");
+},
+/**
+ * Check if we can start a new recording (idle, complete, or conversation active)
+ */
+async canStartAskAiRecording() : Promise<boolean> {
+    return await TAURI_INVOKE("can_start_ask_ai_recording");
+},
+/**
+ * Cancel the current Ask AI session
+ */
+async cancelAskAiSession() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_ask_ai_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Reset Ask AI to idle state and clear conversation
+ */
+async resetAskAiSession() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_ask_ai_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Dismiss the Ask AI overlay but keep conversation for potential resume
+ */
+async dismissAskAiSession() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("dismiss_ask_ai_session") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Start a new conversation (clears existing conversation)
+ */
+async startNewAskAiConversation() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_new_ask_ai_conversation") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable Ask AI feature
+ */
+async changeAskAiEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change Ask AI Ollama base URL
+ */
+async changeAskAiOllamaBaseUrlSetting(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_ollama_base_url_setting", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change Ask AI Ollama model
+ */
+async changeAskAiOllamaModelSetting(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_ollama_model_setting", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM provider for Ask AI
+ */
+async changeAskAiLlmProvider(provider: LlmProvider) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM API key for Ask AI
+ */
+async changeAskAiLlmApiKey(apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_api_key", { apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the LLM model for Ask AI (cloud provider)
+ */
+async changeAskAiLlmModel(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the custom LLM base URL for Ask AI
+ */
+async changeAskAiLlmBaseUrl(baseUrl: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_llm_base_url", { baseUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change Ask AI system prompt
+ */
+async changeAskAiSystemPromptSetting(prompt: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_ask_ai_system_prompt_setting", { prompt }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get Ask AI settings (for display in UI)
+ */
+async getAskAiSettings() : Promise<AskAiSettings> {
+    return await TAURI_INVOKE("get_ask_ai_settings");
+},
+/**
+ * Save Ask AI window position and size
+ */
+async saveAskAiWindowBounds(bounds: AskAiWindowBounds) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_ask_ai_window_bounds", { bounds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get Ask AI window position and size
+ */
+async getAskAiWindowBounds() : Promise<AskAiWindowBounds> {
+    return await TAURI_INVOKE("get_ask_ai_window_bounds");
+},
+/**
+ * Save a conversation to history
+ */
+async saveAskAiConversationToHistory(conversation: AskAiConversation) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_ask_ai_conversation_to_history", { conversation }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * List recent Ask AI conversations from history
+ */
+async listAskAiConversations(limit: number) : Promise<Result<AskAiConversation[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_ask_ai_conversations", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get a specific Ask AI conversation from history
+ */
+async getAskAiConversationFromHistory(id: string) : Promise<Result<AskAiConversation | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_ask_ai_conversation_from_history", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete an Ask AI conversation from history
+ */
+async deleteAskAiConversationFromHistory(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_ask_ai_conversation_from_history", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Add a document to the knowledge base
+ */
+async ragAddDocument(content: string, sourceType: string, sourceId: string | null, title: string | null) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_add_document", { content, sourceType, sourceId, title }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Add a document from a file path (.txt/.md/.pdf)
+ */
+async ragAddDocumentFromFile(path: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_add_document_from_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Search the knowledge base for relevant context
+ */
+async ragSearch(query: string, topK: number | null) : Promise<Result<SearchResult[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_search", { query, topK }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete a document from the knowledge base
+ */
+async ragDeleteDocument(documentId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_delete_document", { documentId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * List all documents in the knowledge base
+ */
+async ragListDocuments() : Promise<Result<StoredDocument[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_list_documents") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get knowledge base statistics
+ */
+async ragGetStats() : Promise<Result<RagStats, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_get_stats") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current embedding model
+ */
+async ragGetEmbeddingModel() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_get_embedding_model") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Set the embedding model
+ */
+async ragSetEmbeddingModel(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_set_embedding_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Clear all documents from the knowledge base
+ */
+async ragClearAll() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_clear_all") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Chat with the knowledge base using RAG context
+ */
+async ragChat(question: string, context: string | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rag_chat", { question, context }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get knowledge base settings
+ */
+async getKnowledgeBaseSettings() : Promise<Result<KnowledgeBaseSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_knowledge_base_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update knowledge base enabled setting
+ */
+async changeKnowledgeBaseEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_knowledge_base_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update auto-index transcriptions setting
+ */
+async changeAutoIndexTranscriptionsSetting(autoIndex: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_auto_index_transcriptions_setting", { autoIndex }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update embedding model setting
+ */
+async changeKbEmbeddingModelSetting(model: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_kb_embedding_model_setting", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update top_k setting
+ */
+async changeKbTopKSetting(topK: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_kb_top_k_setting", { topK }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update similarity threshold setting
+ */
+async changeKbSimilarityThresholdSetting(threshold: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_kb_similarity_threshold_setting", { threshold }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update use in active listening setting
+ */
+async changeKbUseInActiveListeningSetting(useInAl: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_kb_use_in_active_listening_setting", { useInAl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current suggestions settings
+ */
+async getSuggestionsSettings() : Promise<Result<SuggestionsSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_suggestions_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update the suggestions settings
+ */
+async updateSuggestionsSettings(settings: SuggestionsSettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_suggestions_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable the suggestions feature
+ */
+async changeSuggestionsEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_suggestions_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get all quick responses
+ */
+async getQuickResponses() : Promise<Result<QuickResponse[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_quick_responses") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get quick responses by category
+ */
+async getQuickResponsesByCategory(category: string) : Promise<Result<QuickResponse[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_quick_responses_by_category", { category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Add a new quick response
+ */
+async addQuickResponse(response: QuickResponse) : Promise<Result<QuickResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_quick_response", { response }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update an existing quick response
+ */
+async updateQuickResponse(response: QuickResponse) : Promise<Result<QuickResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_quick_response", { response }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete a quick response
+ */
+async deleteQuickResponse(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_quick_response", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Toggle a quick response's enabled state
+ */
+async toggleQuickResponse(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_quick_response", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable RAG suggestions
+ */
+async changeRagSuggestionsEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_rag_suggestions_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable LLM suggestions
+ */
+async changeLlmSuggestionsEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_llm_suggestions_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update max suggestions count
+ */
+async changeMaxSuggestions(maxSuggestions: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_max_suggestions", { maxSuggestions }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update minimum confidence threshold
+ */
+async changeMinConfidence(minConfidence: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_min_confidence", { minConfidence }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update auto-dismiss on copy setting
+ */
+async changeAutoDismissOnCopy(autoDismiss: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_auto_dismiss_on_copy", { autoDismiss }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update display duration setting
+ */
+async changeDisplayDuration(durationSeconds: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_display_duration", { durationSeconds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get current sound detection settings
+ */
+async getSoundDetectionSettings() : Promise<Result<SoundDetectionSettings, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_sound_detection_settings") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable sound detection
+ */
+async changeSoundDetectionEnabled(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_enabled", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update the detection confidence threshold
+ */
+async changeSoundDetectionThreshold(threshold: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_threshold", { threshold }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update which sound categories to detect
+ */
+async changeSoundDetectionCategories(categories: SoundCategory[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_categories", { categories }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Enable or disable sound detection notifications
+ */
+async changeSoundDetectionNotification(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_sound_detection_notification", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addToBatchQueue(paths: string[]) : Promise<Result<BatchQueueStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_to_batch_queue", { paths }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async startBatchProcessing() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_batch_processing") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelBatchProcessing() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_batch_processing") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBatchStatus() : Promise<Result<BatchQueueStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_batch_status") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeBatchItem(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_batch_item", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearCompletedBatchItems() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_completed_batch_items") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async extractActionItems(entryId: number) : Promise<Result<ActionItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("extract_action_items", { entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getActionItems(entryId: number | null) : Promise<Result<ActionItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_action_items", { entryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async toggleActionItem(id: number, completed: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_action_item", { id, completed }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteActionItem(id: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_action_item", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportActionItems(entryId: number | null, format: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_action_items", { entryId, format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getVocabulary() : Promise<Result<VocabularyEntry[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addVocabularyTerm(term: string, category: string | null) : Promise<Result<VocabularyEntry, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_vocabulary_term", { term, category }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeVocabularyTerm(id: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_vocabulary_term", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async importVocabulary(json: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("import_vocabulary", { json }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportVocabulary() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get all text replacements.
+ */
+async getTextReplacements() : Promise<TextReplacement[]> {
+    return await TAURI_INVOKE("get_text_replacements");
+},
+/**
+ * Add a new text replacement.
+ */
+async addTextReplacement(pattern: string, replacement: string, isRegex: boolean, caseInsensitive: boolean, description: string | null) : Promise<Result<TextReplacement, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_text_replacement", { pattern, replacement, isRegex, caseInsensitive, description }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update an existing text replacement.
+ */
+async updateTextReplacement(id: string, pattern: string | null, replacement: string | null, isRegex: boolean | null, caseInsensitive: boolean | null, enabled: boolean | null, description: string | null) : Promise<Result<TextReplacement, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_text_replacement", { id, pattern, replacement, isRegex, caseInsensitive, enabled, description }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete a text replacement.
+ */
+async deleteTextReplacement(id: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_text_replacement", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Toggle a text replacement's enabled state.
+ */
+async toggleTextReplacement(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_text_replacement", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Change the text replacements enabled setting.
+ */
+async changeTextReplacementsEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_text_replacements_enabled_setting", { enabled });
+},
+/**
+ * Test a replacement pattern against sample text.
+ */
+async testTextReplacement(pattern: string, replacement: string, isRegex: boolean, caseInsensitive: boolean, sampleText: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_text_replacement", { pattern, replacement, isRegex, caseInsensitive, sampleText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Reorder text replacements (move a replacement to a new position).
+ */
+async reorderTextReplacement(id: string, newIndex: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reorder_text_replacement", { id, newIndex }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Import text replacements from JSON.
+ */
+async importTextReplacements(json: string, merge: boolean) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("import_text_replacements", { json, merge }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Export text replacements to JSON.
+ */
+async exportTextReplacements() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_text_replacements") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the current wake-word settings.
+ */
+async getWakeWordSettings() : Promise<WakeWordSettings> {
+    return await TAURI_INVOKE("get_wake_word_settings");
+},
+/**
+ * Update wake-word settings.
+ */
+async updateWakeWordSettings(settings: WakeWordSettings) : Promise<void> {
+    await TAURI_INVOKE("update_wake_word_settings", { settings });
+},
+/**
+ * Enable or disable wake-word detection.
+ */
+async changeWakeWordEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_enabled_setting", { enabled });
+},
+/**
+ * Change the wake phrase.
+ */
+async changeWakePhraseSetting(phrase: string) : Promise<void> {
+    await TAURI_INVOKE("change_wake_phrase_setting", { phrase });
+},
+/**
+ * Change the wake-word trigger action.
+ */
+async changeWakeWordActionSetting(action: WakeWordAction) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_action_setting", { action });
+},
+/**
+ * Change the detection threshold.
+ */
+async changeWakeWordThresholdSetting(threshold: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_threshold_setting", { threshold });
+},
+/**
+ * Change the cooldown period between detections.
+ */
+async changeWakeWordCooldownSetting(seconds: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_cooldown_setting", { seconds });
+},
+/**
+ * Enable or disable owner-only voice authentication.
+ */
+async changeWakeWordVoiceAuthEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_voice_auth_enabled_setting", { enabled });
+},
+async changeWakeWordKwsThresholdSetting(threshold: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_kws_threshold_setting", { threshold });
+},
+async changeWakeWordSpoofThresholdSetting(threshold: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_spoof_threshold_setting", { threshold });
+},
+async changeWakeWordVadEnabledSetting(enabled: boolean) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_vad_enabled_setting", { enabled });
+},
+async changeWakeWordTargetFarSetting(targetFarPerHour: number) : Promise<void> {
+    await TAURI_INVOKE("change_wake_word_target_far_setting", { targetFarPerHour });
+},
+async runWakeCalibrationSession() : Promise<WakeCalibrationResult> {
+    return await TAURI_INVOKE("run_wake_calibration_session");
+},
+/**
+ * Start owner voice enrollment flow.
+ */
+async startWakeVoiceEnrollment() : Promise<void> {
+    await TAURI_INVOKE("start_wake_voice_enrollment");
+},
+/**
+ * Capture one enrollment sample from a WAV file path.
+ */
+async captureWakeVoiceSample(audioPath: string) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("capture_wake_voice_sample", { audioPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Finish enrollment and persist profile into wake word settings.
+ */
+async finishWakeVoiceEnrollment() : Promise<Result<WakeVoiceProfileStatus, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("finish_wake_voice_enrollment") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Clear enrolled owner voice profile.
+ */
+async resetWakeVoiceEnrollment() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_wake_voice_enrollment") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get owner voice profile enrollment status.
+ */
+async getWakeVoiceProfileStatus() : Promise<WakeVoiceProfileStatus> {
+    return await TAURI_INVOKE("get_wake_voice_profile_status");
+},
+/**
+ * Test voice authentication score against enrolled profile using a WAV sample.
+ */
+async testWakeVoiceAuth(audioPath: string) : Promise<Result<WakeVoiceAuthTestResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_wake_voice_auth", { audioPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getObservabilitySettings() : Promise<ObservabilitySettings> {
+    return await TAURI_INVOKE("get_observability_settings");
+},
+async updateObservabilitySettings(settings: ObservabilitySettings) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_observability_settings", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_enabled_setting", { enabled }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityDataModeSetting(mode: ObservabilityDataMode) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_data_mode_setting", { mode }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async changeObservabilityMaxEventsSetting(maxEvents: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_observability_max_events_setting", { maxEvents }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRecentTelemetryEvents(limit: number | null) : Promise<Result<TelemetryEvent[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_recent_telemetry_events", { limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTelemetrySnapshot() : Promise<Result<TelemetrySnapshot, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_telemetry_snapshot") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearTelemetryEvents() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_telemetry_events") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async recordFrontendTelemetryEvent(event: TelemetryRecordInput) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("record_frontend_telemetry_event", { event }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTelemetrySnapshotBundle() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_telemetry_snapshot_bundle") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Store an API key in the system keyring.
+ */
+async setApiKey(providerId: string, apiKey: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("set_api_key", { providerId, apiKey }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get an API key from the system keyring.
+ * Returns None if the key doesn't exist.
+ */
+async getApiKey(providerId: string) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_api_key", { providerId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete an API key from the system keyring.
+ */
+async deleteApiKey(providerId: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_api_key", { providerId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Check if an API key exists in the system keyring.
+ */
+async hasApiKey(providerId: string) : Promise<boolean> {
+    return await TAURI_INVOKE("has_api_key", { providerId });
+},
+/**
+ * Get a masked version of the API key for display (e.g., "sk-••••••••xxxx").
+ * Returns None if no key exists.
+ */
+async getMaskedApiKey(providerId: string) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_masked_api_key", { providerId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Checks if the Mac is a laptop by detecting battery presence
- * 
+ *
  * This uses pmset to check for battery information.
  * Returns true if a battery is detected (laptop), false otherwise (desktop)
  */
@@ -738,35 +2287,863 @@ async isLaptop() : Promise<Result<boolean, string>> {
 
 /** user-defined types **/
 
-export type AppSettings = { bindings: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk: boolean; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; experimental_enabled?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; typing_tool?: TypingTool; external_script_path: string | null; custom_filler_words?: string[] | null }
+export type ActionItem = { id: number; entry_id: number; task: string; assignee: string | null; deadline: string | null; priority: string; completed: boolean; created_at: string }
+/**
+ * A prompt template for active listening
+ */
+export type ActiveListeningPrompt = {
+/**
+ * Unique identifier for the prompt
+ */
+id: string;
+/**
+ * Display name for the prompt
+ */
+name: string;
+/**
+ * Prompt template supporting {{transcription}}, {{previous_context}}, {{session_topic}}
+ */
+prompt_template: string;
+/**
+ * When this prompt was created (Unix timestamp in milliseconds)
+ */
+created_at: number;
+/**
+ * Whether this is a built-in default prompt
+ */
+is_default?: boolean;
+/**
+ * Category for grouping prompts in the UI
+ */
+category?: PromptCategory }
+/**
+ * Information about an active listening session
+ */
+export type ActiveListeningSession = {
+/**
+ * Unique session identifier
+ */
+id: string;
+/**
+ * Unix timestamp when session started (milliseconds)
+ */
+started_at: number;
+/**
+ * Unix timestamp when session ended (milliseconds)
+ */
+ended_at: number | null;
+/**
+ * User-defined topic for this session
+ */
+topic: string | null;
+/**
+ * All insights generated during this session
+ */
+insights: SessionInsight[] }
+/**
+ * Settings for the Active Listening feature
+ */
+export type ActiveListeningSettings = {
+/**
+ * Whether active listening is enabled
+ */
+enabled?: boolean;
+/**
+ * Duration of each audio segment in seconds before transcription
+ */
+segment_duration_seconds?: number;
+/**
+ * LLM provider to use for generating insights
+ */
+llm_provider?: LlmProvider;
+/**
+ * API key for cloud LLM providers (OpenRouter, etc.)
+ */
+llm_api_key?: string | null;
+/**
+ * Model to use with the cloud LLM provider
+ */
+llm_model?: string | null;
+/**
+ * Custom base URL for the LLM provider (used with Custom provider)
+ */
+llm_base_url?: string | null;
+/**
+ * Ollama server base URL
+ */
+ollama_base_url?: string;
+/**
+ * Ollama model to use for generating insights
+ */
+ollama_model?: string;
+/**
+ * Custom prompts for active listening
+ */
+prompts?: ActiveListeningPrompt[];
+/**
+ * Currently selected prompt ID
+ */
+selected_prompt_id?: string | null;
+/**
+ * Number of previous summaries to keep for context
+ */
+context_window_size?: number;
+/**
+ * Audio source type for capturing audio
+ */
+audio_source_type?: AudioSourceType;
+/**
+ * Settings for audio mixing when using Mixed mode
+ */
+audio_mix_settings?: AudioMixSettings }
+/**
+ * State of the active listening session
+ */
+export type ActiveListeningState =
+/**
+ * No active session
+ */
+"idle" |
+/**
+ * Listening and accumulating audio
+ */
+"listening" |
+/**
+ * Processing a segment (transcribing + Ollama)
+ */
+"processing" |
+/**
+ * Error state
+ */
+"error"
+export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk: boolean; audio_feedback: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; selected_model?: string; always_on_microphone?: boolean; selected_microphone?: string | null; clamshell_microphone?: string | null; selected_output_device?: string | null; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: Partial<{ [key in string]: string }>; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; mute_while_recording?: boolean; append_trailing_space?: boolean; app_language?: string; experimental_enabled?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; typing_tool?: TypingTool; external_script_path: string | null;
+/**
+ * Enable transcription hook (external script that processes transcription output)
+ */
+transcription_hook_enabled?: boolean;
+/**
+ * Path to transcription hook script (if not set, uses default location in app data dir)
+ */
+transcription_hook_path?: string | null;
+/**
+ * Enable text replacements (applied after transcription, before LLM post-processing)
+ */
+text_replacements_enabled?: boolean;
+/**
+ * List of text replacement rules
+ */
+text_replacements?: TextReplacement[];
+/**
+ * Wake-word detection settings
+ */
+wake_word?: WakeWordSettings; custom_filler_words?: string[] | null;
+/**
+ * Active Listening feature settings
+ */
+active_listening?: ActiveListeningSettings;
+/**
+ * Ask AI feature settings
+ */
+ask_ai?: AskAiSettings;
+/**
+ * Knowledge Base (RAG) feature settings
+ */
+knowledge_base?: KnowledgeBaseSettings;
+/**
+ * Screen Vision feature settings
+ */
+screen_vision?: ScreenVisionSettings;
+/**
+ * Sound Detection feature settings
+ */
+sound_detection?: SoundDetectionSettings;
+/**
+ * Suggestions feature settings
+ */
+suggestions?: SuggestionsSettings;
+/**
+ * Observability and diagnostics settings
+ */
+observability?: ObservabilitySettings;
+/**
+ * Hide overlay from screen capture/sharing
+ */
+private_overlay?: boolean }
+/**
+ * An Ask AI conversation consisting of multiple turns
+ */
+export type AskAiConversation = {
+/**
+ * Unique identifier for the conversation
+ */
+id: string;
+/**
+ * All Q&A turns in this conversation
+ */
+turns: ConversationTurn[];
+/**
+ * Unix timestamp when conversation was created
+ */
+created_at: number;
+/**
+ * Unix timestamp when conversation was last updated
+ */
+updated_at: number;
+/**
+ * Auto-generated title from first question
+ */
+title: string | null }
+/**
+ * Settings for the Ask AI feature
+ */
+export type AskAiSettings = {
+/**
+ * Whether Ask AI feature is enabled
+ */
+enabled?: boolean;
+/**
+ * LLM provider to use for generating responses
+ */
+llm_provider?: LlmProvider;
+/**
+ * API key for cloud LLM providers (OpenRouter, etc.)
+ */
+llm_api_key?: string | null;
+/**
+ * Model to use with the cloud LLM provider
+ */
+llm_model?: string | null;
+/**
+ * Custom base URL for the LLM provider (used with Custom provider)
+ */
+llm_base_url?: string | null;
+/**
+ * Ollama server base URL
+ */
+ollama_base_url?: string;
+/**
+ * Ollama model to use for generating responses
+ */
+ollama_model?: string;
+/**
+ * System prompt for the AI assistant
+ */
+system_prompt?: string;
+/**
+ * Saved window width for the Ask AI overlay
+ */
+window_width?: number | null;
+/**
+ * Saved window height for the Ask AI overlay
+ */
+window_height?: number | null;
+/**
+ * Saved window X position for the Ask AI overlay
+ */
+window_x?: number | null;
+/**
+ * Saved window Y position for the Ask AI overlay
+ */
+window_y?: number | null }
+/**
+ * State of the Ask AI session
+ */
+export type AskAiState =
+/**
+ * No active session
+ */
+"idle" |
+/**
+ * Recording the user's question
+ */
+"recording" |
+/**
+ * Transcribing the recorded audio
+ */
+"transcribing" |
+/**
+ * Generating AI response
+ */
+"generating" |
+/**
+ * Response complete, waiting for follow-up
+ */
+"complete" |
+/**
+ * Conversation active, waiting for follow-up question
+ */
+"conversation_active" |
+/**
+ * Error occurred
+ */
+"error"
+/**
+ * Window position and size for Ask AI overlay
+ */
+export type AskAiWindowBounds = { width: number | null; height: number | null; x: number | null; y: number | null }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
+/**
+ * Settings for audio source mixing when using Mixed mode
+ */
+export type AudioMixSettings = {
+/**
+ * Mix ratio: 0.0 = microphone only, 1.0 = system audio only, 0.5 = equal mix
+ */
+mix_ratio?: number }
+/**
+ * Audio source type for Active Listening
+ * Determines where audio is captured from for transcription
+ */
+export type AudioSourceType =
+/**
+ * Microphone input only (current default behavior)
+ */
+"microphone" |
+/**
+ * System audio output only (loopback capture)
+ */
+"system_audio" |
+/**
+ * Both microphone and system audio mixed together
+ */
+"mixed"
 export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
+export type BatchItem = { id: string; file_name: string; file_path: string; status: JobStatus; progress: number; error: string | null; duration_seconds: number | null }
+export type BatchQueueStatus = { items: BatchItem[]; total: number; completed: number; failed: number; is_processing: boolean }
 export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
+/**
+ * A single turn in a conversation (question + response pair)
+ */
+export type ConversationTurn = {
+/**
+ * Unique identifier for the turn
+ */
+id: string;
+/**
+ * The transcribed question
+ */
+question: string;
+/**
+ * The AI response
+ */
+response: string;
+/**
+ * Unix timestamp when this turn was created
+ */
+timestamp: number;
+/**
+ * Optional reference to the audio file for this turn
+ */
+audio_file_name: string | null }
 export type CustomSounds = { start: boolean; stop: boolean }
+/**
+ * Document metadata for RAG storage
+ */
+export type DocMetadata = {
+/**
+ * Type of source: "transcription", "upload", "note"
+ */
+source_type: string;
+/**
+ * Optional reference ID (e.g., history entry ID, file path)
+ */
+source_id: string | null;
+/**
+ * Document title or description
+ */
+title: string | null }
 export type EngineType = "Whisper" | "Parakeet" | "Moonshine" | "MoonshineStreaming" | "SenseVoice" | "GigaAM"
+export type ExportFormat = "txt" | "srt" | "vtt" | "json" | "markdown"
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null }
 /**
  * Result of changing keyboard implementation
  */
-export type ImplementationChangeResult = { success: boolean; 
+export type ImplementationChangeResult = { success: boolean;
 /**
  * List of binding IDs that were reset to defaults due to incompatibility
  */
 reset_bindings: string[] }
+export type JobStatus = "Queued" | "Decoding" | "Transcribing" | "Completed" | "Failed" | "Cancelled"
 export type KeyboardImplementation = "tauri" | "handy_keys"
+/**
+ * Settings for the Knowledge Base feature
+ */
+export type KnowledgeBaseSettings = {
+/**
+ * Whether knowledge base is enabled
+ */
+enabled?: boolean;
+/**
+ * Automatically index transcriptions from Active Listening
+ */
+auto_index_transcriptions?: boolean;
+/**
+ * Embedding model to use (Ollama model name)
+ */
+embedding_model?: string;
+/**
+ * Number of context chunks to retrieve per query
+ */
+top_k?: number;
+/**
+ * Minimum similarity threshold for including results (0.0-1.0)
+ */
+similarity_threshold?: number;
+/**
+ * Use RAG context in Active Listening prompts
+ */
+use_in_active_listening?: boolean }
 export type LLMPrompt = { id: string; name: string; prompt: string }
+/**
+ * LLM provider type for AI features
+ */
+export type LlmProvider =
+/**
+ * Local Ollama server
+ */
+"ollama" |
+/**
+ * Local OpenAI-compatible server (vLLM/TGI)
+ */
+"local_open_ai" |
+/**
+ * OpenRouter API (OpenAI-compatible)
+ */
+"open_router" |
+/**
+ * OpenAI API
+ */
+"open_ai" |
+/**
+ * Groq API (OpenAI-compatible)
+ */
+"groq" |
+/**
+ * Together AI API (OpenAI-compatible)
+ */
+"together" |
+/**
+ * Fireworks AI API (OpenAI-compatible)
+ */
+"fireworks" |
+/**
+ * Custom OpenAI-compatible API
+ */
+"custom"
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
+/**
+ * Loopback device information for the frontend
+ */
+export type LoopbackDeviceInfoDto = { id: string; name: string; is_default: boolean }
+/**
+ * Loopback support level for the frontend
+ */
+export type LoopbackSupportLevel =
+/**
+ * Full native support for loopback capture
+ */
+"native" |
+/**
+ * Requires additional software/virtual audio device
+ */
+"requires_virtual_device" |
+/**
+ * Not supported on this platform
+ */
+"not_supported"
+/**
+ * An action item extracted from a meeting
+ */
+export type MeetingActionItem = {
+/**
+ * Description of the action
+ */
+description: string;
+/**
+ * Person responsible (if mentioned)
+ */
+assignee: string | null;
+/**
+ * Deadline (if mentioned)
+ */
+deadline: string | null }
+/**
+ * Comprehensive meeting summary generated from a session
+ */
+export type MeetingSummary = {
+/**
+ * Session ID this summary is for
+ */
+session_id: string;
+/**
+ * Brief executive summary (2-3 sentences)
+ */
+executive_summary: string;
+/**
+ * Key decisions made during the meeting
+ */
+decisions: string[];
+/**
+ * Action items with optional assignees and deadlines
+ */
+action_items: MeetingActionItem[];
+/**
+ * Main topics discussed
+ */
+topics: string[];
+/**
+ * Suggested follow-up questions
+ */
+follow_ups: string[];
+/**
+ * Total duration in minutes
+ */
+duration_minutes: number;
+/**
+ * When this summary was generated
+ */
+generated_at: number }
 export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; is_custom: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_5"
+export type ObservabilityDataMode = "metadata_only" | "sensitive_text" | "developer"
+export type ObservabilitySettings = { enabled?: boolean; data_mode?: ObservabilityDataMode; max_events?: number; emit_live_events?: boolean; capture_frontend_events?: boolean }
+/**
+ * Ollama model information
+ */
+export type OllamaModel = { name: string }
 export type OverlayPosition = "none" | "top" | "bottom"
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean }
+/**
+ * Category for grouping prompts
+ */
+export type PromptCategory =
+/**
+ * Note-taking and summarization prompts
+ */
+"note_taking" |
+/**
+ * Real-time meeting coach prompts (Perssua-like)
+ */
+"meeting_coach" |
+/**
+ * User-created custom prompts
+ */
+"custom"
+/**
+ * A quick response template that can be triggered by keywords
+ */
+export type QuickResponse = {
+/**
+ * Unique identifier for the quick response
+ */
+id: string;
+/**
+ * Display name for the quick response
+ */
+name: string;
+/**
+ * Keywords that trigger this response (comma-separated phrases)
+ */
+trigger_phrases: string[];
+/**
+ * Category for grouping (e.g., "pricing", "objection", "closing")
+ */
+category: string;
+/**
+ * The response template to suggest
+ */
+response_template: string;
+/**
+ * Whether this quick response is enabled
+ */
+enabled?: boolean;
+/**
+ * When this was created (Unix timestamp in milliseconds)
+ */
+created_at: number }
+/**
+ * Knowledge base statistics
+ */
+export type RagStats = { document_count: number; embedding_count: number }
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"
+export type ScreenVisionSettings = { enabled?: boolean; interval_seconds?: number; duration_seconds?: number; max_snapshots?: number; llm_provider?: LlmProvider; llm_api_key?: string | null; llm_base_url?: string | null; llm_model?: string; prompt?: string }
+export type ScreenVisionSnapshotResult = { timestamp_ms: number; capture_path: string | null; analysis: string }
+export type ScreenVisionStatus = { running: boolean; session_id: string | null; started_at_ms: number | null; expires_at_ms: number | null; snapshots_processed: number; last_result: ScreenVisionSnapshotResult | null; last_error: string | null }
+/**
+ * Search result from RAG query
+ */
+export type SearchResult = {
+/**
+ * Document ID
+ */
+document_id: number;
+/**
+ * Chunk text that matched
+ */
+chunk_text: string;
+/**
+ * Similarity score (0-1, higher is better)
+ */
+similarity: number;
+/**
+ * Document metadata
+ */
+metadata: DocMetadata;
+/**
+ * Original document title
+ */
+title: string | null }
+/**
+ * A single insight generated from a segment
+ */
+export type SessionInsight = {
+/**
+ * Unix timestamp when this insight was generated
+ */
+timestamp: number;
+/**
+ * The transcribed text for this segment
+ */
+transcription: string;
+/**
+ * The AI-generated insight
+ */
+insight: string;
+/**
+ * Duration of the audio segment in milliseconds
+ */
+duration_ms: number;
+/**
+ * Speaker ID (0 = primary/you, 1+ = others)
+ */
+speaker_id: number | null;
+/**
+ * Human-readable speaker label (e.g., "You", "Speaker 2", or custom name)
+ */
+speaker_label: string | null }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
+/**
+ * Categories of environmental sounds that can be detected
+ */
+export type SoundCategory = "doorbell" | "alarm" | "phone_ring" | "dog_bark" | "baby_cry" | "knocking" | "siren" | "applause"
+/**
+ * Settings for the Environmental Sound Detection feature
+ */
+export type SoundDetectionSettings = {
+/**
+ * Whether sound detection is enabled
+ */
+enabled?: boolean;
+/**
+ * Which sound categories to detect
+ */
+categories?: SoundCategory[];
+/**
+ * Minimum confidence threshold for triggering a detection (0.0-1.0)
+ */
+threshold?: number;
+/**
+ * Whether to show system notifications on detection
+ */
+notification_enabled?: boolean }
 export type SoundTheme = "marimba" | "pop" | "custom"
+/**
+ * Stored document representation
+ */
+export type StoredDocument = { id: number; content: string; source_type: string; source_id: string | null; title: string | null; created_at: number }
+/**
+ * Settings for the Suggestions feature
+ */
+export type SuggestionsSettings = {
+/**
+ * Whether suggestions are enabled
+ */
+enabled?: boolean;
+/**
+ * Quick response templates
+ */
+quick_responses?: QuickResponse[];
+/**
+ * Whether to use RAG for context-aware suggestions
+ */
+rag_suggestions_enabled?: boolean;
+/**
+ * Whether to use LLM for generating dynamic suggestions
+ */
+llm_suggestions_enabled?: boolean;
+/**
+ * Maximum number of suggestions to show at once
+ */
+max_suggestions?: number;
+/**
+ * Minimum confidence score for showing suggestions (0.0 - 1.0)
+ */
+min_confidence?: number;
+/**
+ * Whether to auto-dismiss suggestions after copying
+ */
+auto_dismiss_on_copy?: boolean;
+/**
+ * Suggestion display duration in seconds (0 = until dismissed)
+ */
+display_duration_seconds?: number }
+export type TelemetryAttribute = { key: string; value: string; redacted?: boolean }
+export type TelemetryAttributeInput = { key: string; value: string; sensitive?: boolean }
+export type TelemetryComponentStat = { component: string; total_events: number; error_events: number; warn_events: number; last_event_at_ms: number | null }
+export type TelemetryEvent = { id: string; timestamp_ms: number; component: string; action: string; level: TelemetryLevel; message: string; trace_id: string | null; session_id: string | null; duration_ms: number | null; status: string | null; source: string; attributes: TelemetryAttribute[] }
+export type TelemetryLevel = "trace" | "debug" | "info" | "warn" | "error"
+export type TelemetryRecordInput = { component: string; action: string; level: TelemetryLevel; message: string; trace_id: string | null; session_id: string | null; duration_ms: number | null; status: string | null; source?: string | null; attributes?: TelemetryAttributeInput[] }
+export type TelemetrySnapshot = { settings: ObservabilitySettings; stats: TelemetryStats; events: TelemetryEvent[] }
+export type TelemetryStats = { total_events: number; buffered_events: number; dropped_events: number; error_events: number; warn_events: number; last_event_at_ms: number | null; live_streaming_enabled: boolean; component_breakdown: TelemetryComponentStat[] }
+/**
+ * A text replacement rule.
+ */
+export type TextReplacement = {
+/**
+ * Unique identifier for this replacement.
+ */
+id: string;
+/**
+ * Whether this replacement is enabled.
+ */
+enabled: boolean;
+/**
+ * The pattern to match (literal text or regex).
+ */
+pattern: string;
+/**
+ * The replacement text (supports magic commands).
+ */
+replacement: string;
+/**
+ * Whether the pattern is a regular expression.
+ */
+is_regex: boolean;
+/**
+ * Whether the match should be case-insensitive.
+ */
+case_insensitive: boolean;
+/**
+ * Optional description of what this replacement does.
+ */
+description?: string | null }
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
+export type VocabularyEntry = { id: number; term: string; frequency: number; source: string; category: string | null; created_at: string }
+/**
+ * Voice authentication mode for wake-word detection.
+ */
+export type VoiceAuthMode =
+/**
+ * Disable speaker verification.
+ */
+"disabled" |
+/**
+ * Only accept wake phrase when it matches the enrolled owner voice.
+ */
+"owner_only"
+export type WakeCalibrationResult = { suggested_kws_threshold: number; suggested_speaker_threshold: number; suggested_spoof_threshold: number; target_far_per_hour: number; note: string }
+export type WakeVoiceAuthTestResult = { accepted: boolean; score: number; threshold: number }
+/**
+ * Lightweight voice profile computed from enrollment samples.
+ */
+export type WakeVoiceProfile = {
+/**
+ * Mean feature vector for the enrolled speaker.
+ */
+centroid: number[];
+/**
+ * Number of samples used to build the profile.
+ */
+sample_count: number }
+export type WakeVoiceProfileStatus = { enrolled: boolean; sample_count: number; voice_auth_enabled: boolean; mode: VoiceAuthMode; enrollment_active: boolean }
+/**
+ * Action to perform when wake-word is detected.
+ */
+export type WakeWordAction =
+/**
+ * Start an Active Listening session
+ */
+"start_active_listening" |
+/**
+ * Start standard transcription
+ */
+"start_recording" |
+/**
+ * No action (disabled)
+ */
+"none"
+/**
+ * Wake-word detection settings.
+ */
+export type WakeWordSettings = {
+/**
+ * Whether wake-word detection is enabled
+ */
+enabled: boolean;
+/**
+ * The wake phrase to listen for (e.g., "Hey Handy")
+ */
+wake_phrase: string;
+/**
+ * Case-insensitive matching
+ */
+case_insensitive: boolean;
+/**
+ * Action to perform when wake-word is detected
+ */
+trigger_action: WakeWordAction;
+/**
+ * Minimum confidence threshold (0.0 - 1.0)
+ * For transcript matching, this is fuzzy match threshold
+ */
+detection_threshold: number;
+/**
+ * Cooldown period in seconds between detections
+ */
+cooldown_seconds: number;
+/**
+ * Enable speaker verification for owner-only wake word.
+ */
+voice_auth_enabled?: boolean;
+/**
+ * Voice authentication strategy.
+ */
+voice_auth_mode?: VoiceAuthMode;
+/**
+ * Minimum similarity threshold for speaker verification (0.0 - 1.0).
+ */
+speaker_threshold?: number;
+/**
+ * Minimum audio duration required for speaker verification.
+ */
+quality_min_duration_ms?: number;
+/**
+ * Optional enrolled profile for speaker verification.
+ */
+voice_profile?: WakeVoiceProfile | null;
+/**
+ * KWS acceptance threshold (0.0 - 1.0).
+ */
+kws_threshold?: number;
+/**
+ * Anti-spoof threshold (0.0 - 1.0). Used only when voice auth is enabled.
+ */
+spoof_threshold?: number;
+/**
+ * Enable simple voice activity gating before wake detection.
+ */
+vad_enabled?: boolean;
+/**
+ * Target false accepts per hour used for calibration suggestions.
+ */
+target_far_per_hour?: number;
+/**
+ * If true, owner-only mode falls back to phrase-only detection when no profile is enrolled.
+ */
+fallback_when_no_profile?: boolean }
 
 /** tauri-specta globals **/
 

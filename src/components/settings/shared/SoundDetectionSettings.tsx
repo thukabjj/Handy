@@ -49,9 +49,11 @@ export const SoundDetectionSettings: React.FC = () => {
 
   const handleCategoryToggle = useCallback(
     async (category: string, checked: boolean) => {
-      const updated = (checked
-        ? [...categories, category]
-        : categories.filter((c: string) => c !== category)) as SoundCategory[];
+      const updated = (
+        checked
+          ? [...categories, category]
+          : categories.filter((c: string) => c !== category)
+      ) as SoundCategory[];
       const result = await commands.changeSoundDetectionCategories(updated);
       if (result.status === "ok") {
         await refreshSettings();
@@ -114,7 +116,9 @@ export const SoundDetectionSettings: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={categories.includes(cat)}
-                    onChange={(e) => handleCategoryToggle(cat, e.target.checked)}
+                    onChange={(e) =>
+                      handleCategoryToggle(cat, e.target.checked)
+                    }
                     className="rounded border-neutral-600 bg-neutral-800 text-blue-500 focus:ring-blue-500/20"
                   />
                   {t(`soundDetection.category.${cat}`)}

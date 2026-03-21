@@ -1,243 +1,86 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
+import { gotoApp, openSearch, openSidebarSection } from "./helpers/settings";
 
-/**
- * E2E tests for the Handy application using Playwright
- *
- * These tests run against the Vite dev server and test the web frontend.
- * Tauri-specific native features are mocked or skipped.
- */
-
-test.describe('Handy Application', () => {
+test.describe("Handy Application", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to the app
-    await page.goto('/');
-
-    // Wait for the app to initialize
-    await page.waitForTimeout(1000);
+    await gotoApp(page);
   });
 
-  test('should load the application', async ({ page }) => {
-    // The page should have loaded
-    await expect(page).toHaveURL('/');
+  test("should render the main shell", async ({ page }) => {
+    await expect(page.locator("#root")).toBeAttached();
+    await expect(page.locator('main[role="main"]')).toBeVisible();
+    await expect(page.locator('footer[role="contentinfo"]')).toBeVisible();
   });
 
-  test('should display main content', async ({ page }) => {
-    // Check for body content
-    const body = page.locator('body');
-    await expect(body).toBeVisible();
-  });
-
-  test('should have app structure', async ({ page }) => {
-    // Wait for React to render
-    await page.waitForSelector('div', { timeout: 5000 });
-
-    // The app root should exist
-    const root = page.locator('#root');
-    await expect(root).toBeVisible();
-  });
-});
-
-test.describe('Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(1000);
-  });
-
-  test('should have navigation when main app loads', async ({ page }) => {
-    // Check if sidebar navigation exists (main app state)
+  test("should show the current sidebar navigation", async ({ page }) => {
     const nav = page.locator('nav[aria-label="Settings navigation"]');
-    const navExists = await nav.isVisible().catch(() => false);
-
-    if (navExists) {
-      // We're in the main app
-      await expect(nav).toBeVisible();
-
-      // Check for sidebar sections
-      const generalText = nav.locator('text=General');
-      await expect(generalText).toBeVisible();
-    } else {
-      // We might be in onboarding - that's also valid
-      test.info().annotations.push({
-        type: 'info',
-        description: 'App is showing onboarding screen',
-      });
-    }
+    await expect(nav).toBeVisible();
+    await expect(nav.getByText("Transcribe", { exact: true })).toBeVisible();
+    await expect(nav.getByText("History", { exact: true })).toBeVisible();
+    await expect(nav.getByText("Settings", { exact: true })).toBeVisible();
+    await expect(nav.getByText("About", { exact: true })).toBeVisible();
   });
 
-  test('should navigate between sections when in main app', async ({
+  test("should navigate between sidebar sections", async ({ page }) => {
+    const nav = page.locator('nav[aria-label="Settings navigation"]');
+
+    await openSidebarSection(page, "Settings");
+    await expect(nav.locator(".bg-logo-primary\\/80")).toContainText(
+      "Settings",
+    );
+
+    await openSidebarSection(page, "History");
+    await expect(nav.locator(".bg-logo-primary\\/80")).toContainText("History");
+
+    await openSidebarSection(page, "About");
+    await expect(nav.locator(".bg-logo-primary\\/80")).toContainText("About");
+
+    await openSidebarSection(page, "Transcribe");
+    await expect(nav.locator(".bg-logo-primary\\/80")).toContainText(
+      "Transcribe",
+    );
+  });
+
+  test("should deep-link search results into the correct unified settings panel", async ({
+    page,
+  }) => {
+    const searchInput = await openSearch(page);
+    await searchInput.fill("Knowledge Base");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(250);
+
+    const nav = page.locator('nav[aria-label="Settings navigation"]');
+    await expect(nav.locator(".bg-logo-primary\\/80")).toContainText(
+      "Settings",
+    );
+    await expect(
+      page.getByTestId("unified-section-features-toggle"),
+    ).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByTestId("feature-card-knowledge-base")).toBeVisible();
+    await expect(
+      page.locator('main[role="main"]').getByText("Knowledge Base"),
+    ).toBeVisible();
+  });
+
+  test("should toggle debug mode with the keyboard shortcut", async ({
     page,
   }) => {
     const nav = page.locator('nav[aria-label="Settings navigation"]');
-    const navExists = await nav.isVisible().catch(() => false);
+    const debugBefore = await nav
+      .getByText("Debug", { exact: true })
+      .isVisible()
+      .catch(() => false);
 
-    if (navExists) {
-      // Click on Advanced
-      const advanced = nav.locator('text=Advanced');
-      if (await advanced.isVisible()) {
-        await advanced.click();
-        await page.waitForTimeout(300);
+    await page.keyboard.press("Meta+Shift+KeyD");
+    await page.waitForTimeout(400);
+    const debugAfter = await nav
+      .getByText("Debug", { exact: true })
+      .isVisible()
+      .catch(() => false);
 
-        // The Advanced section should now be active
-        const activeSection = nav.locator('.bg-logo-primary\\/80');
-        await expect(activeSection).toContainText('Advanced');
-      }
+    await page.keyboard.press("Meta+Shift+KeyD");
+    await page.waitForTimeout(250);
 
-      // Click on History
-      const history = nav.locator('text=History');
-      if (await history.isVisible()) {
-        await history.click();
-        await page.waitForTimeout(300);
-      }
-
-      // Click on About
-      const about = nav.locator('text=About');
-      if (await about.isVisible()) {
-        await about.click();
-        await page.waitForTimeout(300);
-      }
-
-      // Return to General
-      const general = nav.locator('text=General');
-      await general.click();
-      await page.waitForTimeout(300);
-    }
-  });
-});
-
-test.describe('Settings UI', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(1000);
-  });
-
-  test('should have interactive toggle switches', async ({ page }) => {
-    const nav = page.locator('nav[aria-label="Settings navigation"]');
-    const navExists = await nav.isVisible().catch(() => false);
-
-    if (navExists) {
-      // Look for toggle switches (checkboxes styled as toggles)
-      const toggles = page.locator('input[type="checkbox"]');
-      const count = await toggles.count();
-
-      if (count > 0) {
-        test.info().annotations.push({
-          type: 'info',
-          description: `Found ${count} toggle switches`,
-        });
-
-        // Try to interact with the first toggle
-        const firstToggle = toggles.first();
-        const initialState = await firstToggle.isChecked();
-
-        await firstToggle.click();
-        await page.waitForTimeout(200);
-
-        // Toggle should have changed
-        const newState = await firstToggle.isChecked();
-        expect(newState).toBe(!initialState);
-
-        // Toggle back
-        await firstToggle.click();
-      }
-    }
-  });
-
-  test('should have main content area', async ({ page }) => {
-    const main = page.locator('main[role="main"]');
-    const mainExists = await main.isVisible().catch(() => false);
-
-    if (mainExists) {
-      await expect(main).toBeVisible();
-    }
-  });
-
-  test('should have footer', async ({ page }) => {
-    const footer = page.locator('footer[role="contentinfo"]');
-    const footerExists = await footer.isVisible().catch(() => false);
-
-    if (footerExists) {
-      await expect(footer).toBeVisible();
-    }
-  });
-});
-
-test.describe('Keyboard Interactions', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.waitForTimeout(1000);
-  });
-
-  test('should support Tab navigation', async ({ page }) => {
-    // Press Tab to navigate
-    await page.keyboard.press('Tab');
-    await page.waitForTimeout(100);
-
-    // Get the focused element
-    const focusedTag = await page.evaluate(
-      () => document.activeElement?.tagName
-    );
-    expect(focusedTag).toBeTruthy();
-  });
-
-  test('should handle Escape key gracefully', async ({ page }) => {
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
-
-    // App should still be responsive
-    const body = page.locator('body');
-    await expect(body).toBeVisible();
-  });
-
-  test('should toggle debug mode with keyboard shortcut', async ({ page }) => {
-    const nav = page.locator('nav[aria-label="Settings navigation"]');
-    const navExists = await nav.isVisible().catch(() => false);
-
-    if (navExists) {
-      // Check if Debug section is initially visible
-      const debugBefore = await nav.locator('text=Debug').isVisible().catch(() => false);
-
-      // Press Cmd+Shift+D (Meta+Shift+D)
-      await page.keyboard.press('Meta+Shift+KeyD');
-      await page.waitForTimeout(500);
-
-      // Check if Debug section visibility changed
-      const debugAfter = await nav.locator('text=Debug').isVisible().catch(() => false);
-
-      // Toggle back
-      await page.keyboard.press('Meta+Shift+KeyD');
-      await page.waitForTimeout(300);
-
-      test.info().annotations.push({
-        type: 'info',
-        description: `Debug visibility: ${debugBefore} -> ${debugAfter}`,
-      });
-    }
-  });
-});
-
-test.describe('Responsive Design', () => {
-  test('should handle different viewport sizes', async ({ page }) => {
-    await page.goto('/');
-
-    // Test at different sizes
-    const sizes = [
-      { width: 1280, height: 720 },
-      { width: 1024, height: 768 },
-      { width: 800, height: 600 },
-    ];
-
-    for (const size of sizes) {
-      await page.setViewportSize(size);
-      await page.waitForTimeout(200);
-
-      // App should still render
-      const body = page.locator('body');
-      await expect(body).toBeVisible();
-
-      test.info().annotations.push({
-        type: 'info',
-        description: `Tested at ${size.width}x${size.height}`,
-      });
-    }
+    expect(debugAfter).toBe(!debugBefore);
   });
 });

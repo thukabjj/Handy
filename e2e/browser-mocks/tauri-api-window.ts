@@ -3,7 +3,9 @@
  */
 
 function noop() {}
-function noopAsync() { return Promise.resolve(); }
+function noopAsync() {
+  return Promise.resolve();
+}
 
 const mockWindow = {
   close: noopAsync,

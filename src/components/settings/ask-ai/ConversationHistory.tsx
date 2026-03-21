@@ -35,7 +35,9 @@ const formatTime = (timestamp: number): string => {
 };
 
 // Format conversation to markdown for export
-const formatConversationAsMarkdown = (conversation: AskAiConversation): string => {
+const formatConversationAsMarkdown = (
+  conversation: AskAiConversation,
+): string => {
   const header = `# ${conversation.title || "Ask AI Conversation"}\n`;
   const date = `_${formatDate(conversation.created_at)} at ${formatTime(conversation.created_at)}_\n\n`;
 
@@ -89,9 +91,17 @@ const ConversationCard: React.FC<{
 
   return (
     <div className="border border-mid-gray/20 rounded-lg overflow-hidden">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        className="w-full p-4 flex items-start gap-3 hover:bg-mid-gray/5 transition-colors text-left cursor-pointer"
       >
         <div className="flex-shrink-0 mt-0.5">
           <MessageSquare className="h-5 w-5 text-purple-500" />
@@ -139,7 +149,7 @@ const ConversationCard: React.FC<{
             <ChevronDown className="h-5 w-5 text-mid-gray ml-1" />
           )}
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-mid-gray/10">
@@ -147,11 +157,7 @@ const ConversationCard: React.FC<{
             {conversation.turns.map((turn, index) => (
               <div
                 key={turn.id}
-                className={
-                  index > 0
-                    ? "pt-4 border-t border-mid-gray/10"
-                    : ""
-                }
+                className={index > 0 ? "pt-4 border-t border-mid-gray/10" : ""}
               >
                 <TurnDisplay turn={turn} index={index} />
               </div>
@@ -215,7 +221,7 @@ export const ConversationHistory: React.FC = () => {
         return c.turns.some(
           (t) =>
             t.question.toLowerCase().includes(searchLower) ||
-            t.response.toLowerCase().includes(searchLower)
+            t.response.toLowerCase().includes(searchLower),
         );
       })
     : conversations;
@@ -273,13 +279,16 @@ export const ConversationHistory: React.FC = () => {
             <p className="text-mid-gray">
               {t(
                 "askAi.history.empty",
-                "No conversations yet. Use Ask AI to start a conversation."
+                "No conversations yet. Use Ask AI to start a conversation.",
               )}
             </p>
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-mid-gray">
-            {t("askAi.history.noResults", "No conversations match your search.")}
+            {t(
+              "askAi.history.noResults",
+              "No conversations match your search.",
+            )}
           </div>
         ) : (
           <div className="space-y-2">

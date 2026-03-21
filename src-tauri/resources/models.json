@@ -9,7 +9,7 @@
       "size_mb": 487,
       "is_directory": false,
       "engine_type": "Whisper",
-      "accuracy_score": 0.60,
+      "accuracy_score": 0.6,
       "speed_score": 0.85
     },
     {
@@ -22,7 +22,7 @@
       "is_directory": false,
       "engine_type": "Whisper",
       "accuracy_score": 0.75,
-      "speed_score": 0.60
+      "speed_score": 0.6
     },
     {
       "id": "turbo",
@@ -33,8 +33,8 @@
       "size_mb": 1600,
       "is_directory": false,
       "engine_type": "Whisper",
-      "accuracy_score": 0.80,
-      "speed_score": 0.40
+      "accuracy_score": 0.8,
+      "speed_score": 0.4
     },
     {
       "id": "large",
@@ -46,7 +46,7 @@
       "is_directory": false,
       "engine_type": "Whisper",
       "accuracy_score": 0.85,
-      "speed_score": 0.30
+      "speed_score": 0.3
     },
     {
       "id": "parakeet-tdt-0.6b-v2",
@@ -69,7 +69,7 @@
       "size_mb": 478,
       "is_directory": true,
       "engine_type": "Parakeet",
-      "accuracy_score": 0.80,
+      "accuracy_score": 0.8,
       "speed_score": 0.85
     },
     {
@@ -81,8 +81,8 @@
       "size_mb": 58,
       "is_directory": true,
       "engine_type": "Moonshine",
-      "accuracy_score": 0.70,
-      "speed_score": 0.90
+      "accuracy_score": 0.7,
+      "speed_score": 0.9
     }
   ]
 }

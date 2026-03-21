@@ -33,19 +33,19 @@ export const HomeSettings: React.FC = () => {
       <SettingsGroup title={t("home.quickStart.title")}>
         <div className="space-y-3 px-4 py-2">
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-light/20 text-primary-light text-xs font-bold shrink-0">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-logo-primary/20 text-logo-primary text-xs font-bold shrink-0">
               1
             </div>
             <p className="text-sm text-text">{t("home.quickStart.step1")}</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-light/20 text-primary-light text-xs font-bold shrink-0">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-logo-primary/20 text-logo-primary text-xs font-bold shrink-0">
               2
             </div>
             <p className="text-sm text-text">{t("home.quickStart.step2")}</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary-light/20 text-primary-light text-xs font-bold shrink-0">
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-logo-primary/20 text-logo-primary text-xs font-bold shrink-0">
               3
             </div>
             <p className="text-sm text-text">{t("home.quickStart.step3")}</p>

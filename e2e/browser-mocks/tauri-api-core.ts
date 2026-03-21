@@ -14,6 +14,33 @@ function ok<T>(data: T) {
   return data;
 }
 
+let screenVisionSettings = {
+  enabled: false,
+  interval_seconds: 5,
+  duration_seconds: 30,
+  max_snapshots: 6,
+  llm_provider: "open_router",
+  llm_api_key: "",
+  llm_base_url: "https://openrouter.ai/api/v1",
+  llm_model: "qwen/qwen2.5-vl-72b-instruct:free",
+  prompt:
+    "Analyze this screen for actionable context. Return concise bullet points for what is visible, what requires attention, and recommended next action.",
+};
+
+let screenVisionStatus = {
+  running: false,
+  session_id: null as string | null,
+  started_at_ms: null as number | null,
+  expires_at_ms: null as number | null,
+  snapshots_processed: 0,
+  last_result: null as {
+    timestamp_ms: number;
+    capture_path?: string | null;
+    analysis: string;
+  } | null,
+  last_error: null as string | null,
+};
+
 /**
  * Command handlers grouped by feature domain.
  * Each returns the raw data value (not wrapped in Result — bindings.ts wraps it).
@@ -23,27 +50,82 @@ const handlers: Record<string, (args: Args) => unknown> = {
   get_app_settings: () => mockState.settings,
   get_default_settings: () => mockState.settings,
 
-  change_ptt_setting: (a) => { updateSettings({ push_to_talk: a.enabled }); return null; },
-  change_audio_feedback_setting: (a) => { updateSettings({ audio_feedback: a.enabled }); return null; },
-  change_audio_feedback_volume_setting: (a) => { updateSettings({ audio_feedback_volume: a.volume }); return null; },
-  change_sound_theme_setting: (a) => { updateSettings({ sound_theme: a.theme }); return null; },
-  change_start_hidden_setting: (a) => { updateSettings({ start_hidden: a.enabled }); return null; },
-  change_autostart_setting: (a) => { updateSettings({ autostart_enabled: a.enabled }); mockState.autostart = a.enabled; return null; },
-  change_translate_to_english_setting: (a) => { updateSettings({ translate_to_english: a.enabled }); return null; },
-  change_selected_language_setting: (a) => { updateSettings({ selected_language: a.language }); return null; },
-  change_overlay_position_setting: (a) => { updateSettings({ overlay_position: a.position }); return null; },
-  change_debug_mode_setting: (a) => { updateSettings({ debug_mode: a.enabled }); return null; },
-  change_word_correction_threshold_setting: (a) => { updateSettings({ word_correction_threshold: a.threshold }); return null; },
-  change_paste_method_setting: (a) => { updateSettings({ paste_method: a.method }); return null; },
-  change_clipboard_handling_setting: (a) => { updateSettings({ clipboard_handling: a.handling }); return null; },
-  change_post_process_enabled_setting: (a) => { updateSettings({ post_process_enabled: a.enabled }); return null; },
+  change_ptt_setting: (a) => {
+    updateSettings({ push_to_talk: a.enabled });
+    return null;
+  },
+  change_audio_feedback_setting: (a) => {
+    updateSettings({ audio_feedback: a.enabled });
+    return null;
+  },
+  change_audio_feedback_volume_setting: (a) => {
+    updateSettings({ audio_feedback_volume: a.volume });
+    return null;
+  },
+  change_sound_theme_setting: (a) => {
+    updateSettings({ sound_theme: a.theme });
+    return null;
+  },
+  change_start_hidden_setting: (a) => {
+    updateSettings({ start_hidden: a.enabled });
+    return null;
+  },
+  change_autostart_setting: (a) => {
+    updateSettings({ autostart_enabled: a.enabled });
+    mockState.autostart = a.enabled;
+    return null;
+  },
+  change_translate_to_english_setting: (a) => {
+    updateSettings({ translate_to_english: a.enabled });
+    return null;
+  },
+  change_selected_language_setting: (a) => {
+    updateSettings({ selected_language: a.language });
+    return null;
+  },
+  change_overlay_position_setting: (a) => {
+    updateSettings({ overlay_position: a.position });
+    return null;
+  },
+  change_debug_mode_setting: (a) => {
+    updateSettings({ debug_mode: a.enabled });
+    return null;
+  },
+  change_word_correction_threshold_setting: (a) => {
+    updateSettings({ word_correction_threshold: a.threshold });
+    return null;
+  },
+  change_paste_method_setting: (a) => {
+    updateSettings({ paste_method: a.method });
+    return null;
+  },
+  change_clipboard_handling_setting: (a) => {
+    updateSettings({ clipboard_handling: a.handling });
+    return null;
+  },
+  change_post_process_enabled_setting: (a) => {
+    updateSettings({ post_process_enabled: a.enabled });
+    return null;
+  },
   change_post_process_base_url_setting: () => null,
   change_post_process_api_key_setting: () => null,
   change_post_process_model_setting: () => null,
-  change_app_language_setting: (a) => { updateSettings({ app_language: a.language }); return null; },
-  change_update_checks_setting: (a) => { updateSettings({ update_checks_enabled: a.enabled }); return null; },
-  change_mute_while_recording_setting: (a) => { updateSettings({ mute_while_recording: a.enabled }); return null; },
-  change_append_trailing_space_setting: (a) => { updateSettings({ append_trailing_space: a.enabled }); return null; },
+  change_app_language_setting: (a) => {
+    updateSettings({ app_language: a.language });
+    return null;
+  },
+  change_update_checks_setting: (a) => {
+    updateSettings({ update_checks_enabled: a.enabled });
+    return null;
+  },
+  change_mute_while_recording_setting: (a) => {
+    updateSettings({ mute_while_recording: a.enabled });
+    return null;
+  },
+  change_append_trailing_space_setting: (a) => {
+    updateSettings({ append_trailing_space: a.enabled });
+    return null;
+  },
 
   // Bindings
   change_binding: (_a) => ({ success: true, binding: null, error: null }),
@@ -54,21 +136,32 @@ const handlers: Record<string, (args: Args) => unknown> = {
   // Post-process
   set_post_process_provider: () => null,
   fetch_post_process_models: () => [],
-  add_post_process_prompt: (a) => ({ id: crypto.randomUUID(), name: a.name, prompt: a.prompt }),
+  add_post_process_prompt: (a) => ({
+    id: crypto.randomUUID(),
+    name: a.name,
+    prompt: a.prompt,
+  }),
   update_post_process_prompt: () => null,
   delete_post_process_prompt: () => null,
   set_post_process_selected_prompt: () => null,
 
   // Custom words
-  update_custom_words: (a) => { updateSettings({ custom_words: a.words }); return null; },
+  update_custom_words: (a) => {
+    updateSettings({ custom_words: a.words });
+    return null;
+  },
 
   // ── Models ────────────────────────────────────────────────────────────
   get_available_models: () => mockState.models,
-  get_model_info: (a) => mockState.models.find((m) => m.id === a.modelId) || null,
+  get_model_info: (a) =>
+    mockState.models.find((m) => m.id === a.modelId) || null,
   download_model: () => null,
   delete_model: () => null,
   cancel_download: () => null,
-  set_active_model: (a) => { mockState.currentModel = a.modelId; return null; },
+  set_active_model: (a) => {
+    mockState.currentModel = a.modelId;
+    return null;
+  },
   get_current_model: () => mockState.currentModel,
   get_transcription_model_status: () => null,
   is_model_loading: () => false,
@@ -81,16 +174,28 @@ const handlers: Record<string, (args: Args) => unknown> = {
 
   // ── Audio devices ─────────────────────────────────────────────────────
   get_available_microphones: () => mockState.microphones,
-  set_selected_microphone: (a) => { mockState.selectedMicrophone = a.deviceName; return null; },
+  set_selected_microphone: (a) => {
+    mockState.selectedMicrophone = a.deviceName;
+    return null;
+  },
   get_selected_microphone: () => mockState.selectedMicrophone,
   get_available_output_devices: () => mockState.outputDevices,
-  set_selected_output_device: (a) => { mockState.selectedOutputDevice = a.deviceName; return null; },
+  set_selected_output_device: (a) => {
+    mockState.selectedOutputDevice = a.deviceName;
+    return null;
+  },
   get_selected_output_device: () => mockState.selectedOutputDevice,
   play_test_sound: () => undefined,
   check_custom_sounds: () => ({ start: false, stop: false }),
-  set_clamshell_microphone: (a) => { updateSettings({ clamshell_microphone: a.deviceName }); return null; },
+  set_clamshell_microphone: (a) => {
+    updateSettings({ clamshell_microphone: a.deviceName });
+    return null;
+  },
   get_clamshell_microphone: () => mockState.settings.clamshell_microphone ?? "",
-  update_microphone_mode: (a) => { updateSettings({ always_on_microphone: a.alwaysOn }); return null; },
+  update_microphone_mode: (a) => {
+    updateSettings({ always_on_microphone: a.alwaysOn });
+    return null;
+  },
   get_microphone_mode: () => mockState.settings.always_on_microphone ?? false,
 
   // ── Recording ─────────────────────────────────────────────────────────
@@ -106,16 +211,27 @@ const handlers: Record<string, (args: Args) => unknown> = {
   },
   get_audio_file_path: (a) => `/mock/recordings/${a.fileName}`,
   delete_history_entry: (a) => {
-    mockState.historyEntries = mockState.historyEntries.filter((e) => e.id !== a.id);
+    mockState.historyEntries = mockState.historyEntries.filter(
+      (e) => e.id !== a.id,
+    );
     return null;
   },
-  update_history_limit: (a) => { updateSettings({ history_limit: a.limit }); return null; },
-  update_recording_retention_period: (a) => { updateSettings({ recording_retention_period: a.period }); return null; },
+  update_history_limit: (a) => {
+    updateSettings({ history_limit: a.limit });
+    return null;
+  },
+  update_recording_retention_period: (a) => {
+    updateSettings({ recording_retention_period: a.period });
+    return null;
+  },
 
   // ── App utilities ─────────────────────────────────────────────────────
   get_app_dir_path: () => "/mock/app-data",
   get_log_dir_path: () => "/mock/logs",
-  set_log_level: (a) => { updateSettings({ log_level: a.level }); return null; },
+  set_log_level: (a) => {
+    updateSettings({ log_level: a.level });
+    return null;
+  },
   open_recordings_folder: () => null,
   open_log_dir: () => null,
   open_app_data_dir: () => null,
@@ -124,6 +240,7 @@ const handlers: Record<string, (args: Args) => unknown> = {
   initialize_shortcuts: () => null,
   trigger_update_check: () => null,
   is_laptop: () => true,
+  open_screen_recording_settings: () => null,
 
   // ── Active Listening ──────────────────────────────────────────────────
   start_active_listening_session: () => "mock-session-1",
@@ -133,27 +250,92 @@ const handlers: Record<string, (args: Args) => unknown> = {
   check_ollama_connection: () => mockState.ollamaConnected,
   fetch_ollama_models: () => mockState.ollamaModels,
   change_active_listening_enabled_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, enabled: a.enabled };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      enabled: a.enabled,
+    };
     return null;
   },
   change_active_listening_segment_duration_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, segment_duration_seconds: a.durationSeconds };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      segment_duration_seconds: a.durationSeconds,
+    };
     return null;
   },
   change_ollama_base_url_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, ollama_base_url: a.baseUrl };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      ollama_base_url: a.baseUrl,
+    };
     return null;
   },
   change_ollama_model_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, ollama_model: a.model };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      ollama_model: a.model,
+    };
     return null;
   },
+  change_active_listening_llm_provider: (a) => {
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      llm_provider: a.provider,
+    };
+    return null;
+  },
+  change_active_listening_llm_api_key: (a) => {
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      llm_api_key: a.apiKey,
+    };
+    return null;
+  },
+  change_active_listening_llm_model: (a) => {
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      llm_model: a.model,
+    };
+    return null;
+  },
+  change_active_listening_llm_base_url: (a) => {
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      llm_base_url: a.baseUrl,
+    };
+    return null;
+  },
+  fetch_llm_models: (a) => {
+    const providerType = a.providerType ?? "open_router";
+    if (providerType === "open_router") {
+      return ["qwen/qwen2.5-vl-72b-instruct:free", "openrouter/auto"];
+    }
+    if (providerType === "open_ai") {
+      return ["gpt-4o-mini", "gpt-4.1-mini"];
+    }
+    if (providerType === "groq") {
+      return ["llama-3.3-70b-versatile"];
+    }
+    if (providerType === "together") {
+      return ["meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"];
+    }
+    if (providerType === "fireworks") {
+      return ["accounts/fireworks/models/llama-v3p1-70b-instruct"];
+    }
+    return ["custom-model-1"];
+  },
   change_active_listening_context_window_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, context_window_size: a.size };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      context_window_size: a.size,
+    };
     return null;
   },
   change_audio_source_type_setting: (a) => {
-    mockState.settings.active_listening = { ...mockState.settings.active_listening, audio_source_type: a.sourceType };
+    mockState.settings.active_listening = {
+      ...mockState.settings.active_listening,
+      audio_source_type: a.sourceType,
+    };
     return null;
   },
   change_audio_mix_ratio_setting: (a) => {
@@ -163,8 +345,10 @@ const handlers: Record<string, (args: Args) => unknown> = {
     };
     return null;
   },
-  get_audio_source_type: () => mockState.settings.active_listening.audio_source_type,
-  get_audio_mix_ratio: () => mockState.settings.active_listening.audio_mix_settings.mix_ratio,
+  get_audio_source_type: () =>
+    mockState.settings.active_listening.audio_source_type,
+  get_audio_mix_ratio: () =>
+    mockState.settings.active_listening.audio_mix_settings.mix_ratio,
   get_loopback_support_level: () => "native",
   is_loopback_supported: () => true,
   list_loopback_devices: () => [
@@ -191,6 +375,40 @@ const handlers: Record<string, (args: Args) => unknown> = {
   }),
   export_meeting_summary: () => "Exported summary content",
 
+  // ── Screen Vision ────────────────────────────────────────────────────
+  get_screen_vision_settings: () => screenVisionSettings,
+  update_screen_vision_settings: (a) => {
+    screenVisionSettings = { ...screenVisionSettings, ...a.settings };
+    return null;
+  },
+  get_screen_vision_status: () => screenVisionStatus,
+  test_screen_vision_once: () => ({
+    timestamp_ms: Date.now(),
+    capture_path: "/tmp/mock-screen.png",
+    analysis: "Mock analysis: email inbox open, 2 unread urgent threads.",
+  }),
+  start_screen_vision_session: () => {
+    const now = Date.now();
+    screenVisionStatus = {
+      running: true,
+      session_id: "mock-screen-session-1",
+      started_at_ms: now,
+      expires_at_ms: now + 30000,
+      snapshots_processed: 1,
+      last_result: {
+        timestamp_ms: now,
+        capture_path: "/tmp/mock-screen.png",
+        analysis: "Mock analysis: screen session started.",
+      },
+      last_error: null,
+    };
+    return "mock-screen-session-1";
+  },
+  stop_screen_vision_session: () => {
+    screenVisionStatus = { ...screenVisionStatus, running: false };
+    return null;
+  },
+
   // ── Ask AI ────────────────────────────────────────────────────────────
   get_ask_ai_state: () => mockState.askAiState,
   is_ask_ai_active: () => false,
@@ -203,19 +421,38 @@ const handlers: Record<string, (args: Args) => unknown> = {
   dismiss_ask_ai_session: () => null,
   start_new_ask_ai_conversation: () => null,
   change_ask_ai_enabled_setting: (a) => {
-    mockState.settings.ask_ai = { ...mockState.settings.ask_ai, enabled: a.enabled };
+    mockState.settings.ask_ai = {
+      ...mockState.settings.ask_ai,
+      enabled: a.enabled,
+    };
     return null;
   },
   change_ask_ai_ollama_base_url_setting: (a) => {
-    mockState.settings.ask_ai = { ...mockState.settings.ask_ai, ollama_base_url: a.baseUrl };
+    mockState.settings.ask_ai = {
+      ...mockState.settings.ask_ai,
+      ollama_base_url: a.baseUrl,
+    };
     return null;
   },
   change_ask_ai_ollama_model_setting: (a) => {
-    mockState.settings.ask_ai = { ...mockState.settings.ask_ai, ollama_model: a.model };
+    mockState.settings.ask_ai = {
+      ...mockState.settings.ask_ai,
+      ollama_model: a.model,
+    };
+    return null;
+  },
+  change_ask_ai_llm_model: (a) => {
+    mockState.settings.ask_ai = {
+      ...mockState.settings.ask_ai,
+      llm_model: a.model,
+    };
     return null;
   },
   change_ask_ai_system_prompt_setting: (a) => {
-    mockState.settings.ask_ai = { ...mockState.settings.ask_ai, system_prompt: a.prompt };
+    mockState.settings.ask_ai = {
+      ...mockState.settings.ask_ai,
+      system_prompt: a.prompt,
+    };
     return null;
   },
   get_ask_ai_settings: () => mockState.settings.ask_ai,
@@ -238,60 +475,98 @@ const handlers: Record<string, (args: Args) => unknown> = {
   rag_delete_document: () => null,
   rag_list_documents: () => [],
   rag_get_stats: () => ({ document_count: 0, embedding_count: 0 }),
-  rag_get_embedding_model: () => mockState.settings.knowledge_base.embedding_model,
+  rag_get_embedding_model: () =>
+    mockState.settings.knowledge_base.embedding_model,
   rag_set_embedding_model: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, embedding_model: a.model };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      embedding_model: a.model,
+    };
     return null;
   },
   rag_clear_all: () => null,
   get_knowledge_base_settings: () => mockState.settings.knowledge_base,
   change_knowledge_base_enabled_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, enabled: a.enabled };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      enabled: a.enabled,
+    };
     return null;
   },
   change_auto_index_transcriptions_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, auto_index_transcriptions: a.autoIndex };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      auto_index_transcriptions: a.autoIndex,
+    };
     return null;
   },
   change_kb_embedding_model_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, embedding_model: a.model };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      embedding_model: a.model,
+    };
     return null;
   },
   change_kb_top_k_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, top_k: a.topK };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      top_k: a.topK,
+    };
     return null;
   },
   change_kb_similarity_threshold_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, similarity_threshold: a.threshold };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      similarity_threshold: a.threshold,
+    };
     return null;
   },
   change_kb_use_in_active_listening_setting: (a) => {
-    mockState.settings.knowledge_base = { ...mockState.settings.knowledge_base, use_in_active_listening: a.useInAl };
+    mockState.settings.knowledge_base = {
+      ...mockState.settings.knowledge_base,
+      use_in_active_listening: a.useInAl,
+    };
     return null;
   },
 
   // ── Sound Detection ───────────────────────────────────────────────────
   get_sound_detection_settings: () => mockState.settings.sound_detection,
   change_sound_detection_enabled: (a) => {
-    mockState.settings.sound_detection = { ...mockState.settings.sound_detection, enabled: a.enabled };
+    mockState.settings.sound_detection = {
+      ...mockState.settings.sound_detection,
+      enabled: a.enabled,
+    };
     return null;
   },
   change_sound_detection_threshold: (a) => {
-    mockState.settings.sound_detection = { ...mockState.settings.sound_detection, threshold: a.threshold };
+    mockState.settings.sound_detection = {
+      ...mockState.settings.sound_detection,
+      threshold: a.threshold,
+    };
     return null;
   },
   change_sound_detection_categories: (a) => {
-    mockState.settings.sound_detection = { ...mockState.settings.sound_detection, categories: a.categories };
+    mockState.settings.sound_detection = {
+      ...mockState.settings.sound_detection,
+      categories: a.categories,
+    };
     return null;
   },
   change_sound_detection_notification: (a) => {
-    mockState.settings.sound_detection = { ...mockState.settings.sound_detection, notification_enabled: a.enabled };
+    mockState.settings.sound_detection = {
+      ...mockState.settings.sound_detection,
+      notification_enabled: a.enabled,
+    };
     return null;
   },
 
   // ── Batch Processing ──────────────────────────────────────────────────
   batch_process_files: () => null,
-  get_batch_processing_status: () => ({ status: "idle", processed: 0, total: 0 }),
+  get_batch_processing_status: () => ({
+    status: "idle",
+    processed: 0,
+    total: 0,
+  }),
   cancel_batch_processing: () => null,
 
   // ── Vocabulary ────────────────────────────────────────────────────────

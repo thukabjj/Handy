@@ -1,3 +1,23 @@
+// Submodules for feature-specific settings
+pub mod active_listening;
+pub mod ask_ai;
+pub mod knowledge_base;
+pub mod observability;
+pub mod screen_vision;
+pub mod sound_detection;
+pub mod suggestions;
+
+// Re-export types from submodules
+pub use active_listening::{
+    ActiveListeningPrompt, ActiveListeningSettings, AudioSourceType, PromptCategory,
+};
+pub use ask_ai::AskAiSettings;
+pub use knowledge_base::KnowledgeBaseSettings;
+pub use observability::ObservabilitySettings;
+pub use screen_vision::ScreenVisionSettings;
+pub use sound_detection::SoundDetectionSettings;
+pub use suggestions::{QuickResponse, SuggestionsSettings, WarningSeverity};
+
 use crate::managers::replacements::TextReplacement;
 use crate::managers::wake_word::WakeWordSettings;
 use log::{debug, warn};
@@ -115,9 +135,10 @@ pub enum OverlayPosition {
     Bottom,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelUnloadTimeout {
+    #[default]
     Never,
     Immediately,
     Min2,
@@ -139,16 +160,18 @@ pub enum PasteMethod {
     ExternalScript,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ClipboardHandling {
+    #[default]
     DontModify,
     CopyToClipboard,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum AutoSubmitKey {
+    #[default]
     Enter,
     CtrlEnter,
     CmdEnter,
@@ -182,12 +205,6 @@ impl Default for KeyboardImplementation {
     }
 }
 
-impl Default for ModelUnloadTimeout {
-    fn default() -> Self {
-        ModelUnloadTimeout::Never
-    }
-}
-
 impl Default for PasteMethod {
     fn default() -> Self {
         // Default to CtrlV for macOS and Windows, Direct for Linux
@@ -195,18 +212,6 @@ impl Default for PasteMethod {
         return PasteMethod::Direct;
         #[cfg(not(target_os = "linux"))]
         return PasteMethod::CtrlV;
-    }
-}
-
-impl Default for ClipboardHandling {
-    fn default() -> Self {
-        ClipboardHandling::DontModify
-    }
-}
-
-impl Default for AutoSubmitKey {
-    fn default() -> Self {
-        AutoSubmitKey::Enter
     }
 }
 
@@ -251,18 +256,21 @@ impl SoundTheme {
         }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_start_path(&self) -> String {
         format!("resources/{}_start.wav", self.as_str())
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_stop_path(&self) -> String {
         format!("resources/{}_stop.wav", self.as_str())
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum TypingTool {
+    #[default]
     Auto,
     Wtype,
     Kwtype,
@@ -271,15 +279,10 @@ pub enum TypingTool {
     Xdotool,
 }
 
-impl Default for TypingTool {
-    fn default() -> Self {
-        TypingTool::Auto
-    }
-}
-
 /* still handy for composing the initial JSON in the store ------------- */
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AppSettings {
+    #[serde(default)]
     pub bindings: HashMap<String, ShortcutBinding>,
     pub push_to_talk: bool,
     pub audio_feedback: bool,
@@ -379,6 +382,34 @@ pub struct AppSettings {
     pub wake_word: WakeWordSettings,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
+    /// Active Listening feature settings
+    #[serde(default)]
+    pub active_listening: ActiveListeningSettings,
+    /// Ask AI feature settings
+    #[serde(default)]
+    pub ask_ai: AskAiSettings,
+    /// Knowledge Base (RAG) feature settings
+    #[serde(default)]
+    pub knowledge_base: KnowledgeBaseSettings,
+    /// Screen Vision feature settings
+    #[serde(default)]
+    pub screen_vision: ScreenVisionSettings,
+    /// Sound Detection feature settings
+    #[serde(default)]
+    pub sound_detection: SoundDetectionSettings,
+    /// Suggestions feature settings
+    #[serde(default)]
+    pub suggestions: SuggestionsSettings,
+    /// Observability and diagnostics settings
+    #[serde(default)]
+    pub observability: ObservabilitySettings,
+    /// Hide overlay from screen capture/sharing
+    #[serde(default = "default_private_overlay")]
+    pub private_overlay: bool,
+}
+
+fn default_private_overlay() -> bool {
+    true
 }
 
 fn default_model() -> String {
@@ -749,6 +780,14 @@ pub fn get_default_settings() -> AppSettings {
         text_replacements: Vec::new(),
         wake_word: WakeWordSettings::default(),
         custom_filler_words: None,
+        active_listening: ActiveListeningSettings::default(),
+        ask_ai: AskAiSettings::default(),
+        knowledge_base: KnowledgeBaseSettings::default(),
+        screen_vision: ScreenVisionSettings::default(),
+        sound_detection: SoundDetectionSettings::default(),
+        suggestions: SuggestionsSettings::default(),
+        observability: ObservabilitySettings::default(),
+        private_overlay: default_private_overlay(),
     }
 }
 
@@ -775,6 +814,34 @@ impl AppSettings {
     }
 }
 
+fn summarize_settings_for_log(settings: &AppSettings) -> String {
+    let cloud_model = settings
+        .active_listening
+        .llm_model
+        .clone()
+        .unwrap_or_default();
+    let has_cloud_key = settings
+        .active_listening
+        .llm_api_key
+        .as_ref()
+        .map(|k| !k.trim().is_empty())
+        .unwrap_or(false);
+    let has_voice_profile = settings.wake_word.voice_profile.is_some();
+    format!(
+        "provider={:?} cloud_key={} cloud_model='{}' ollama_model='{}' wake_enabled={} voice_auth={} voice_profile={} ask_ai_enabled={} observability_enabled={} observability_mode={:?}",
+        settings.active_listening.llm_provider,
+        has_cloud_key,
+        cloud_model,
+        settings.active_listening.ollama_model,
+        settings.wake_word.enabled,
+        settings.wake_word.voice_auth_enabled,
+        has_voice_profile,
+        settings.ask_ai.enabled,
+        settings.observability.enabled,
+        settings.observability.data_mode
+    )
+}
+
 pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     // Initialize store
     let store = app
@@ -785,15 +852,21 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         // Parse the entire settings object
         match serde_json::from_value::<AppSettings>(settings_value) {
             Ok(mut settings) => {
-                debug!("Found existing settings: {:?}", settings);
+                debug!(
+                    "Found existing settings: {}",
+                    summarize_settings_for_log(&settings)
+                );
                 let default_settings = get_default_settings();
                 let mut updated = false;
 
                 // Merge default bindings into existing settings
                 for (key, value) in default_settings.bindings {
-                    if !settings.bindings.contains_key(&key) {
-                        debug!("Adding missing binding: {}", key);
-                        settings.bindings.insert(key, value);
+                    let binding_key = key.clone();
+                    if let std::collections::hash_map::Entry::Vacant(entry) =
+                        settings.bindings.entry(key)
+                    {
+                        debug!("Adding missing binding: {}", binding_key);
+                        entry.insert(value);
                         updated = true;
                     }
                 }
@@ -856,6 +929,23 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
         .expect("Failed to initialize store");
 
     store.set("settings", serde_json::to_value(&settings).unwrap());
+
+    crate::telemetry::TelemetryEventBuilder::new("settings", "persisted")
+        .message("Application settings persisted")
+        .attr("debug_mode", settings.debug_mode)
+        .attr("log_level", format!("{:?}", settings.log_level))
+        .attr("wake_enabled", settings.wake_word.enabled)
+        .attr(
+            "llm_provider",
+            format!("{:?}", settings.active_listening.llm_provider),
+        )
+        .attr("ask_ai_enabled", settings.ask_ai.enabled)
+        .attr("observability_enabled", settings.observability.enabled)
+        .attr(
+            "observability_mode",
+            format!("{:?}", settings.observability.data_mode),
+        )
+        .emit();
 }
 
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {

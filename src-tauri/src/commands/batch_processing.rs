@@ -1,6 +1,5 @@
 use crate::managers::batch_processor::{BatchProcessor, BatchQueueStatus};
 use std::path::PathBuf;
-use tauri::AppHandle;
 use tokio::sync::Mutex;
 
 #[tauri::command]

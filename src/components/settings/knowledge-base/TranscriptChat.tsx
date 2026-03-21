@@ -150,7 +150,7 @@ export const TranscriptChat: React.FC = () => {
         {messages.length > 0 && (
           <button
             onClick={clearChat}
-            className="text-text/50 hover:text-primary-light transition-colors cursor-pointer p-1"
+            className="text-text/50 hover:text-logo-primary transition-colors cursor-pointer p-1"
             title={t("settings.knowledgeBase.chat.clearChat")}
           >
             <Trash2 width={14} height={14} />
@@ -189,7 +189,7 @@ export const TranscriptChat: React.FC = () => {
                     <div
                       className={`rounded-lg px-3 py-2 text-sm max-w-[85%] whitespace-pre-wrap ${
                         msg.role === "user"
-                          ? "bg-primary-light/20 text-text"
+                          ? "bg-logo-primary/20 text-text"
                           : "bg-mid-gray/10 text-text"
                       }`}
                     >
@@ -215,12 +215,12 @@ export const TranscriptChat: React.FC = () => {
               placeholder={t("settings.knowledgeBase.chat.placeholder")}
               disabled={isGenerating}
               rows={1}
-              className="flex-1 px-3 py-2 text-sm bg-mid-gray/10 border border-mid-gray/20 rounded-lg resize-none focus:outline-none focus:border-primary-light disabled:opacity-50"
+              className="flex-1 px-3 py-2 text-sm bg-mid-gray/10 border border-mid-gray/20 rounded-lg resize-none focus:outline-none focus:border-logo-primary disabled:opacity-50"
             />
             <button
               onClick={handleSend}
               disabled={isGenerating || !input.trim()}
-              className="px-3 py-2 bg-primary-light/20 border border-primary-light/50 rounded-lg hover:bg-primary-light/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-logo-primary/20 border border-logo-primary/50 rounded-lg hover:bg-logo-primary/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title={t("settings.knowledgeBase.chat.send")}
             >
               <Send width={16} height={16} />

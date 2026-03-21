@@ -212,6 +212,7 @@ impl Default for SuggestionsSettings {
     }
 }
 
+#[allow(dead_code)]
 impl SuggestionsSettings {
     /// Get a quick response by ID
     pub fn get_quick_response(&self, id: &str) -> Option<&QuickResponse> {
@@ -225,7 +226,10 @@ impl SuggestionsSettings {
 
     /// Get all enabled quick responses
     pub fn get_enabled_quick_responses(&self) -> Vec<&QuickResponse> {
-        self.quick_responses.iter().filter(|qr| qr.enabled).collect()
+        self.quick_responses
+            .iter()
+            .filter(|qr| qr.enabled)
+            .collect()
     }
 
     /// Get quick responses by category
@@ -238,12 +242,17 @@ impl SuggestionsSettings {
 }
 
 /// Ensure default quick responses exist in settings (for migrations)
+#[allow(dead_code)]
 pub fn ensure_suggestions_defaults(settings: &mut SuggestionsSettings) -> bool {
     let mut changed = false;
     let defaults = default_quick_responses();
 
     for default_qr in defaults {
-        if !settings.quick_responses.iter().any(|qr| qr.id == default_qr.id) {
+        if !settings
+            .quick_responses
+            .iter()
+            .any(|qr| qr.id == default_qr.id)
+        {
             settings.quick_responses.push(default_qr);
             changed = true;
         }

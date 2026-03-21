@@ -23,14 +23,14 @@ Handy is a cross-platform desktop application that provides simple, privacy-focu
 
 ### Fork-Exclusive Features
 
-| Feature | Description | Requires |
-|---------|-------------|----------|
-| **Active Listening** | Continuous transcription with AI-generated insights | Ollama |
-| **Ask AI** | Multi-turn voice conversations with local LLM | Ollama |
-| **RAG Knowledge Base** | Vector search for context-aware responses | Ollama |
-| **Suggestion Engine** | Context-aware quick responses | Ollama |
-| **System Audio Loopback** | Capture both sides of calls/meetings | - |
-| **Audio Mixer** | Mix microphone + system audio | - |
+| Feature                   | Description                                         | Requires |
+| ------------------------- | --------------------------------------------------- | -------- |
+| **Active Listening**      | Continuous transcription with AI-generated insights | Ollama   |
+| **Ask AI**                | Multi-turn voice conversations with local LLM       | Ollama   |
+| **RAG Knowledge Base**    | Vector search for context-aware responses           | Ollama   |
+| **Suggestion Engine**     | Context-aware quick responses                       | Ollama   |
+| **System Audio Loopback** | Capture both sides of calls/meetings                | -        |
+| **Audio Mixer**           | Mix microphone + system audio                       | -        |
 
 See [FEATURES.md](FEATURES.md) for detailed documentation.
 
@@ -95,48 +95,48 @@ Press Shortcut → Speak → VAD Filters Silence → Local Transcription → Pas
 
 **Supported Models:**
 
-| Model | Size | Speed | Accuracy |
-|-------|------|-------|----------|
-| Whisper Tiny | 75MB | Fastest | Good |
-| Whisper Base | 142MB | Fast | Better |
-| Whisper Small | 466MB | Medium | Good |
-| Whisper Medium | 1.5GB | Slow | Great |
-| Whisper Large | 2.9GB | Slowest | Best |
-| Parakeet V3 | 478MB | Fast | Good (English) |
+| Model          | Size  | Speed   | Accuracy       |
+| -------------- | ----- | ------- | -------------- |
+| Whisper Tiny   | 75MB  | Fastest | Good           |
+| Whisper Base   | 142MB | Fast    | Better         |
+| Whisper Small  | 466MB | Medium  | Good           |
+| Whisper Medium | 1.5GB | Slow    | Great          |
+| Whisper Large  | 2.9GB | Slowest | Best           |
+| Parakeet V3    | 478MB | Fast    | Good (English) |
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [FEATURES.md](FEATURES.md) | Feature documentation and usage |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design and data flow |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
-| [CLAUDE.md](CLAUDE.md) | Developer reference and patterns |
-| [DEV_DOCS.md](DEV_DOCS.md) | Technical reference |
-| [BUILD.md](BUILD.md) | Build instructions |
-| [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) | Fork sync status |
+| Document                                     | Description                      |
+| -------------------------------------------- | -------------------------------- |
+| [FEATURES.md](FEATURES.md)                   | Feature documentation and usage  |
+| [ARCHITECTURE.md](ARCHITECTURE.md)           | System design and data flow      |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | How to contribute                |
+| [CLAUDE.md](CLAUDE.md)                       | Developer reference and patterns |
+| [DEV_DOCS.md](DEV_DOCS.md)                   | Technical reference              |
+| [BUILD.md](BUILD.md)                         | Build instructions               |
+| [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) | Fork sync status                 |
 
 ---
 
 ## Platform Support
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **macOS** (Intel & Apple Silicon) | Full | Metal GPU acceleration |
-| **Windows** (x64) | Full | Vulkan/DirectML acceleration |
-| **Linux** (x64) | Full | Wayland requires wtype/dotool |
+| Platform                          | Status | Notes                         |
+| --------------------------------- | ------ | ----------------------------- |
+| **macOS** (Intel & Apple Silicon) | Full   | Metal GPU acceleration        |
+| **Windows** (x64)                 | Full   | Vulkan/DirectML acceleration  |
+| **Linux** (x64)                   | Full   | Wayland requires wtype/dotool |
 
 ### Linux Notes
 
 **Text Input Tools:**
 
-| Display Server | Tool | Install |
-|----------------|------|---------|
-| X11 | xdotool | `sudo apt install xdotool` |
-| Wayland | wtype | `sudo apt install wtype` |
-| Both | dotool | `sudo apt install dotool` |
+| Display Server | Tool    | Install                    |
+| -------------- | ------- | -------------------------- |
+| X11            | xdotool | `sudo apt install xdotool` |
+| Wayland        | wtype   | `sudo apt install wtype`   |
+| Both           | dotool  | `sudo apt install dotool`  |
 
 **Wayland Shortcuts:**
 
@@ -184,12 +184,14 @@ Access advanced diagnostics: `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Li
 If behind a proxy, download models manually:
 
 **Whisper Models:**
+
 - Small: `https://blob.handy.computer/ggml-small.bin`
 - Medium: `https://blob.handy.computer/whisper-medium-q4_1.bin`
 - Turbo: `https://blob.handy.computer/ggml-large-v3-turbo.bin`
 - Large: `https://blob.handy.computer/ggml-large-v3-q5_0.bin`
 
 **Parakeet Models:**
+
 - V2: `https://blob.handy.computer/parakeet-v2-int8.tar.gz`
 - V3: `https://blob.handy.computer/parakeet-v3-int8.tar.gz`
 
@@ -198,17 +200,20 @@ Place in `~/.config/handy/models/` (Linux), `~/Library/Application Support/com.p
 ### Common Issues
 
 **"Ollama not connected":**
+
 ```bash
 ollama serve  # Start Ollama server
 curl http://localhost:11434/api/tags  # Verify
 ```
 
 **Linux crashes:**
+
 ```bash
 WEBKIT_DISABLE_DMABUF_RENDERER=1 handy
 ```
 
 **Missing library (libgtk-layer-shell.so.0):**
+
 ```bash
 sudo apt install libgtk-layer-shell0  # Ubuntu/Debian
 sudo dnf install gtk-layer-shell      # Fedora
@@ -219,12 +224,14 @@ sudo dnf install gtk-layer-shell      # Fedora
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
 - Development setup
 - Code patterns (Manager, Command, Settings, Components)
 - Testing guidelines
 - PR process
 
 **Quick Start:**
+
 ```bash
 git clone git@github.com:YOUR_USERNAME/Handy.git
 cd Handy
@@ -237,6 +244,7 @@ make dev
 ## Upstream Sync
 
 This fork tracks [cjpais/Handy](https://github.com/cjpais/Handy). See [UPSTREAM_TRACKING.md](UPSTREAM_TRACKING.md) for:
+
 - Open PRs and issues
 - Sync status
 - Conflict resolution guidelines

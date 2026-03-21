@@ -110,6 +110,7 @@ fn expand_magic_commands(text: &str) -> String {
 }
 
 /// Apply text transformations based on magic commands.
+#[allow(dead_code)]
 fn apply_text_transformations(text: &str, replacement: &str) -> String {
     let mut result = text.to_string();
 
@@ -130,6 +131,7 @@ fn apply_text_transformations(text: &str, replacement: &str) -> String {
 }
 
 /// Capitalize the first letter of each word.
+#[allow(dead_code)]
 fn capitalize_words(s: &str) -> String {
     s.split_whitespace()
         .map(|word| {

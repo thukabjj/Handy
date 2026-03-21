@@ -39,9 +39,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
     >
       <div className="p-4">
         <div className="flex items-start gap-3">
-          {icon && (
-            <div className="mt-0.5 text-mid-gray shrink-0">{icon}</div>
-          )}
+          {icon && <div className="mt-0.5 text-mid-gray shrink-0">{icon}</div>}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-medium text-text">{title}</h3>

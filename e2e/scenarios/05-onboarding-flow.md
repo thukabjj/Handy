@@ -20,6 +20,7 @@ Edit `mock-state.ts` to set `hasAnyModels: false`, reload the page, test onboard
 ### 1. Configure mock state for new user
 
 Edit `e2e/browser-mocks/mock-state.ts`:
+
 - Set `hasAnyModels: false`
 - Set all model `is_downloaded: false`
 
@@ -31,6 +32,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Onboarding screen is displayed (not the main settings UI)
 - Welcome message or model selection prompt visible
 
@@ -41,6 +43,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Model cards are displayed for available models
 - Each model shows name, description, size
 - A "Download" or "Get Started" button is present
@@ -53,6 +56,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Model selection is acknowledged
 - Progress indicator or next step appears
 
@@ -66,6 +70,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Main settings UI is displayed (onboarding skipped)
 
 ## Expected Results

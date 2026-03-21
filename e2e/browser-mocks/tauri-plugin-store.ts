@@ -22,23 +22,31 @@ export async function load(name: string): Promise<{
   entries: () => Promise<[string, unknown][]>;
   length: () => Promise<number>;
   has: (key: string) => Promise<boolean>;
-  onKeyChange: (key: string, cb: (value: unknown) => void) => Promise<() => void>;
+  onKeyChange: (
+    key: string,
+    cb: (value: unknown) => void,
+  ) => Promise<() => void>;
   onChange: (cb: (key: string, value: unknown) => void) => Promise<() => void>;
 }> {
   const store = getOrCreateStore(name);
 
   return {
     get: async (key: string) => store.get(key) ?? null,
-    set: async (key: string, value: unknown) => { store.set(key, value); },
+    set: async (key: string, value: unknown) => {
+      store.set(key, value);
+    },
     save: async () => {},
     delete: async (key: string) => store.delete(key),
-    clear: async () => { store.clear(); },
+    clear: async () => {
+      store.clear();
+    },
     keys: async () => Array.from(store.keys()),
     values: async () => Array.from(store.values()),
     entries: async () => Array.from(store.entries()),
     length: async () => store.size,
     has: async (key: string) => store.has(key),
-    onKeyChange: async (_key: string, _cb: (value: unknown) => void) => () => {},
+    onKeyChange:
+      async (_key: string, _cb: (value: unknown) => void) => () => {},
     onChange: async (_cb: (key: string, value: unknown) => void) => () => {},
   };
 }

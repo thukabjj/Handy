@@ -7,7 +7,10 @@ export async function readTextFile(path: string): Promise<string> {
   return mockState.fileSystem[path] ?? "";
 }
 
-export async function writeTextFile(path: string, content: string): Promise<void> {
+export async function writeTextFile(
+  path: string,
+  content: string,
+): Promise<void> {
   mockState.fileSystem[path] = content;
 }
 
@@ -26,9 +29,14 @@ export async function exists(path: string): Promise<boolean> {
 
 export async function mkdir(_path: string, _options?: unknown): Promise<void> {}
 
-export async function remove(_path: string, _options?: unknown): Promise<void> {}
+export async function remove(
+  _path: string,
+  _options?: unknown,
+): Promise<void> {}
 
-export async function readDir(_path: string): Promise<Array<{ name: string; isDirectory: boolean; isFile: boolean }>> {
+export async function readDir(
+  _path: string,
+): Promise<Array<{ name: string; isDirectory: boolean; isFile: boolean }>> {
   return [];
 }
 

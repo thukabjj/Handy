@@ -18,6 +18,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - History section is displayed
 - Two transcription entries are visible
 
@@ -28,6 +29,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Entry 1 shows transcription text (e.g., "This is a test transcription...")
 - Entry 2 shows transcription text (e.g., "Another transcription entry...")
 - Each entry shows:
@@ -42,6 +44,7 @@ browser_click({ ref: "<copy-btn-ref>", element: "Copy button for first entry" })
 ```
 
 **Verify:**
+
 - Copy action triggers (clipboard mock updated)
 - Visual feedback (button state change or toast notification)
 
@@ -53,6 +56,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Entry is removed from the list
 - Remaining entries still display correctly
 
@@ -66,6 +70,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Empty state message is shown (e.g., "No transcriptions yet")
 
 ## Expected Results

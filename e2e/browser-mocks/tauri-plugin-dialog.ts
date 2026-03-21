@@ -18,10 +18,7 @@ export async function confirm(
   return true;
 }
 
-export async function message(
-  msg: string,
-  _options?: unknown,
-): Promise<void> {
+export async function message(msg: string, _options?: unknown): Promise<void> {
   console.log("[E2E Mock] dialog.message:", msg);
 }
 
@@ -31,8 +28,6 @@ export async function open(
   return "/mock/selected-file.txt";
 }
 
-export async function save(
-  _options?: unknown,
-): Promise<string | null> {
+export async function save(_options?: unknown): Promise<string | null> {
   return "/mock/saved-file.txt";
 }

@@ -122,10 +122,10 @@ bun run tauri build
 
 Output binaries are placed in `src-tauri/target/release/bundle/`:
 
-| Platform | Format              | Location                                         |
-|----------|---------------------|--------------------------------------------------|
-| macOS    | `.dmg`, `.app`      | `src-tauri/target/release/bundle/dmg/`           |
-| Windows  | `.msi`, `.exe`      | `src-tauri/target/release/bundle/msi/`           |
+| Platform | Format              | Location                                            |
+| -------- | ------------------- | --------------------------------------------------- |
+| macOS    | `.dmg`, `.app`      | `src-tauri/target/release/bundle/dmg/`              |
+| Windows  | `.msi`, `.exe`      | `src-tauri/target/release/bundle/msi/`              |
 | Linux    | `.deb`, `.AppImage` | `src-tauri/target/release/bundle/deb/`, `appimage/` |
 
 For code-signed builds, set the appropriate environment variables for your platform before running the build command. See the [Tauri signing docs](https://tauri.app/distribute/sign/) for details.
@@ -187,30 +187,30 @@ Ollama must be running (`ollama serve`) before using AI features. Handy connects
 
 ## Makefile Reference
 
-| Target             | Description                                  |
-|--------------------|----------------------------------------------|
-| `make install`     | Install all dependencies + VAD model         |
-| `make dev`         | Run in development mode                      |
-| `make build`       | Production build                             |
-| `make check`       | Full check (Rust + TypeScript)               |
-| `make check-fast`  | Quick Rust syntax check                      |
-| `make check-lib`   | Check only Rust lib crate                    |
-| `make lint`        | Run all linters                              |
-| `make lint-rust`   | Run clippy                                   |
-| `make lint-ts`     | Run ESLint                                   |
-| `make format`      | Format all code                              |
-| `make format-check`| Check formatting                             |
-| `make test`        | Run all tests                                |
-| `make test-rust`   | Run Rust tests                               |
-| `make test-ts`     | Run frontend tests                           |
-| `make build-rust`  | Build Rust backend only                      |
-| `make build-frontend` | Build frontend only                       |
+| Target                   | Description                                 |
+| ------------------------ | ------------------------------------------- |
+| `make install`           | Install all dependencies + VAD model        |
+| `make dev`               | Run in development mode                     |
+| `make build`             | Production build                            |
+| `make check`             | Full check (Rust + TypeScript)              |
+| `make check-fast`        | Quick Rust syntax check                     |
+| `make check-lib`         | Check only Rust lib crate                   |
+| `make lint`              | Run all linters                             |
+| `make lint-rust`         | Run clippy                                  |
+| `make lint-ts`           | Run ESLint                                  |
+| `make format`            | Format all code                             |
+| `make format-check`      | Check formatting                            |
+| `make test`              | Run all tests                               |
+| `make test-rust`         | Run Rust tests                              |
+| `make test-ts`           | Run frontend tests                          |
+| `make build-rust`        | Build Rust backend only                     |
+| `make build-frontend`    | Build frontend only                         |
 | `make generate-bindings` | Generate TypeScript bindings (tauri-specta) |
-| `make clean`       | Clean all build artifacts                    |
-| `make rebuild`     | Clean and rebuild                            |
-| `make build-timings` | Show compilation timing report             |
-| `make deps`        | Show dependency tree                         |
-| `make help`        | Show all available targets                   |
+| `make clean`             | Clean all build artifacts                   |
+| `make rebuild`           | Clean and rebuild                           |
+| `make build-timings`     | Show compilation timing report              |
+| `make deps`              | Show dependency tree                        |
+| `make help`              | Show all available targets                  |
 
 ## Troubleshooting
 
@@ -229,7 +229,7 @@ The `make dev` target applies this automatically.
 If the app fails to start with `error while loading shared libraries: libgtk-layer-shell.so.0`:
 
 | Distro        | Install command                        |
-|---------------|----------------------------------------|
+| ------------- | -------------------------------------- |
 | Ubuntu/Debian | `sudo apt install libgtk-layer-shell0` |
 | Fedora/RHEL   | `sudo dnf install gtk-layer-shell`     |
 | Arch Linux    | `sudo pacman -S gtk-layer-shell`       |

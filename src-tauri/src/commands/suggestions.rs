@@ -262,10 +262,7 @@ pub async fn change_min_confidence(app: AppHandle, min_confidence: f32) -> Resul
 /// Update auto-dismiss on copy setting
 #[tauri::command]
 #[specta::specta]
-pub async fn change_auto_dismiss_on_copy(
-    app: AppHandle,
-    auto_dismiss: bool,
-) -> Result<(), String> {
+pub async fn change_auto_dismiss_on_copy(app: AppHandle, auto_dismiss: bool) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.suggestions.auto_dismiss_on_copy = auto_dismiss;
     write_settings(&app, settings.clone());
@@ -281,10 +278,7 @@ pub async fn change_auto_dismiss_on_copy(
 /// Update display duration setting
 #[tauri::command]
 #[specta::specta]
-pub async fn change_display_duration(
-    app: AppHandle,
-    duration_seconds: u32,
-) -> Result<(), String> {
+pub async fn change_display_duration(app: AppHandle, duration_seconds: u32) -> Result<(), String> {
     let mut settings = get_settings(&app);
     settings.suggestions.display_duration_seconds = duration_seconds;
     write_settings(&app, settings.clone());

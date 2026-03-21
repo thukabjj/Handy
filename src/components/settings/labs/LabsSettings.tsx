@@ -19,13 +19,30 @@ export const LabsSettings: React.FC = () => {
   const { t } = useTranslation();
   const { settings, updateSetting, refreshSettings } = useSettings();
 
-  // Get feature states - use settings object directly for type safety
+  // Get feature states
   const postProcessEnabled = settings?.post_process_enabled ?? false;
-  const experimentalEnabled = settings?.experimental_enabled ?? false;
+  const activeListeningEnabled = settings?.active_listening?.enabled ?? false;
+  const askAiEnabled = settings?.ask_ai?.enabled ?? false;
+  const knowledgeBaseEnabled = settings?.knowledge_base?.enabled ?? false;
 
-  // Toggle handlers using updateSetting for features stored directly
+  // Toggle handlers
   const handlePostProcessingToggle = async (value: boolean) => {
     await commands.changePostProcessEnabledSetting(value);
+    await refreshSettings();
+  };
+
+  const handleActiveListeningToggle = async (value: boolean) => {
+    await commands.changeActiveListeningEnabledSetting(value);
+    await refreshSettings();
+  };
+
+  const handleAskAiToggle = async (value: boolean) => {
+    await commands.changeAskAiEnabledSetting(value);
+    await refreshSettings();
+  };
+
+  const handleKnowledgeBaseToggle = async (value: boolean) => {
+    await commands.changeKnowledgeBaseEnabledSetting(value);
     await refreshSettings();
   };
 
@@ -48,48 +65,71 @@ export const LabsSettings: React.FC = () => {
         onToggle={handlePostProcessingToggle}
         icon={<Sparkles className="h-5 w-5" />}
       >
-        {postProcessEnabled && <FeatureConfigHint featureKey="postProcessing" />}
+        {postProcessEnabled && (
+          <FeatureConfigHint featureKey="postProcessing" />
+        )}
       </FeatureCard>
 
-      {/* Coming Soon Section - Features requiring backend updates */}
-      <div className="space-y-4 opacity-60">
-        <p className="text-xs text-mid-gray uppercase tracking-wider px-1">
-          {t("labs.comingSoon", "Coming Soon")}
-        </p>
+      {/* Active Listening */}
+      <FeatureCard
+        title={t("labs.activeListening.title")}
+        description={t("labs.activeListening.description")}
+        enabled={activeListeningEnabled}
+        onToggle={handleActiveListeningToggle}
+        badge="beta"
+        icon={<Headphones className="h-5 w-5" />}
+      >
+        {activeListeningEnabled && (
+          <FeatureConfigHint
+            featureKey="activeListening"
+            model={
+              settings?.active_listening?.llm_provider === "ollama"
+                ? settings?.active_listening?.ollama_model
+                : (settings?.active_listening?.llm_model ?? undefined)
+            }
+          />
+        )}
+      </FeatureCard>
 
-        {/* Active Listening - Placeholder */}
-        <FeatureCard
-          title={t("labs.activeListening.title")}
-          description={t("labs.activeListening.description")}
-          enabled={false}
-          onToggle={() => {}}
-          badge="beta"
-          icon={<Headphones className="h-5 w-5" />}
-          disabled
-        />
+      {/* Ask AI */}
+      <FeatureCard
+        title={t("labs.askAi.title")}
+        description={t("labs.askAi.description")}
+        enabled={askAiEnabled}
+        onToggle={handleAskAiToggle}
+        badge="beta"
+        icon={<MessageSquare className="h-5 w-5" />}
+      >
+        {askAiEnabled && (
+          <FeatureConfigHint
+            featureKey="askAi"
+            model={
+              settings?.active_listening?.llm_provider === "ollama"
+                ? settings?.active_listening?.ollama_model
+                : (settings?.active_listening?.llm_model ?? undefined)
+            }
+          />
+        )}
+      </FeatureCard>
 
-        {/* Ask AI - Placeholder */}
-        <FeatureCard
-          title={t("labs.askAi.title")}
-          description={t("labs.askAi.description")}
-          enabled={false}
-          onToggle={() => {}}
-          badge="beta"
-          icon={<MessageSquare className="h-5 w-5" />}
-          disabled
-        />
-
-        {/* Knowledge Base - Placeholder */}
-        <FeatureCard
-          title={t("labs.knowledgeBase.title")}
-          description={t("labs.knowledgeBase.description")}
-          enabled={false}
-          onToggle={() => {}}
-          badge="beta"
-          icon={<BookOpen className="h-5 w-5" />}
-          disabled
-        />
-      </div>
+      {/* Knowledge Base */}
+      <FeatureCard
+        title={t("labs.knowledgeBase.title")}
+        description={t("labs.knowledgeBase.description")}
+        enabled={knowledgeBaseEnabled}
+        onToggle={handleKnowledgeBaseToggle}
+        badge="beta"
+        icon={<BookOpen className="h-5 w-5" />}
+      >
+        {knowledgeBaseEnabled && (
+          <FeatureConfigHint
+            featureKey="knowledgeBase"
+            embeddingModel={
+              settings?.knowledge_base?.embedding_model ?? undefined
+            }
+          />
+        )}
+      </FeatureCard>
     </div>
   );
 };
@@ -98,20 +138,20 @@ export const LabsSettings: React.FC = () => {
  * Shows configuration status for a Labs feature.
  */
 interface FeatureConfigHintProps {
-  ollamaModel?: string;
+  model?: string;
   embeddingModel?: string;
   featureKey: string;
 }
 
 const FeatureConfigHint: React.FC<FeatureConfigHintProps> = ({
-  ollamaModel,
+  model,
   embeddingModel,
 }) => {
   const { t } = useTranslation();
 
-  const hasOllamaConfig = ollamaModel && ollamaModel.length > 0;
+  const hasModelConfig = model && model.length > 0;
   const hasEmbeddingConfig = embeddingModel && embeddingModel.length > 0;
-  const isConfigured = hasOllamaConfig || hasEmbeddingConfig;
+  const isConfigured = hasModelConfig || hasEmbeddingConfig;
 
   return (
     <div className="mt-3 pt-3 border-t border-mid-gray/20">
@@ -123,11 +163,11 @@ const FeatureConfigHint: React.FC<FeatureConfigHintProps> = ({
           <span className="text-sm text-mid-gray">
             {isConfigured ? (
               <>
-                {hasOllamaConfig && (
+                {hasModelConfig && (
                   <span>
                     {t("labs.configuredWith", "Using")}{" "}
                     <code className="text-xs bg-mid-gray/20 px-1 py-0.5 rounded">
-                      {ollamaModel}
+                      {model}
                     </code>
                   </span>
                 )}
@@ -141,7 +181,10 @@ const FeatureConfigHint: React.FC<FeatureConfigHintProps> = ({
                 )}
               </>
             ) : (
-              t("labs.notConfigured", "Not configured - requires Ollama")
+              t(
+                "labs.notConfigured",
+                "Not configured - requires an AI provider",
+              )
             )}
           </span>
         </div>

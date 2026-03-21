@@ -10,6 +10,7 @@
     "tauri": "tauri",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
+    "check:translations": "bun scripts/check-translations.ts",
     "format": "prettier --write . && cd src-tauri && cargo fmt",
     "format:check": "prettier --check . && cd src-tauri && cargo fmt -- --check",
     "format:frontend": "prettier --write .",
@@ -23,6 +24,7 @@
     "e2e": "playwright test --config=e2e/playwright.config.js",
     "e2e:ui": "playwright test --config=e2e/playwright.config.js --ui",
     "e2e:headed": "playwright test --config=e2e/playwright.config.js --headed",
+    "test:playwright": "playwright test",
     "e2e:wdio": "wdio run e2e/wdio.conf.js",
     "e2e:build": "cd src-tauri && cargo build --release",
     "dev:e2e": "vite --config e2e/vite.config.e2e.ts"

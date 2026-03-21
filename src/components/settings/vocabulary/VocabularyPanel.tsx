@@ -3,7 +3,15 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { Plus, Trash2, Upload, Download, Search, BookA, Tag } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Upload,
+  Download,
+  Search,
+  BookA,
+  Tag,
+} from "lucide-react";
 
 import { SettingsGroup } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
@@ -43,7 +51,7 @@ const CategoryBadge: React.FC<{ category: string }> = ({ category }) => {
 };
 
 const SourceBadge: React.FC<{ source: string }> = ({ source }) => (
-  <span className="text-xs px-1.5 py-0.5 rounded bg-mid-gray/10 text-text-secondary border border-mid-gray/20">
+  <span className="text-xs px-1.5 py-0.5 rounded bg-mid-gray/10 text-mid-gray border border-mid-gray/20">
     {source}
   </span>
 );
@@ -75,9 +83,7 @@ export const VocabularyPanel: React.FC = () => {
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) return entries;
     const query = searchQuery.toLowerCase();
-    return entries.filter((entry) =>
-      entry.term.toLowerCase().includes(query),
-    );
+    return entries.filter((entry) => entry.term.toLowerCase().includes(query));
   }, [entries, searchQuery]);
 
   const handleAddTerm = useCallback(async () => {
@@ -168,7 +174,7 @@ export const VocabularyPanel: React.FC = () => {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="px-2 py-1.5 text-sm bg-mid-gray/10 border border-mid-gray/80 rounded-md text-text transition-all duration-150 hover:bg-primary-light/10 hover:border-primary-light focus:outline-none focus:bg-primary-light/20 focus:border-primary-light"
+              className="px-2 py-1.5 text-sm bg-mid-gray/10 border border-mid-gray/80 rounded-md text-text transition-all duration-150 hover:bg-logo-primary/10 hover:border-logo-primary focus:outline-none focus:bg-logo-primary/20 focus:border-logo-primary"
             >
               <option value="">{t("vocabulary.noCategory")}</option>
               {CATEGORIES.map((cat) => (

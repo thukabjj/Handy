@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshCcw, Wifi, WifiOff, Presentation } from "lucide-react";
-import { commands } from "@/bindings";
+import { commands, type LlmProvider } from "@/bindings";
 import { SpeakerAnalytics } from "./SpeakerAnalytics";
 
 import {
@@ -18,6 +18,21 @@ import { useSettings } from "../../../hooks/useSettings";
 import { ShortcutInput as HandyShortcut } from "../ShortcutInput";
 import { SessionViewer } from "./SessionViewer";
 import { AudioSourceSettings } from "./AudioSourceSettings";
+import { WakeWordSettings } from "./WakeWordSettings";
+import { ScreenVisionSettings } from "./ScreenVisionSettings";
+import {
+  CLOUD_PROVIDER_PRESETS,
+  type CloudProviderId,
+  detectCloudProvider,
+  prioritizeOpenRouterModels,
+  resolveCloudFetchConfig,
+} from "./providerUtils";
+
+const TUCANO2_MODEL_PRESETS = [
+  "Polygl0t/Tucano2-qwen-1.5B-Instruct",
+  "Polygl0t/Tucano2-qwen-3.7B-Instruct",
+  "Polygl0t/Tucano2-qwen-6.7B-Instruct",
+];
 
 const DisabledNotice: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -78,18 +93,44 @@ const OllamaConnectionStatus: React.FC = () => {
   );
 };
 
-const OllamaSettingsComponent: React.FC = () => {
+const LlmProviderSettings: React.FC = () => {
   const { t } = useTranslation();
-  const { getSetting, updateSetting, isUpdating, refreshSettings } =
-    useSettings();
+  const { getSetting, refreshSettings } = useSettings();
   const [modelOptions, setModelOptions] = useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
 
   const activeListening = getSetting("active_listening");
+  const provider: LlmProvider = activeListening?.llm_provider ?? "ollama";
   const baseUrl = activeListening?.ollama_base_url ?? "http://localhost:11434";
-  const model = activeListening?.ollama_model ?? "";
+  const ollamaModel = activeListening?.ollama_model ?? "";
+  const llmModel = activeListening?.llm_model ?? "";
+  const llmApiKey = activeListening?.llm_api_key ?? "";
+  const llmBaseUrl = activeListening?.llm_base_url ?? "";
+  const isLocalProvider = provider === "ollama" || provider === "local_open_ai";
+  const mode = isLocalProvider ? "local" : "cloud";
+  const cloudProvider = detectCloudProvider(provider, llmBaseUrl);
+  const [ollamaBaseUrlDraft, setOllamaBaseUrlDraft] = useState(baseUrl);
+  const [llmApiKeyDraft, setLlmApiKeyDraft] = useState(llmApiKey);
+  const [llmBaseUrlDraft, setLlmBaseUrlDraft] = useState(llmBaseUrl);
+  const [llmModelDraft, setLlmModelDraft] = useState(llmModel);
 
-  const fetchModels = async () => {
+  useEffect(() => {
+    setOllamaBaseUrlDraft(baseUrl);
+  }, [baseUrl]);
+
+  useEffect(() => {
+    setLlmApiKeyDraft(llmApiKey);
+  }, [llmApiKey]);
+
+  useEffect(() => {
+    setLlmBaseUrlDraft(llmBaseUrl);
+  }, [llmBaseUrl]);
+
+  useEffect(() => {
+    setLlmModelDraft(llmModel);
+  }, [llmModel]);
+
+  const fetchOllamaModels = async () => {
     setIsFetchingModels(true);
     try {
       const result = await commands.fetchOllamaModels();
@@ -103,74 +144,523 @@ const OllamaSettingsComponent: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchModels();
-  }, [baseUrl]);
+  const fetchCloudModels = async () => {
+    if (!llmApiKeyDraft.trim()) return;
 
-  const handleBaseUrlChange = async (newUrl: string) => {
-    if (!activeListening) return;
-    await commands.changeOllamaBaseUrlSetting(newUrl);
-    await refreshSettings();
-    fetchModels();
+    const { provider: effectiveProvider, baseUrl: effectiveBaseUrl } =
+      resolveCloudFetchConfig(cloudProvider, llmBaseUrlDraft);
+
+    setIsFetchingModels(true);
+    try {
+      const result = await commands.fetchLlmModels(
+        effectiveProvider,
+        llmApiKeyDraft,
+        effectiveBaseUrl,
+      );
+      if (result.status === "ok") {
+        const models =
+          cloudProvider === "open_router"
+            ? prioritizeOpenRouterModels(result.data)
+            : result.data;
+        setModelOptions(models);
+      }
+    } catch (error) {
+      console.error("Failed to fetch LLM models:", error);
+    } finally {
+      setIsFetchingModels(false);
+    }
   };
 
-  const handleModelChange = async (newModel: string | null) => {
-    if (!activeListening || !newModel) return;
+  const fetchLocalOpenAiModels = async () => {
+    setIsFetchingModels(true);
+    try {
+      const result = await commands.fetchLlmModels(
+        "local_open_ai",
+        llmApiKeyDraft,
+        llmBaseUrlDraft || "http://127.0.0.1:8000/v1",
+      );
+      if (result.status === "ok") {
+        setModelOptions(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch local OpenAI-compatible models:", error);
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
+
+  useEffect(() => {
+    setModelOptions([]);
+    if (provider === "ollama") {
+      fetchOllamaModels();
+    }
+  }, [provider, baseUrl]);
+
+  const handleModeChange = async (value: string | null) => {
+    if (!value) return;
+    if (value === "local") {
+      await commands.changeActiveListeningLlmProvider("ollama");
+      await refreshSettings();
+      return;
+    }
+
+    if (isLocalProvider) {
+      await commands.changeActiveListeningLlmProvider("open_router");
+      await refreshSettings();
+    }
+  };
+
+  const handleLocalRuntimeChange = async (value: string | null) => {
+    if (!value) return;
+    if (value === "ollama") {
+      await commands.changeActiveListeningLlmProvider("ollama");
+    } else if (value === "local_open_ai") {
+      await commands.changeActiveListeningLlmProvider("local_open_ai");
+      if (!llmBaseUrlDraft.trim()) {
+        await commands.changeActiveListeningLlmBaseUrl(
+          "http://127.0.0.1:8000/v1",
+        );
+      }
+    }
+    await refreshSettings();
+  };
+
+  const handleCloudProviderChange = async (value: string | null) => {
+    if (!value) return;
+    const selected = value as CloudProviderId;
+
+    if (selected === "open_router") {
+      await commands.changeActiveListeningLlmProvider("open_router");
+      await refreshSettings();
+      return;
+    }
+
+    if (selected === "custom") {
+      await commands.changeActiveListeningLlmProvider("custom");
+      await refreshSettings();
+      return;
+    }
+
+    await commands.changeActiveListeningLlmProvider(selected as LlmProvider);
+    await refreshSettings();
+  };
+
+  const handleBaseUrlChange = async (newUrl: string) => {
+    await commands.changeOllamaBaseUrlSetting(newUrl);
+    await refreshSettings();
+    fetchOllamaModels();
+  };
+
+  const handleOllamaModelChange = async (newModel: string | null) => {
+    if (!newModel) return;
     await commands.changeOllamaModelSetting(newModel);
+    await refreshSettings();
+  };
+
+  const handleApiKeyChange = async (key: string) => {
+    await commands.changeActiveListeningLlmApiKey(key);
+    await refreshSettings();
+  };
+
+  const handleLlmModelChange = async (newModel: string | null) => {
+    if (!newModel) return;
+    await commands.changeActiveListeningLlmModel(newModel);
+    await refreshSettings();
+  };
+
+  const handleLlmBaseUrlChange = async (url: string) => {
+    await commands.changeActiveListeningLlmBaseUrl(url);
     await refreshSettings();
   };
 
   return (
     <>
-      <OllamaConnectionStatus />
-
       <SettingContainer
-        title={t("settings.activeListening.ollama.baseUrl.title")}
-        description={t("settings.activeListening.ollama.baseUrl.description")}
+        title={t("settings.activeListening.llm.mode.title")}
+        description={t("settings.activeListening.llm.mode.description")}
         descriptionMode="tooltip"
         layout="horizontal"
         grouped={true}
       >
-        <Input
-          value={baseUrl}
-          onBlur={(e) => handleBaseUrlChange(e.target.value)}
-          placeholder="http://localhost:11434"
-          className="min-w-[300px]"
+        <Dropdown
+          selectedValue={mode}
+          options={[
+            {
+              value: "local",
+              label: t("settings.activeListening.llm.mode.local"),
+            },
+            {
+              value: "cloud",
+              label: t("settings.activeListening.llm.mode.cloud"),
+            },
+          ]}
+          onSelect={handleModeChange}
+          className="min-w-[200px]"
         />
       </SettingContainer>
 
-      <SettingContainer
-        title={t("settings.activeListening.ollama.model.title")}
-        description={t("settings.activeListening.ollama.model.description")}
-        descriptionMode="tooltip"
-        layout="horizontal"
-        grouped={true}
-      >
-        <div className="flex items-center gap-2">
-          <Dropdown
-            selectedValue={model || null}
-            options={modelOptions.map((m) => ({ value: m, label: m }))}
-            onSelect={handleModelChange}
-            placeholder={
-              modelOptions.length > 0
-                ? t("settings.activeListening.ollama.model.placeholder")
-                : t("settings.activeListening.ollama.model.placeholderNoModels")
-            }
-            disabled={isFetchingModels}
-            className="min-w-[250px]"
-          />
-          <ResetButton
-            onClick={fetchModels}
-            disabled={isFetchingModels}
-            ariaLabel={t("settings.activeListening.ollama.model.refresh")}
-            className="flex h-10 w-10 items-center justify-center"
+      {mode === "local" && (
+        <>
+          <SettingContainer
+            title={t(
+              "settings.activeListening.llm.runtime.title",
+              "Local Runtime",
+            )}
+            description={t(
+              "settings.activeListening.llm.runtime.description",
+              "Choose local inference runtime",
+            )}
+            descriptionMode="tooltip"
+            layout="horizontal"
+            grouped={true}
           >
-            <RefreshCcw
-              className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+            <Dropdown
+              selectedValue={
+                provider === "local_open_ai" ? "local_open_ai" : "ollama"
+              }
+              options={[
+                {
+                  value: "ollama",
+                  label: t(
+                    "settings.activeListening.llm.runtime.ollama",
+                    "Ollama",
+                  ),
+                },
+                {
+                  value: "local_open_ai",
+                  label: t(
+                    "settings.activeListening.llm.runtime.localOpenAi",
+                    "OpenAI-compatible local server (vLLM/TGI)",
+                  ),
+                },
+              ]}
+              onSelect={handleLocalRuntimeChange}
+              className="min-w-[300px]"
             />
-          </ResetButton>
-        </div>
-      </SettingContainer>
+          </SettingContainer>
+
+          {provider === "ollama" && (
+            <>
+              <OllamaConnectionStatus />
+              <SettingContainer
+                title={t("settings.activeListening.ollama.baseUrl.title")}
+                description={t(
+                  "settings.activeListening.ollama.baseUrl.description",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <Input
+                  value={ollamaBaseUrlDraft}
+                  onChange={(e) => setOllamaBaseUrlDraft(e.target.value)}
+                  onBlur={() => handleBaseUrlChange(ollamaBaseUrlDraft)}
+                  placeholder="http://localhost:11434"
+                  className="min-w-[300px]"
+                />
+              </SettingContainer>
+
+              <SettingContainer
+                title={t("settings.activeListening.ollama.model.title")}
+                description={t(
+                  "settings.activeListening.ollama.model.description",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <div className="flex items-center gap-2">
+                  <Dropdown
+                    selectedValue={ollamaModel || null}
+                    options={modelOptions.map((m) => ({ value: m, label: m }))}
+                    onSelect={handleOllamaModelChange}
+                    placeholder={
+                      modelOptions.length > 0
+                        ? t("settings.activeListening.ollama.model.placeholder")
+                        : t(
+                            "settings.activeListening.ollama.model.placeholderNoModels",
+                          )
+                    }
+                    disabled={isFetchingModels}
+                    className="min-w-[250px]"
+                  />
+                  <ResetButton
+                    onClick={fetchOllamaModels}
+                    disabled={isFetchingModels}
+                    ariaLabel={t(
+                      "settings.activeListening.ollama.model.refresh",
+                    )}
+                    className="flex h-10 w-10 items-center justify-center"
+                  >
+                    <RefreshCcw
+                      className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+                    />
+                  </ResetButton>
+                </div>
+              </SettingContainer>
+            </>
+          )}
+
+          {provider === "local_open_ai" && (
+            <>
+              <SettingContainer
+                title={t(
+                  "settings.activeListening.llm.model.tucanoPresetsTitle",
+                  "Tucano2 Presets",
+                )}
+                description={t(
+                  "settings.activeListening.llm.model.tucanoPresetsDescription",
+                  "Quick-select a Tucano2 model served by your local vLLM/TGI runtime",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <Dropdown
+                  selectedValue={
+                    TUCANO2_MODEL_PRESETS.includes(llmModel) ? llmModel : null
+                  }
+                  options={TUCANO2_MODEL_PRESETS.map((m) => ({
+                    value: m,
+                    label: m,
+                  }))}
+                  onSelect={handleLlmModelChange}
+                  placeholder={t(
+                    "settings.activeListening.llm.model.tucanoPresetsPlaceholder",
+                    "Select Tucano2 preset...",
+                  )}
+                  className="min-w-[320px]"
+                />
+              </SettingContainer>
+
+              <SettingContainer
+                title={t("settings.activeListening.llm.baseUrl.title")}
+                description={t(
+                  "settings.activeListening.llm.baseUrl.description",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <Input
+                  value={llmBaseUrlDraft}
+                  onChange={(e) => setLlmBaseUrlDraft(e.target.value)}
+                  onBlur={() => handleLlmBaseUrlChange(llmBaseUrlDraft)}
+                  placeholder="http://127.0.0.1:8000/v1"
+                  className="min-w-[300px]"
+                />
+              </SettingContainer>
+              <SettingContainer
+                title={t("settings.activeListening.llm.apiKey.title")}
+                description={t(
+                  "settings.activeListening.llm.apiKey.descriptionLocal",
+                  "Optional API key for local OpenAI-compatible server",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <Input
+                  type="password"
+                  value={llmApiKeyDraft}
+                  onChange={(e) => setLlmApiKeyDraft(e.target.value)}
+                  onBlur={() => handleApiKeyChange(llmApiKeyDraft)}
+                  placeholder="optional"
+                  className="min-w-[300px]"
+                />
+              </SettingContainer>
+              <SettingContainer
+                title={t("settings.activeListening.llm.model.title")}
+                description={t(
+                  "settings.activeListening.llm.model.description",
+                )}
+                descriptionMode="tooltip"
+                layout="horizontal"
+                grouped={true}
+              >
+                <div className="flex items-center gap-2">
+                  {modelOptions.length > 0 ? (
+                    <Dropdown
+                      selectedValue={llmModel || null}
+                      options={modelOptions.map((m) => ({
+                        value: m,
+                        label: m,
+                      }))}
+                      onSelect={handleLlmModelChange}
+                      placeholder={t(
+                        "settings.activeListening.llm.model.placeholder",
+                      )}
+                      disabled={isFetchingModels}
+                      className="min-w-[250px]"
+                    />
+                  ) : (
+                    <Input
+                      value={llmModelDraft}
+                      onChange={(e) => setLlmModelDraft(e.target.value)}
+                      onBlur={() => handleLlmModelChange(llmModelDraft)}
+                      placeholder={t(
+                        "settings.activeListening.llm.model.inputPlaceholder",
+                      )}
+                      className="min-w-[250px]"
+                    />
+                  )}
+                  <ResetButton
+                    onClick={fetchLocalOpenAiModels}
+                    disabled={isFetchingModels}
+                    ariaLabel={t(
+                      "settings.activeListening.llm.model.refresh",
+                      "Refresh models",
+                    )}
+                    className="flex h-10 w-10 items-center justify-center"
+                  >
+                    <RefreshCcw
+                      className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+                    />
+                  </ResetButton>
+                </div>
+                <p className="mt-2 text-xs text-mid-gray">
+                  {t(
+                    "settings.activeListening.llm.model.tucanoHint",
+                    "Tip: run Tucano2 locally via vLLM/TGI and select it here.",
+                  )}
+                </p>
+              </SettingContainer>
+            </>
+          )}
+        </>
+      )}
+
+      {mode === "cloud" && (
+        <>
+          <SettingContainer
+            title={t("settings.activeListening.llm.provider.title")}
+            description={t("settings.activeListening.llm.provider.description")}
+            descriptionMode="tooltip"
+            layout="horizontal"
+            grouped={true}
+          >
+            <Dropdown
+              selectedValue={cloudProvider}
+              options={[
+                {
+                  value: "open_router",
+                  label: t("settings.activeListening.llm.provider.openRouter"),
+                },
+                {
+                  value: "open_ai",
+                  label: t("settings.activeListening.llm.provider.openAi"),
+                },
+                {
+                  value: "groq",
+                  label: t("settings.activeListening.llm.provider.groq"),
+                },
+                {
+                  value: "together",
+                  label: t("settings.activeListening.llm.provider.together"),
+                },
+                {
+                  value: "fireworks",
+                  label: t("settings.activeListening.llm.provider.fireworks"),
+                },
+                {
+                  value: "custom",
+                  label: t("settings.activeListening.llm.provider.custom"),
+                },
+              ]}
+              onSelect={handleCloudProviderChange}
+              className="min-w-[240px]"
+            />
+          </SettingContainer>
+
+          {cloudProvider === "custom" && (
+            <SettingContainer
+              title={t("settings.activeListening.llm.baseUrl.title")}
+              description={t(
+                "settings.activeListening.llm.baseUrl.description",
+              )}
+              descriptionMode="tooltip"
+              layout="horizontal"
+              grouped={true}
+            >
+              <Input
+                value={llmBaseUrlDraft}
+                onChange={(e) => setLlmBaseUrlDraft(e.target.value)}
+                onBlur={() => handleLlmBaseUrlChange(llmBaseUrlDraft)}
+                placeholder="https://api.example.com/v1"
+                className="min-w-[300px]"
+              />
+            </SettingContainer>
+          )}
+
+          <SettingContainer
+            title={t("settings.activeListening.llm.apiKey.title")}
+            description={t("settings.activeListening.llm.apiKey.description")}
+            descriptionMode="tooltip"
+            layout="horizontal"
+            grouped={true}
+          >
+            <Input
+              type="password"
+              value={llmApiKeyDraft}
+              onChange={(e) => setLlmApiKeyDraft(e.target.value)}
+              onBlur={() => handleApiKeyChange(llmApiKeyDraft)}
+              placeholder="sk-..."
+              className="min-w-[300px]"
+            />
+          </SettingContainer>
+
+          <SettingContainer
+            title={t("settings.activeListening.llm.model.title")}
+            description={t("settings.activeListening.llm.model.description")}
+            descriptionMode="tooltip"
+            layout="horizontal"
+            grouped={true}
+          >
+            <div className="flex items-center gap-2">
+              {modelOptions.length > 0 ? (
+                <Dropdown
+                  selectedValue={llmModel || null}
+                  options={modelOptions.map((m) => ({ value: m, label: m }))}
+                  onSelect={handleLlmModelChange}
+                  placeholder={t(
+                    "settings.activeListening.llm.model.placeholder",
+                  )}
+                  disabled={isFetchingModels}
+                  className="min-w-[250px]"
+                />
+              ) : (
+                <Input
+                  value={llmModelDraft}
+                  onChange={(e) => setLlmModelDraft(e.target.value)}
+                  onBlur={() => handleLlmModelChange(llmModelDraft)}
+                  placeholder={t(
+                    "settings.activeListening.llm.model.inputPlaceholder",
+                  )}
+                  className="min-w-[250px]"
+                />
+              )}
+              <ResetButton
+                onClick={fetchCloudModels}
+                disabled={isFetchingModels || !llmApiKeyDraft.trim()}
+                ariaLabel={t(
+                  "settings.activeListening.llm.model.refresh",
+                  "Refresh models",
+                )}
+                className="flex h-10 w-10 items-center justify-center"
+              >
+                <RefreshCcw
+                  className={`h-4 w-4 ${isFetchingModels ? "animate-spin" : ""}`}
+                />
+              </ResetButton>
+            </div>
+            {cloudProvider === "open_router" && (
+              <p className="mt-2 text-xs text-mid-gray">
+                {t("settings.activeListening.llm.model.openSourceHint")}
+              </p>
+            )}
+          </SettingContainer>
+        </>
+      )}
     </>
   );
 };
@@ -569,7 +1059,11 @@ export const ActiveListeningSettings: React.FC = () => {
   const { getSetting, refreshSettings } = useSettings();
 
   const activeListening = getSetting("active_listening");
+  const bindings = getSetting("bindings");
   const enabled = activeListening?.enabled ?? false;
+  const hasActiveListeningShortcut = Boolean(
+    bindings && (bindings as Record<string, unknown>)["active_listening"],
+  );
 
   const handleEnableChange = async (value: boolean) => {
     await commands.changeActiveListeningEnabledSetting(value);
@@ -586,15 +1080,22 @@ export const ActiveListeningSettings: React.FC = () => {
           onChange={handleEnableChange}
           grouped={true}
         />
-        {enabled && (
+        {enabled && hasActiveListeningShortcut && (
           <HandyShortcut shortcutId="active_listening" grouped={true} />
         )}
       </SettingsGroup>
 
       {enabled && (
         <>
-          <SettingsGroup title={t("settings.activeListening.ollama.title")}>
-            <OllamaSettingsComponent />
+          <SettingsGroup title={t("settings.activeListening.llm.title")}>
+            <div className="p-3 bg-mid-gray/5 rounded-lg border border-mid-gray/20">
+              <p className="text-sm text-mid-gray">
+                {t(
+                  "settings.activeListening.llm.centralizedNotice",
+                  "AI provider is configured centrally in Settings > Advanced Features > AI Config. This section uses the shared configuration.",
+                )}
+              </p>
+            </div>
           </SettingsGroup>
 
           <SettingsGroup title={t("settings.activeListening.segments.title")}>
@@ -607,9 +1108,7 @@ export const ActiveListeningSettings: React.FC = () => {
             <PromptsEditorComponent />
           </SettingsGroup>
 
-          <SettingsGroup
-            title={t("presentationMode.title")}
-          >
+          <SettingsGroup title={t("presentationMode.title")}>
             <SettingContainer
               title={t("presentationMode.description")}
               layout="horizontal"
@@ -624,6 +1123,17 @@ export const ActiveListeningSettings: React.FC = () => {
                 {t("presentationMode.open")}
               </Button>
             </SettingContainer>
+          </SettingsGroup>
+
+          <WakeWordSettings />
+
+          <SettingsGroup
+            title={t(
+              "settings.activeListening.screenVision.title",
+              "Screen Vision",
+            )}
+          >
+            <ScreenVisionSettings />
           </SettingsGroup>
 
           <SpeakerAnalytics />

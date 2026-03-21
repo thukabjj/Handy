@@ -67,9 +67,7 @@ export const OllamaConnectionStatus: React.FC<OllamaConnectionStatusProps> = ({
         title={t("shared.ollama.refreshConnection")}
         aria-label={t("shared.ollama.refreshConnection")}
       >
-        <RefreshCcw
-          className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`}
-        />
+        <RefreshCcw className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`} />
       </button>
     </div>
   );

@@ -38,10 +38,7 @@ export interface AppError extends HandyError {
 /**
  * Convert a HandyError (from backend) to an AppError (for frontend use)
  */
-export function toAppError(
-  error: HandyError,
-  context?: string
-): AppError {
+export function toAppError(error: HandyError, context?: string): AppError {
   return {
     ...error,
     id: generateErrorId(),

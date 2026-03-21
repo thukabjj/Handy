@@ -38,11 +38,11 @@ pub struct DiarizationConfig {
 impl Default for DiarizationConfig {
     fn default() -> Self {
         Self {
-            silence_threshold: 0.02,          // -34 dB roughly
-            min_silence_duration_ms: 500,     // 500ms silence suggests speaker change
-            energy_change_threshold: 2.0,     // 2x energy change suggests new speaker
+            silence_threshold: 0.02,      // -34 dB roughly
+            min_silence_duration_ms: 500, // 500ms silence suggests speaker change
+            energy_change_threshold: 2.0, // 2x energy change suggests new speaker
             sample_rate: 16000,
-            history_window_size: 20,          // ~20 frames of history
+            history_window_size: 20, // ~20 frames of history
         }
     }
 }
@@ -267,8 +267,7 @@ impl SpeakerDiarizer for EnergyBasedDiarizer {
             }
 
             // Update current speaker's energy profile
-            self.current_speaker_energy =
-                self.current_speaker_energy * 0.9 + rms * 0.1;
+            self.current_speaker_energy = self.current_speaker_energy * 0.9 + rms * 0.1;
         }
 
         None

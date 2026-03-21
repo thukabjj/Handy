@@ -178,8 +178,8 @@ mod tests {
 
     #[test]
     fn test_error_display() {
-        let error = HandyError::settings("Failed to save settings")
-            .with_details("Permission denied");
+        let error =
+            HandyError::settings("Failed to save settings").with_details("Permission denied");
 
         assert_eq!(
             format!("{}", error),

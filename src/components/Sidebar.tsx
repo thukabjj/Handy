@@ -1,13 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  FlaskConical,
-  History,
-  Info,
-  Mic,
-  Settings,
-  Bug,
-} from "lucide-react";
+import { History, Info, Mic, Settings, Bug } from "lucide-react";
 import type { AppSettings } from "@/bindings";
 import HandyTextLogo from "./icons/HandyTextLogo";
 import { useSettings } from "../hooks/useSettings";
@@ -16,7 +9,6 @@ import {
   DebugSettings,
   AboutSettings,
   HomeSettings,
-  LabsSettings,
   UnifiedSettings,
 } from "./settings";
 
@@ -58,13 +50,6 @@ export const SECTIONS_CONFIG = {
     component: UnifiedSettings,
     enabled: () => true,
   },
-  labs: {
-    labelKey: "sidebar.labs",
-    icon: FlaskConical,
-    component: LabsSettings,
-    enabled: () => true,
-    badge: "beta" as const,
-  },
   about: {
     labelKey: "sidebar.about",
     icon: Info,
@@ -102,29 +87,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
-          const badge = "badge" in section ? section.badge : undefined;
+          const badge = ("badge" in section ? section.badge : undefined) as
+            | SectionConfig["badge"]
+            | undefined;
+          const label = String(t(section.labelKey));
 
           return (
             <div
               key={section.id}
               className={`flex gap-2 items-center p-2 w-full rounded-lg cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-primary-light/15 text-primary-light"
+                  ? "bg-logo-primary/80 text-logo-primary"
                   : "hover:bg-mid-gray/20 hover:opacity-100 opacity-85"
               }`}
               onClick={() => onSectionChange(section.id)}
             >
               <Icon width={24} height={24} className="shrink-0" />
               <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <p
-                  className="text-sm font-medium truncate"
-                  title={t(section.labelKey)}
-                >
-                  {t(section.labelKey)}
+                <p className="text-sm font-medium truncate" title={label}>
+                  {label}
                 </p>
                 {badge && (
                   <span className="px-1 py-0.5 text-[9px] font-medium bg-purple-500/20 text-purple-400 rounded shrink-0">
-                    {badge}
+                    {String(badge)}
                   </span>
                 )}
               </div>

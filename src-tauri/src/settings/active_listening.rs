@@ -35,6 +35,46 @@ impl Default for AudioMixSettings {
     }
 }
 
+/// LLM provider type for AI features
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum LlmProvider {
+    /// Local Ollama server
+    #[default]
+    Ollama,
+    /// Local OpenAI-compatible server (vLLM/TGI)
+    LocalOpenAi,
+    /// OpenRouter API (OpenAI-compatible)
+    OpenRouter,
+    /// OpenAI API
+    OpenAi,
+    /// Groq API (OpenAI-compatible)
+    Groq,
+    /// Together AI API (OpenAI-compatible)
+    Together,
+    /// Fireworks AI API (OpenAI-compatible)
+    Fireworks,
+    /// Custom OpenAI-compatible API
+    Custom,
+}
+
+impl LlmProvider {
+    /// OpenAI-compatible base URL for known providers.
+    /// Custom provider URL is sourced from settings.
+    pub fn default_base_url(self) -> Option<&'static str> {
+        match self {
+            Self::Ollama => None,
+            Self::LocalOpenAi => Some("http://127.0.0.1:8000/v1"),
+            Self::OpenRouter => Some("https://openrouter.ai/api/v1"),
+            Self::OpenAi => Some("https://api.openai.com/v1"),
+            Self::Groq => Some("https://api.groq.com/openai/v1"),
+            Self::Together => Some("https://api.together.xyz/v1"),
+            Self::Fireworks => Some("https://api.fireworks.ai/inference/v1"),
+            Self::Custom => None,
+        }
+    }
+}
+
 /// Settings for the Active Listening feature
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct ActiveListeningSettings {
@@ -45,6 +85,22 @@ pub struct ActiveListeningSettings {
     /// Duration of each audio segment in seconds before transcription
     #[serde(default = "default_segment_duration_seconds")]
     pub segment_duration_seconds: u32,
+
+    /// LLM provider to use for generating insights
+    #[serde(default)]
+    pub llm_provider: LlmProvider,
+
+    /// API key for cloud LLM providers (OpenRouter, etc.)
+    #[serde(default)]
+    pub llm_api_key: Option<String>,
+
+    /// Model to use with the cloud LLM provider
+    #[serde(default)]
+    pub llm_model: Option<String>,
+
+    /// Custom base URL for the LLM provider (used with Custom provider)
+    #[serde(default)]
+    pub llm_base_url: Option<String>,
 
     /// Ollama server base URL
     #[serde(default = "default_ollama_base_url")]
@@ -185,7 +241,8 @@ If no action items are found, briefly note the main topic discussed."#
         ActiveListeningPrompt {
             id: "meeting_coach_objection_handler".to_string(),
             name: "Objection Handler".to_string(),
-            prompt_template: r#"You are a real-time meeting coach. Analyze this conversation segment:
+            prompt_template:
+                r#"You are a real-time meeting coach. Analyze this conversation segment:
 
 Transcription: {{transcription}}
 Previous context: {{previous_context}}
@@ -199,7 +256,7 @@ If you detect an objection, concern, or difficult question:
 If no objection detected, provide a brief insight about the conversation flow.
 
 Be concise - this is real-time assistance. Keep response under 100 words."#
-                .to_string(),
+                    .to_string(),
             created_at: 0,
             is_default: true,
             category: PromptCategory::MeetingCoach,
@@ -296,6 +353,10 @@ impl Default for ActiveListeningSettings {
         Self {
             enabled: default_enabled(),
             segment_duration_seconds: default_segment_duration_seconds(),
+            llm_provider: LlmProvider::default(),
+            llm_api_key: None,
+            llm_model: None,
+            llm_base_url: None,
             ollama_base_url: default_ollama_base_url(),
             ollama_model: default_ollama_model(),
             prompts: default_prompts(),
@@ -327,6 +388,7 @@ impl ActiveListeningSettings {
 }
 
 /// Ensure default prompts exist in settings (for migrations)
+#[allow(dead_code)]
 pub fn ensure_active_listening_defaults(settings: &mut ActiveListeningSettings) -> bool {
     let mut changed = false;
     let defaults = default_prompts();
@@ -378,7 +440,9 @@ mod tests {
         assert_eq!(meeting_notes.id, "default_meeting_notes");
         assert_eq!(meeting_notes.name, "Meeting Notes");
         assert!(meeting_notes.prompt_template.contains("{{transcription}}"));
-        assert!(meeting_notes.prompt_template.contains("{{previous_context}}"));
+        assert!(meeting_notes
+            .prompt_template
+            .contains("{{previous_context}}"));
         assert!(meeting_notes.prompt_template.contains("{{session_topic}}"));
         assert!(meeting_notes.is_default);
         assert_eq!(meeting_notes.category, PromptCategory::NoteTaking);
@@ -533,7 +597,10 @@ mod tests {
 
         assert!(changed);
         assert_eq!(settings.prompts.len(), 8); // 1 custom + 7 defaults
-        assert_eq!(settings.selected_prompt_id, Some("custom_prompt".to_string()));
+        assert_eq!(
+            settings.selected_prompt_id,
+            Some("custom_prompt".to_string())
+        );
     }
 
     #[test]
@@ -582,7 +649,10 @@ mod tests {
         let cloned = settings.clone();
 
         assert_eq!(settings.enabled, cloned.enabled);
-        assert_eq!(settings.segment_duration_seconds, cloned.segment_duration_seconds);
+        assert_eq!(
+            settings.segment_duration_seconds,
+            cloned.segment_duration_seconds
+        );
         assert_eq!(settings.prompts.len(), cloned.prompts.len());
     }
 
@@ -714,5 +784,57 @@ mod tests {
         let json = serde_json::to_string(&settings).unwrap();
         assert!(json.contains("\"audio_source_type\":\"mixed\""));
         assert!(json.contains("\"mix_ratio\":0.3"));
+    }
+
+    #[test]
+    fn test_llm_provider_default_base_urls() {
+        assert_eq!(
+            LlmProvider::LocalOpenAi.default_base_url(),
+            Some("http://127.0.0.1:8000/v1")
+        );
+        assert_eq!(
+            LlmProvider::OpenRouter.default_base_url(),
+            Some("https://openrouter.ai/api/v1")
+        );
+        assert_eq!(
+            LlmProvider::OpenAi.default_base_url(),
+            Some("https://api.openai.com/v1")
+        );
+        assert_eq!(
+            LlmProvider::Groq.default_base_url(),
+            Some("https://api.groq.com/openai/v1")
+        );
+        assert_eq!(
+            LlmProvider::Together.default_base_url(),
+            Some("https://api.together.xyz/v1")
+        );
+        assert_eq!(
+            LlmProvider::Fireworks.default_base_url(),
+            Some("https://api.fireworks.ai/inference/v1")
+        );
+        assert_eq!(LlmProvider::Custom.default_base_url(), None);
+        assert_eq!(LlmProvider::Ollama.default_base_url(), None);
+    }
+
+    #[test]
+    fn test_llm_provider_serde_roundtrip_variants() {
+        let variants = vec![
+            (LlmProvider::Ollama, "\"ollama\""),
+            (LlmProvider::LocalOpenAi, "\"local_open_ai\""),
+            (LlmProvider::OpenRouter, "\"open_router\""),
+            (LlmProvider::OpenAi, "\"open_ai\""),
+            (LlmProvider::Groq, "\"groq\""),
+            (LlmProvider::Together, "\"together\""),
+            (LlmProvider::Fireworks, "\"fireworks\""),
+            (LlmProvider::Custom, "\"custom\""),
+        ];
+
+        for (provider, expected_json) in variants {
+            let json = serde_json::to_string(&provider).expect("serialize provider");
+            assert_eq!(json, expected_json);
+
+            let parsed: LlmProvider = serde_json::from_str(&json).expect("deserialize provider");
+            assert_eq!(parsed, provider);
+        }
     }
 }

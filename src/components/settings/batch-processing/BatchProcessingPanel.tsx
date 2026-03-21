@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { commands, type BatchItem, type JobStatus } from "@/bindings";
 import {
   FolderInput,
   Play,
@@ -17,25 +17,9 @@ import {
 import { SettingsGroup } from "@/components/ui";
 import { Button } from "@/components/ui/Button";
 
-interface BatchItem {
-  id: string;
-  file_name: string;
-  file_path: string;
-  status:
-    | "Queued"
-    | "Decoding"
-    | "Transcribing"
-    | "Completed"
-    | "Failed"
-    | "Cancelled";
-  progress: number;
-  error: string | null;
-  duration_seconds: number | null;
-}
-
 interface BatchItemStatusEvent {
   id: string;
-  status: BatchItem["status"];
+  status: JobStatus;
   progress: number;
   error: string | null;
   duration_seconds: number | null;
@@ -49,18 +33,16 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({
-  status,
-}) => {
+const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({ status }) => {
   const { t } = useTranslation();
 
   const styles: Record<BatchItem["status"], string> = {
-    Queued: "bg-mid-gray/20 text-text-secondary",
+    Queued: "bg-mid-gray/20 text-mid-gray",
     Decoding: "bg-blue-500/20 text-blue-400",
-    Transcribing: "bg-primary-light/20 text-primary-light",
+    Transcribing: "bg-logo-primary/20 text-logo-primary",
     Completed: "bg-green-500/20 text-green-400",
     Failed: "bg-red-500/20 text-red-400",
-    Cancelled: "bg-mid-gray/20 text-text-secondary",
+    Cancelled: "bg-mid-gray/20 text-mid-gray",
   };
 
   return (
@@ -79,24 +61,26 @@ const StatusBadge: React.FC<{ status: BatchItem["status"] }> = ({
   );
 };
 
-const ProgressBar: React.FC<{ progress: number; status: BatchItem["status"] }> =
-  ({ progress, status }) => {
-    const barColor =
-      status === "Failed"
-        ? "bg-red-500"
-        : status === "Completed"
-          ? "bg-green-500"
-          : "bg-primary-light";
+const ProgressBar: React.FC<{
+  progress: number;
+  status: BatchItem["status"];
+}> = ({ progress, status }) => {
+  const barColor =
+    status === "Failed"
+      ? "bg-red-500"
+      : status === "Completed"
+        ? "bg-green-500"
+        : "bg-logo-primary";
 
-    return (
-      <div className="h-1.5 w-full rounded-full bg-mid-gray/20">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${barColor}`}
-          style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
-        />
-      </div>
-    );
-  };
+  return (
+    <div className="h-1.5 w-full rounded-full bg-mid-gray/20">
+      <div
+        className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+      />
+    </div>
+  );
+};
 
 export const BatchProcessingPanel: React.FC = () => {
   const { t } = useTranslation();
@@ -104,6 +88,15 @@ export const BatchProcessingPanel: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
+    const loadStatus = async () => {
+      const result = await commands.getBatchStatus();
+      if (result.status === "ok") {
+        setItems(result.data.items);
+        setIsProcessing(result.data.is_processing);
+      }
+    };
+    loadStatus();
+
     const unlistenStatus = listen<BatchItemStatusEvent>(
       "batch-item-status",
       (event) => {
@@ -150,10 +143,10 @@ export const BatchProcessingPanel: React.FC = () => {
     if (paths.length === 0) return;
 
     try {
-      const newItems = await invoke<BatchItem[]>("add_to_batch_queue", {
-        paths,
-      });
-      setItems((prev) => [...prev, ...newItems]);
+      const result = await commands.addToBatchQueue(paths);
+      if (result.status === "ok") {
+        setItems(result.data.items);
+      }
     } catch (error) {
       console.error("Failed to add files to batch queue:", error);
     }
@@ -162,7 +155,10 @@ export const BatchProcessingPanel: React.FC = () => {
   const handleStart = useCallback(async () => {
     try {
       setIsProcessing(true);
-      await invoke("start_batch_processing");
+      const result = await commands.startBatchProcessing();
+      if (result.status === "error") {
+        throw new Error(result.error);
+      }
     } catch (error) {
       setIsProcessing(false);
       console.error("Failed to start batch processing:", error);
@@ -171,7 +167,7 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleCancel = useCallback(async () => {
     try {
-      await invoke("cancel_batch_processing");
+      await commands.cancelBatchProcessing();
       setIsProcessing(false);
     } catch (error) {
       console.error("Failed to cancel batch processing:", error);
@@ -180,10 +176,13 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleClearCompleted = useCallback(async () => {
     try {
-      await invoke("clear_completed_batch_items");
+      await commands.clearCompletedBatchItems();
       setItems((prev) =>
         prev.filter(
-          (item) => item.status !== "Completed" && item.status !== "Failed" && item.status !== "Cancelled",
+          (item) =>
+            item.status !== "Completed" &&
+            item.status !== "Failed" &&
+            item.status !== "Cancelled",
         ),
       );
     } catch (error) {
@@ -193,7 +192,7 @@ export const BatchProcessingPanel: React.FC = () => {
 
   const handleRemoveItem = useCallback(async (id: string) => {
     try {
-      await invoke("remove_batch_item", { id });
+      await commands.removeBatchItem(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Failed to remove batch item:", error);
@@ -274,7 +273,7 @@ export const BatchProcessingPanel: React.FC = () => {
         {totalCount > 0 && (
           <div className="px-4 pb-3 space-y-2">
             <ProgressBar progress={overallProgress} status="Transcribing" />
-            <p className="text-xs text-text-secondary">
+            <p className="text-xs text-mid-gray">
               {t("batchProcessing.stats", {
                 completed: completedCount,
                 total: totalCount,
@@ -288,7 +287,7 @@ export const BatchProcessingPanel: React.FC = () => {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <FileAudio className="h-10 w-10 text-mid-gray/40 mb-3" />
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-mid-gray">
               {t("batchProcessing.empty")}
             </p>
           </div>
@@ -299,7 +298,7 @@ export const BatchProcessingPanel: React.FC = () => {
                 key={item.id}
                 className="flex items-center gap-3 px-4 py-3 group"
               >
-                <FileAudio className="h-4 w-4 flex-shrink-0 text-text-secondary" />
+                <FileAudio className="h-4 w-4 flex-shrink-0 text-mid-gray" />
 
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
@@ -325,7 +324,7 @@ export const BatchProcessingPanel: React.FC = () => {
                 </div>
 
                 {item.duration_seconds != null && (
-                  <span className="text-xs text-text-secondary flex-shrink-0">
+                  <span className="text-xs text-mid-gray flex-shrink-0">
                     {formatDuration(item.duration_seconds)}
                   </span>
                 )}
@@ -333,13 +332,12 @@ export const BatchProcessingPanel: React.FC = () => {
                 <button
                   onClick={() => handleRemoveItem(item.id)}
                   disabled={
-                    item.status === "Decoding" ||
-                    item.status === "Transcribing"
+                    item.status === "Decoding" || item.status === "Transcribing"
                   }
                   className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-mid-gray/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label={t("batchProcessing.removeItem")}
                 >
-                  <X className="h-3.5 w-3.5 text-text-secondary" />
+                  <X className="h-3.5 w-3.5 text-mid-gray" />
                 </button>
               </div>
             ))}

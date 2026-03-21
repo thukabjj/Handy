@@ -15,7 +15,9 @@ export const SpeedControl: React.FC<SpeedControlProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
-  const currentIndex = SPEED_PRESETS.indexOf(speed as (typeof SPEED_PRESETS)[number]);
+  const currentIndex = SPEED_PRESETS.indexOf(
+    speed as (typeof SPEED_PRESETS)[number],
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +91,7 @@ export const SpeedControl: React.FC<SpeedControlProps> = ({
     <div className="relative" ref={containerRef}>
       <button
         type="button"
-        className="px-1.5 py-0.5 text-xs font-semibold rounded border border-mid-gray/40 bg-mid-gray/10 text-text-secondary hover:bg-primary-light/10 hover:border-primary-light/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-light"
+        className="px-1.5 py-0.5 text-xs font-semibold rounded border border-mid-gray/40 bg-mid-gray/10 text-mid-gray hover:bg-logo-primary/10 hover:border-logo-primary/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-logo-primary"
         onClick={() => {
           setIsOpen((prev) => !prev);
           if (!isOpen) {
@@ -117,9 +119,9 @@ export const SpeedControl: React.FC<SpeedControlProps> = ({
               aria-selected={speed === preset}
               className={`px-2 py-0.5 text-xs text-center cursor-pointer transition-colors ${
                 focusedIndex === index
-                  ? "bg-primary-light/20"
-                  : "hover:bg-primary-light/10"
-              } ${speed === preset ? "font-semibold text-primary-light" : "text-text-secondary"}`}
+                  ? "bg-logo-primary/20"
+                  : "hover:bg-logo-primary/10"
+              } ${speed === preset ? "font-semibold text-logo-primary" : "text-mid-gray"}`}
               onClick={() => handleSelect(preset)}
               onMouseEnter={() => setFocusedIndex(index)}
             >

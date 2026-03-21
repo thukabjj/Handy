@@ -95,10 +95,7 @@ pub fn decode_audio_file(path: &Path) -> Result<DecodedAudio, String> {
     let codec_params = track.codec_params.clone();
 
     let original_sample_rate = codec_params.sample_rate.unwrap_or(44100);
-    let channels = codec_params
-        .channels
-        .map(|c| c.count())
-        .unwrap_or(1);
+    let channels = codec_params.channels.map(|c| c.count()).unwrap_or(1);
 
     // Determine format name from extension or codec
     let original_format = path
@@ -149,10 +146,7 @@ pub fn decode_audio_file(path: &Path) -> Result<DecodedAudio, String> {
                 let num_frames = decoded.frames();
                 let num_channels = spec.channels.count();
 
-                let mut sample_buf = SampleBuffer::<f32>::new(
-                    num_frames as u64,
-                    *decoded.spec(),
-                );
+                let mut sample_buf = SampleBuffer::<f32>::new(num_frames as u64, *decoded.spec());
                 sample_buf.copy_interleaved_ref(decoded);
 
                 let interleaved = sample_buf.samples();

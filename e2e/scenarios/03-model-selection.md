@@ -17,6 +17,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Footer shows model selector button with "Whisper Tiny"
 - Model status indicator is present
 
@@ -28,6 +29,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Model dropdown opens
 - Shows available models (Whisper Tiny, Whisper Base, Whisper Small)
 - Downloaded models have appropriate indicators
@@ -41,6 +43,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Model selector now shows "Whisper Base"
 - Mock state updated: active model changed
 
@@ -51,6 +54,7 @@ browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().currentModel"
 ```
 
 **Verify:**
+
 - Returns the whisper-base model name
 
 ## Expected Results

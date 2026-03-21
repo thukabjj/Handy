@@ -26,6 +26,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Active Listening toggle is now enabled
 - Additional Active Listening settings may become visible
 
@@ -38,6 +39,7 @@ browser_snapshot()
 ```
 
 **Verify:**
+
 - Active Listening related settings are accessible
 - Ollama connection status indicator may be visible
 
@@ -48,6 +50,7 @@ browser_evaluate({ function: "() => window.__E2E_MOCK__.getState().settings.acti
 ```
 
 **Verify:**
+
 - Returns `true`
 
 ### 5. Configure Active Listening prompt
@@ -65,6 +68,7 @@ browser_click({ ref: "<active-listening-toggle-ref>", element: "Active Listening
 ```
 
 **Verify:**
+
 - Toggle returns to disabled state
 - Additional settings may be hidden
 
